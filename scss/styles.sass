@@ -1,0 +1,540 @@
+@import 'base/_base'
+@import 'base/_reset'
+@import '_view'
+
+
+// 暗色主题样式
+.dark-theme 
+  background-color: #121212
+  color: #ffffff
+
+  #sidebar 
+    background-color: #1e1e1e
+
+  #main 
+    background-color: #2e2e2e
+    
+
+.fas
+  font-family: 'Font Awesome 5 Free'
+  font-weight: 900
+  width: 16px
+  height: 16px
+  display: inline-block
+  text-align: center
+
+
+#sort-options,
+#view-options
+  display: flex
+
+
+#sort-options button,
+#view-options button
+  margin-right: 5px
+
+
+
+#resizer:hover::after,
+#resizer.resizing::after
+  opacity: 1
+
+
+
+/* 加右侧小图标的样式 */
+.file-actions
+  button
+    background: none
+    border: none
+    cursor: pointer
+    padding: 2px
+    margin-left: 2px
+  
+.error-message
+  color: red
+  padding: 10px
+  background-color: #ffeeee
+  border: 1px solid #ffcccc
+  margin: 10px
+  border-radius: 5px
+
+.file-list-icons .file-icon img,
+.file-list-icons .file-icon i
+  width: 100%
+  height: 100%
+  object-fit: contain
+
+
+::selection
+  background: transparent
+  color: inherit
+
+
+::-moz-selection
+  background: transparent
+  color: inherit
+
+
+.selection-box
+  position: fixed
+  border: 1px solid #007bff
+  background-color: rgba(0, 123, 255, 0.1)
+  pointer-events: none
+  position: fixed
+  border: 1px solid #007bff
+  background-color: rgba(0, 123, 255, 0.1)
+  pointer-events: none
+
+.toolbar-separator
+  width: 1px
+  height: 24px
+  background-color: #ddd
+  margin: 0 10px
+
+
+
+body,
+html
+  margin: 0
+  padding: 0
+  height: 100%
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif
+  background-color: #f0f0f0
+
+
+#app
+  display: flex
+  overflow: hidden
+  height: 100%
+
+  #sidebar
+    min-width: 100px
+    max-width: 50%
+    background-color: #f0f0f0
+    border-right: 1px solid #ddd
+    transition: width 0.3s ease
+    overflow: hidden
+    will-change: width
+    pointer-events: none
+
+    .sidebar-content
+      width: 270px
+      height: 100%
+      overflow-y: auto
+      overflow-x: hidden
+      padding: 20px
+      direction: rtl
+      pointer-events: auto
+      &>*
+        direction: ltr
+      &::-webkit-scrollbar
+        width: 5px // 设置滚动条的宽度
+      &::-webkit-scrollbar-track
+        background: #ffffff // 滚动条轨道的背景颜色
+        border-radius: 10px // 轨道的圆角
+      &::-webkit-scrollbar-thumb
+        background: #868686 // 滚动条的颜色
+        border-radius: 10px // 滚动条的圆角
+        &:hover
+          background: #12bdaf // 鼠标悬停时的颜色
+
+
+    #settings 
+      display: flex
+      background-color: aqua
+      height: 50px
+      bottom: 20px
+      left: 20px
+      cursor: pointer
+
+      #settings-menu
+        width: 500px
+        position: absolute
+        bottom: 40px
+        background-color: white
+        border: 1px solid #ddd
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1)
+        z-index: 1000
+        button
+          display: block
+          padding: 10px
+          border: none
+          background: none
+          cursor: pointer
+          width: 100%
+          text-align: left
+          &:hover
+            background-color: #f0f0f0
+        &.hidden
+          display: none
+            
+   
+    .sidebar-section-header
+      cursor: pointer
+      display: flex
+      align-items: center
+      padding: 5px
+
+    .sidebar-section-icon
+      margin-right: 5px
+
+    .sidebar-section-content
+    padding-left: 15px
+
+
+    &.collapsed 
+      width: 0
+
+  #sidebar-toggle
+    position: absolute
+    left: 250px
+    top: 50%
+    background-color: #f0f0f0
+    border: 1px solid #ddd
+    border-left: none
+    padding: 5px
+    cursor: pointer
+    transition: left 0.3s ease
+
+    i
+      transform: rotate(180deg)
+      transition: transform 0.3s ease
+
+  #resizer
+    width: 6px
+    background-color: #ddd
+    cursor: col-resize
+    transition: background-color 0.3s
+    touch-action: none
+
+    &:hover
+      background-color: #bbb
+
+    &::after
+      content: ''
+      position: absolute
+      top: 0
+      bottom: 0
+      left: 0
+      width: 5px
+      background-color: #007bff
+      opacity: 0
+      transition: opacity 0.3s
+
+
+  #main
+    flex: 1
+    display: flex
+    flex-direction: column
+    background-color: white
+    height: 100%
+    min-width: 200px
+
+    #toolbar
+      display: flex
+      align-items: center
+      padding: 10px
+      background-color: #f9f9f9
+      border-bottom: 1px solid #ddd
+
+    #path
+      width: 100%
+      padding: 5px
+      margin-bottom: 10px
+      border: 1px solid #ddd
+      border-radius: 3px
+
+#view-options
+  margin-left: auto
+  display: flex
+  button
+    margin-left: 5px
+
+.sidebar-section
+  margin-bottom: 20px
+
+  h3
+    margin-bottom: 10px
+    color: #2c3e50
+    font-size: 14px
+
+
+#status-bar
+  display: flex
+  justify-content: space-between
+  padding: 5px 10px
+  background-color: #f0f0f0
+  border-top: 1px solid #ddd
+  font-size: 12px
+  flex-shrink: 0
+  resize: vertical
+  overflow: auto
+  min-height: 20px
+  max-height: 100px
+  height: 20px
+  cursor: ns-resize
+
+
+
+.file-item,
+.favorite-item,
+.quick-access-item,
+.drive-item
+  display: flex
+  align-items: center
+  padding: 5px
+  cursor: pointer
+  transition: background-color 0.2s
+
+  &:hover
+    background-color: #e5f3ff
+
+
+
+.file-icon
+  width: 24px
+  height: 24px
+  margin-right: 10px
+  display: inline-flex
+  align-items: center
+  justify-content: center
+
+  img
+    max-width: 100%
+    max-height: 100%
+    object-fit: contain
+
+  i
+    font-size: 24px
+
+
+
+.status-item 
+  flex: 1
+  white-space: nowrap
+  overflow: hidden
+  text-overflow: ellipsis
+  &:first-child
+    margin-right: 10px
+
+
+#file-list
+  padding: 10px
+  display: flex
+  flex-wrap: wrap
+  align-items: flex-start
+
+
+// 滚动条
+::-webkit-scrollbar
+  width: 8px
+  height: 8px
+
+::-webkit-scrollbar-track
+  background: #f1f1f1
+  border-radius: 10px
+
+
+::-webkit-scrollbar-thumb
+  background: #c1c1c1
+  border-radius: 10px
+  transition: background-color 0.3s ease
+  &:hover
+    background: #a1a1a1
+
+
+// #sidebar,
+// #file-list-container,
+// .file-list-details,
+// .file-list-thumbnails,
+// .file-list-large-icons
+//   scrollbar-width: thin
+//   scrollbar-color: #c1c1c1 #f1f1f1
+
+
+// #sidebar:hover,
+// #file-list-container:hover,
+// .file-list-details:hover,
+// .file-list-thumbnails:hover,
+// .file-list-large-icons:hover
+//   scrollbar-color: #a1a1a1 #f1f1f1
+
+
+
+
+#preview-resizer
+  width: 5px
+  background-color: #ddd
+  cursor: col-resize
+  transition: background-color 0.3s
+  &:hover
+    background-color: #bbb
+  &::after
+    content: ''
+    position: absolute
+    top: 0
+    bottom: 0
+    right: 0
+    width: 5px
+    background-color: #007bff
+    opacity: 0
+    transition: opacity 0.3s
+  
+
+#preview-panel
+  width: 300px
+  background-color: #f9f9f9
+  border-left: 1px solid #ddd
+  display: flex
+  flex-direction: column
+  transition: width 0.3s ease
+
+  &.collapsed
+    width: 0
+
+    #preview-toggle
+      right: 0
+
+      i
+        transform: rotate(180deg)
+        
+  #preview-toggle
+    position: absolute
+    right: 300px
+    top: 50%
+    background-color: #f0f0f0
+    border: 1px solid #ddd
+    border-right: none
+    padding: 5px
+    cursor: pointer
+    transition: right 0.3s ease
+    i
+      transition: transform 0.3s ease
+
+  #preview-content
+    flex: 1
+    overflow: auto
+    padding: 10px
+
+
+#preview-resizer:hover::after,
+#preview-resizer.resizing::after
+  opacity: 1
+
+
+
+
+// 针对列表视图的特殊样式 
+.file-item
+  display: flex
+  align-items: center
+  padding: 5px
+  cursor: pointer
+  transition: background-color 0.1s
+  position: relative
+  cursor: pointer
+
+  &:hover
+    background-color: #f0f0f0
+    background-color: #f0f0f0
+
+    .file-preview
+      display: inline-flex
+      flex-wrap: wrap
+      gap: 5px
+
+    .file-actions
+      display: block
+
+  &.selected
+    background-color: #e5f3ff
+    outline: 1px solid #99d1ff
+    background-color: #e5f3ff
+    background-color: transparent
+    outline: 1px solid #99d1ff
+    background-color: #e5f3ff
+    outline: 1px solid #99d1ff
+
+    &:hover
+      background-color: #d0e8ff
+      background-color: #f0f0f0
+
+    .file-name
+      font-weight: bold
+      color: #0066cc
+    
+
+  &.error
+    opacity: 0.5
+    cursor: not-allowed
+    opacity: 0.5
+    cursor: not-allowed
+
+  .file-icon
+    width: 100%
+    display: flex
+    margin-right: 5px
+    justify-content: center
+  
+  .file-actions
+    display: none
+    position: absolute
+    right: 5px
+    top: 50%
+    transform: translateY(-50%)
+
+
+.file-name
+  flex-grow: 1
+  display: flex
+  align-items: center
+
+
+
+
+
+.quick-access-item
+  display: flex
+  justify-content: flex-start
+  align-items: center
+  padding: 5px
+  cursor: pointer
+  flex-direction: row
+
+
+.quick-access-name
+  flex-grow: 1
+
+
+.quick-access-preview
+  padding: 0 5px
+
+
+#quick-preview
+  position: fixed
+  background-color: white
+  border: 1px solid #ddd
+  padding: 10px
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1)
+  z-index: 1000
+  display: none
+
+  
+#favorites-list
+  list-style-type: none
+  padding: 0
+  margin: 0
+
+.favorite-item
+  cursor: move
+  user-select: none
+  display: flex
+  align-items: center
+  padding: 5px
+  &:hover
+    background-color: #e5f3ff
+
+  .file-icon
+    margin-right: 5px
+  
+

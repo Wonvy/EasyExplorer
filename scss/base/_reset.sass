@@ -1,0 +1,22 @@
+// 重置按钮样式
+button
+  background: none          // 去掉默认背景
+  border: none             // 去掉默认边框
+  padding: 0               // 去掉默认内边距
+  margin: 0                // 去掉默认外边距
+  font: inherit            // 继承父元素的字体样式
+  color: inherit           // 继承父元素的字体颜色
+  cursor: pointer          // 鼠标悬停时显示为指针
+  text-align: left         // 文本左对齐
+  outline: none            // 去掉聚焦时的轮廓
+
+  // 可选：添加自定义样式
+  &:hover
+      background-color: rgba(0, 0, 0, 0.1) // 悬停时的背景色
+
+  &:active 
+      background-color: rgba(0, 0, 0, 0.2) // 点击时的背景色
+
+  &:disabled 
+      cursor: not-allowed // 禁用状态的光标样式
+      opacity: 0.5        // 禁用状态的透明度

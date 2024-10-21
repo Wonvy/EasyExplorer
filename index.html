@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>简易资源管理器</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/all.min.css">
+    
+</head>
+<body>
+    <div id="app">
+        <div id="sidebar">
+            <div class="sidebar-content">
+                <div id="drives" class="sidebar-section"></div>
+                <div id="favorites" class="sidebar-section"></div>
+                <div id="quick-access" class="sidebar-section"></div>
+            </div>
+
+            <div id="settings">
+                <i class="fas fa-cog" title="设置"></i>
+                <div id="settings-menu" class="hidden">
+                    <button id="theme-toggle">颜色主题</button>
+                    <button id="open-settings">设置</button>
+                </div>
+            </div>
+            
+        </div>
+        <div id="sidebar-toggle">
+            <i class="fas fa-chevron-left"></i>
+        </div>
+        <div id="resizer"></div>
+        <div id="main">
+            <div id="toolbar">
+                <button id="back-btn" title="后退"><i class="fas fa-arrow-left"></i></button>
+                <button id="forward-btn" title="前进"><i class="fas fa-arrow-right"></i></button>
+                <button id="up-btn" title="上一级"><i class="fas fa-arrow-up"></i></button>
+
+                <div class="toolbar-separator"></div>
+
+                <div id="sort-options">
+                    <button id="sort-name" title="按名称排序"><i class="fas fa-sort-alpha-down"></i></button>
+                    <button id="sort-date" title="按创建日期排序"><i class="fas fa-calendar-alt"></i></button>
+                    <button id="sort-modified" title="按修改日期排序"><i class="fas fa-clock"></i></button>
+                    <button id="sort-type" title="按文件类型排序"><i class="fas fa-file-alt"></i></button>
+                </div>
+
+                <div class="toolbar-separator"></div>
+                
+                <div id="view-options">
+                    <button id="list-view-btn" title="列表视图"><i class="fas fa-list"></i></button>
+                    <button id="icon-view-btn" title="图标视图"><i class="fas fa-th"></i></button>
+                    <button id="group-view-btn" title="分组视图"><i class="fas fa-object-group"></i></button>
+                    <button id="timeline-view-btn" title="时间轴视图"><i class="fas fa-clock"></i></button> <!-- 添加时间轴视图按钮 -->
+                </div>
+            </div>
+
+            <div id="path-container"></div>
+
+            <div id="file-list-container">
+                <div id="file-list"></div> <!-- 直接在这里更新内容 -->
+            </div>
+            <div id="status-bar"></div>
+        </div>
+        <div id="preview-resizer"></div>
+        <div id="preview-panel">
+            <div id="preview-toggle">
+                <i class="fas fa-chevron-right"></i>
+            </div>
+            <div id="preview-content"></div>
+        </div>
+    </div>
+    <script src="renderer.js"></script>
+</body>
+</html>
