@@ -69,6 +69,18 @@ function setViewMode(mode) {
     const fileListContainer = document.getElementById('file-list-container');
     fileListContainer.className = mode === 'list' ? 'list-view' : mode === 'group' ? 'group-view' : 'icon-view'; // 修改这一行
 
+    // 更新视图按钮的激活状态
+    const viewButtons = document.querySelectorAll('#view-options button');
+    viewButtons.forEach(button => {
+        console.log('mode', mode);
+        if (button.id === `${mode}-view-btn`) {
+            button.classList.add('active'); // 添加激活类
+        } else {
+            button.classList.remove('active'); // 移除激活类
+        }
+    });
+
+
     updateFileList(currentPath);
 }
 
@@ -1298,7 +1310,7 @@ listViewBtn.addEventListener('click', () => {
 iconViewBtn.addEventListener('click', () => {
     isGroupView = false;
     updateFileList(currentPath); // 直接更新文件列表
-    setViewMode('icons');
+    setViewMode('icon');
 });
 
 // 分组视图

@@ -1,6 +1,6 @@
-@import 'base/_base'
-@import 'base/_reset'
-@import '_view'
+@use 'base/_base'
+@use 'base/_reset'
+@use '_view'
 
 
 // 暗色主题样式
@@ -179,7 +179,7 @@ html
       margin-right: 5px
 
     .sidebar-section-content
-    padding-left: 15px
+      padding-left: 15px
 
 
     &.collapsed 
@@ -234,8 +234,25 @@ html
       display: flex
       align-items: center
       padding: 10px
-      background-color: #f9f9f9
+      border-radius: 4px
       border-bottom: 1px solid #ddd
+      button
+        text-align: center
+        color: #262626
+        width: 30px
+        height: 30px
+        &:hover
+          background-color: #ddd
+
+      #view-options
+        margin-left: auto
+        display: flex
+        button
+          &.active
+              background-color: #007bff
+              color: #fff
+
+
 
     #path
       width: 100%
@@ -244,11 +261,7 @@ html
       border: 1px solid #ddd
       border-radius: 3px
 
-#view-options
-  margin-left: auto
-  display: flex
-  button
-    margin-left: 5px
+
 
 .sidebar-section
   margin-bottom: 20px
