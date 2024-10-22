@@ -1721,7 +1721,7 @@ function showFullscreenPreview(filePath) {
                 review_content_fullscreen.innerHTML = `<pre>${data}</pre>`;
             }
         });
-    } else if (['.js', '.html', '.css', '.py', '.java', '.cpp', '.c', '.rb', '.ts', '.jsx'].includes(fileExt)) {
+    } else if (['.js', '.html', '.css', '.py', '.java', '.cpp', '.c', '.rb', '.ts', '.jsx', '.json'].includes(fileExt)) {
         // 处理代码文件
         fs.readFile(filePath, 'utf8', (err, data) => {
             if (err) {
