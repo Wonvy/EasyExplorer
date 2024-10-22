@@ -1334,7 +1334,7 @@ function updatePreview(file) {
         });
     } else if (['.jpg', '.jpeg', '.png', '.gif'].includes(fileExt)) {
         previewContent.innerHTML = `<img src="file://${filePath}" alt="${file.name}" style="max-width: 100%; max-height: 300px;">`;
-    } else if (['.txt', '.md', '.js', '.html', '.css'].includes(fileExt)) {
+    } else if (['.txt', '.md', '.js', '.html', '.css', '.tap', '.nc', '.ini'].includes(fileExt)) {
         fs.readFile(filePath, 'utf8', (err, data) => {
             if (err) {
                 previewContent.innerHTML = `<p>无法读取文件内容: ${err.message}</p>`;
