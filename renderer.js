@@ -1337,7 +1337,7 @@ function updatePreview(file) {
         });
     } else if (['.jpg', '.jpeg', '.png', '.gif'].includes(fileExt)) {
         previewContent.innerHTML = `<img src="file://${filePath}" alt="${file.name}" style="max-width: 100%; max-height: 300px;">`;
-    } else if (['.txt', '.md', '.js', '.html', '.css', '.tap', '.nc', '.ini'].includes(fileExt)) {
+    } else if (['.txt', '.md', '.js', '.svg', '.html', '.css', '.tap', '.nc', '.ini'].includes(fileExt)) {
         fs.readFile(filePath, 'utf8', (err, data) => {
             if (err) {
                 previewContent.innerHTML = `<p>无法读取文件内容: ${err.message}</p>`;
@@ -1611,6 +1611,8 @@ document.getElementById('open-settings').addEventListener('click', () => {
 
 let fullscreen_preview = document.getElementById('fullscreen-preview');
 let review_content_fullscreen = document.getElementById('preview-content-fullscreen');
+let isPreviewOpen = false; // 添加一个变量来跟踪预览状态
+
 
 // 处理空格键和ESC键事件
 document.addEventListener('keydown', (e) => {
@@ -1619,11 +1621,18 @@ document.addEventListener('keydown', (e) => {
         const selectedItem = document.querySelector('.file-item.selected');
         if (selectedItem) {
             const filePath = selectedItem.getAttribute('data-path'); // 假设文件路径存储在data-path属性中
-            console.log('filePath', filePath);
-            showFullscreenPreview(filePath);
+            if (isPreviewOpen) {
+                hideFullscreenPreview(); // 如果预览已经打开，则关闭预览
+                isPreviewOpen = false; // 更新状态
+            } else {
+                showFullscreenPreview(filePath); // 如果预览未打开，则打开预览
+                isPreviewOpen = true; // 更新状态
+            }
         }
     } else if (e.code === 'Escape') {
+        isPreviewOpen = false; 
         hideFullscreenPreview();
+
     } else if (e.code === 'ArrowRight') { // 右切换到下一张
         const nextItem = getNextSelectedItem();
         if (nextItem) {
