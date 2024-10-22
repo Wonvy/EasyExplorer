@@ -8,6 +8,9 @@ const Sortable = require('sortablejs')
 const iconExtractor = require('icon-extractor');
 const windowsShortcuts = require('windows-shortcuts-gbk')
 const { console } = require('inspector')
+const libre = require('libreoffice-convert');
+const fsExtra = require('fs-extra'); // 引入 fs-extra
+const hljs = require('highlight.js'); // 引入 highlight.js
 
 
 let currentPath = ''
@@ -1688,17 +1691,90 @@ document.addEventListener('wheel', (e) => {
     }
 });
 
-// 显示全屏预览
+
+
+// 修改 showFullscreenPreview 函数
 function showFullscreenPreview(filePath) {
-    // 根据文件类型加载内容
     const fileExt = path.extname(filePath).toLowerCase();
-    if (['.jpg', '.jpeg', '.png', '.gif'].includes(fileExt)) {
-        review_content_fullscreen.innerHTML = `<img src="file://${filePath}" alt="预览" style="max-width: 100%; max-height: 100%; object-fit: contain;">`; // 添加样式以自适应宽高
+    if (['.jpg', '.jpeg', '.png', '.gif', '.svg'].includes(fileExt)) {
+        review_content_fullscreen.innerHTML = `<img src="file://${filePath}" alt="预览" style="max-width: 100%; max-height: 100%; object-fit: contain;">`;
+    } else if (fileExt === '.pdf') {
+        review_content_fullscreen.innerHTML = `<iframe src="file://${filePath}" style="width: 100%; height: 100%; border: none;"></iframe>`;
+    } else if (['.mp4', '.avi', '.mov'].includes(fileExt)) {
+        review_content_fullscreen.innerHTML = `<video controls style="width: 100%; height: 100%;">
+            <source src="file://${filePath}" type="video/${fileExt.replace('.', '')}">
+            您的浏览器不支持 video 标签。
+        </video>`;
+    } else if (['.ppt', '.pptx', '.doc', '.docx'].includes(fileExt)) {
+        const tempPdfPath = path.join(os.tmpdir(), `${path.basename(filePath, path.extname(filePath))}.pdf`);
+        convertToPdf(filePath, tempPdfPath).then(() => {
+            review_content_fullscreen.innerHTML = `<iframe src="file://${tempPdfPath}" style="width: 100%; height: 100%; border: none;"></iframe>`;
+        }).catch(err => {
+            review_content_fullscreen.innerHTML = `<p>无法转换文件: ${err.message}</p>`;
+        });
+    } else if (['.txt', '.md', '.ini'].includes(fileExt)) {
+        // 处理文本文件
+        fs.readFile(filePath, 'utf8', (err, data) => {
+            if (err) {
+                review_content_fullscreen.innerHTML = `<p>无法读取文件: ${err.message}</p>`;
+            } else {
+                review_content_fullscreen.innerHTML = `<pre>${data}</pre>`;
+            }
+        });
+    } else if (['.js', '.html', '.css', '.py', '.java', '.cpp', '.c', '.rb', '.ts', '.jsx'].includes(fileExt)) {
+        // 处理代码文件
+        fs.readFile(filePath, 'utf8', (err, data) => {
+            if (err) {
+                review_content_fullscreen.innerHTML = `<p>无法读取文件: ${err.message}</p>`;
+            } else {
+                const highlightedCode = hljs.highlightAuto(data).value; // 使用 highlight.js 进行高亮
+                review_content_fullscreen.innerHTML = `<pre><code class="${fileExt.replace('.', '')}">${highlightedCode}</code></pre>`;
+            }
+        });
     } else {
         review_content_fullscreen.innerHTML = `<p>无法预览此文件类型</p>`;
     }
     fullscreen_preview.style.display = 'block';
 }
+
+// 添加转换函数
+function convertToPdf(inputPath, outputPath) {
+    return new Promise((resolve, reject) => {
+        const file = fs.readFileSync(inputPath);
+        libre.convert(file, '.pdf', undefined, (err, result) => {
+            if (err) {
+                return reject(err);
+            }
+            fs.writeFileSync(outputPath, result);
+            // 清理临时文件
+            const tempDir = path.dirname(inputPath); // 获取临时目录
+
+            // 调试信息：列出临时目录中的文件
+            console.log(`临时目录: ${tempDir}`);
+            fs.readdir(tempDir, (err, files) => {
+                if (err) {
+                    console.error('读取临时目录时出错:', err);
+                } else {
+                    console.log('临时目录中的文件:', files);
+                }
+            });
+
+            // 使用 setTimeout 延迟删除
+            setTimeout(() => {
+                fsExtra.remove(tempDir) // 使用 fs-extra 的 remove 方法
+                    .then(() => {
+                        console.log(`成功删除临时目录: ${tempDir}`);
+                        resolve();
+                    })
+                    .catch(removeErr => {
+                        console.error('清理临时目录时出错:', removeErr);
+                        resolve(); // 继续执行，即使清理失败
+                    });
+            }, 1000); // 延迟 1 秒
+        });
+    });
+}
+
 
 // 隐藏全屏预览
 function hideFullscreenPreview() {

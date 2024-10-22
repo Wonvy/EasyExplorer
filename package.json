@@ -16,8 +16,11 @@
   },
   "dependencies": {
     "everything.js": "^1.0.3",
+    "fs-extra": "^11.2.0",
+    "highlight.js": "^11.10.0",
     "icon-extractor": "^1.0.3",
     "iconv-lite": "^0.6.3",
+    "libreoffice-convert": "^1.6.0",
     "sass": "^1.80.3",
     "sharp": "^0.33.5",
     "sortablejs": "^1.15.3",
