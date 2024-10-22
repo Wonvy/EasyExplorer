@@ -1060,6 +1060,9 @@ function createFileItem(file, dirPath) {
         fileItem.classList.add('error');
     }
 
+ 
+    fileItem.setAttribute('data-path', path.join(dirPath, file.name)); // 确保设置 data-path
+
     const icon = document.createElement('span');
     icon.className = 'file-icon';
 
@@ -1602,3 +1605,45 @@ document.getElementById('open-settings').addEventListener('click', () => {
     // 这里可以实现打开设置窗口的逻辑
     console.log('打开设置窗口');
 });
+
+
+// 全屏窗口
+
+let fullscreen_preview = document.getElementById('fullscreen-preview');
+let review_content_fullscreen = document.getElementById('preview-content-fullscreen');
+
+// 处理空格键和ESC键事件
+document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+        e.preventDefault(); // 防止页面滚动
+        const selectedItem = document.querySelector('.file-item.selected');
+        if (selectedItem) {
+            const filePath = selectedItem.getAttribute('data-path'); // 假设文件路径存储在data-path属性中
+            console.log('filePath',filePath)
+            showFullscreenPreview(filePath);
+        }
+    } else if (e.code === 'Escape') {
+        hideFullscreenPreview();
+    }
+});
+
+
+// 显示全屏预览
+function showFullscreenPreview(filePath) {
+    // 根据文件类型加载内容
+    const fileExt = path.extname(filePath).toLowerCase();
+    if (['.jpg', '.jpeg', '.png', '.gif'].includes(fileExt)) {
+        review_content_fullscreen.innerHTML = `<img src="file://${filePath}" alt="预览">`;
+    } else {
+        review_content_fullscreen.innerHTML = `<p>无法预览此文件类型</p>`;
+    }
+    fullscreen_preview.style.display = 'block';
+}
+
+// 隐藏全屏预览
+function hideFullscreenPreview() {
+    fullscreen_preview.style.display = 'none';
+}
+
+// 关闭预览按钮
+document.getElementById('close-preview').addEventListener('click', hideFullscreenPreview);
