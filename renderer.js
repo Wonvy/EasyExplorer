@@ -1223,9 +1223,6 @@ ipcRenderer.on('file-icon-result', (event, { base64, error }) => {
 });
 
 
-
-// 在文件末尾添加以下代码
-
 // 预览面板切换
 previewToggle.addEventListener('click', () => {
     previewPanel.classList.toggle('collapsed');
@@ -1238,11 +1235,12 @@ let lastPreviewX = 0;
 previewResizer.addEventListener('mousedown', initPreviewResize);
 
 function initPreviewResize(e) {
-    isPreviewResizing = true;
+    isPreviewResizing = true; //开始调整
     lastPreviewX = e.clientX;
     document.addEventListener('mousemove', resizePreview);
     document.addEventListener('mouseup', stopPreviewResize);
 }
+
 
 function resizePreview(e) {
     if (!isPreviewResizing) return;
@@ -1434,10 +1432,13 @@ statusBar.addEventListener('mousedown', (e) => {
     document.addEventListener('mouseup', onMouseUp);
 });
 
+
+
 let isSelecting = false;
 let selectionBox = null;
 let startX, startY;
 
+// 创建选择框
 function createSelectionBox(x, y) {
     selectionBox = document.createElement('div');
     selectionBox.className = 'selection-box';
@@ -1446,6 +1447,7 @@ function createSelectionBox(x, y) {
     document.body.appendChild(selectionBox);
 }
 
+// 更新选择框
 function updateSelectionBox(x, y) {
     const width = Math.abs(x - startX);
     const height = Math.abs(y - startY);
@@ -1457,6 +1459,7 @@ function updateSelectionBox(x, y) {
     selectionBox.style.top = `${top}px`;
 }
 
+// 移除选择框
 function removeSelectionBox() {
     if (selectionBox) {
         selectionBox.remove();
@@ -1464,6 +1467,7 @@ function removeSelectionBox() {
     }
 }
 
+// 判断元素是否在选择框内
 function isElementInSelectionBox(element, box) {
     const elementRect = element.getBoundingClientRect();
     const boxRect = box.getBoundingClientRect();
@@ -1473,6 +1477,7 @@ function isElementInSelectionBox(element, box) {
              elementRect.top > boxRect.bottom);
 }
 
+// 选择框开始
 function handleMouseDown(e) {
     if (e.button !== 0) return; // 只处理左键点击
     isSelecting = true;
@@ -1481,19 +1486,21 @@ function handleMouseDown(e) {
     createSelectionBox(startX, startY);
 }
 
+// 选择框移动
 function handleMouseMove(e) {
     if (!isSelecting) return;
     updateSelectionBox(e.clientX, e.clientY);
     selectItemsInBox();
 }
 
+// 选择框结束
 function handleMouseUp(e) {
     if (!isSelecting) return;
     isSelecting = false;
     removeSelectionBox();
 }
 
-
+// 选择框选择文件
 function selectItemsInBox() {
     const fileItems = fileListContainer.querySelectorAll('.file-item');
     fileItems.forEach(item => {
@@ -1505,6 +1512,7 @@ function selectItemsInBox() {
     });
 }
 
+// 排序
 function sortGroupFiles(groupContent, sortType, isAscending) {
     const fileItems = Array.from(groupContent.children);
     fileItems.sort((a, b) => {
@@ -1529,6 +1537,7 @@ function sortGroupFiles(groupContent, sortType, isAscending) {
 const settingsIcon = document.getElementById('settings');
 const settingsMenu = document.getElementById('settings-menu');
 
+// 当点击设置图标时，切换菜单的隐藏状态
 settingsIcon.addEventListener('click', () => {
     settingsMenu.classList.toggle('hidden');
 });
