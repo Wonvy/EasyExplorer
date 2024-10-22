@@ -78,9 +78,10 @@ button:disabled {
   justify-content: flex-start;
 }
 #file-list-container.icon-view .file-item {
-  width: 100px;
-  height: 100px;
+  width: 160px;
+  height: 160px;
   margin: 10px;
+  row-gap: 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -92,9 +93,12 @@ button:disabled {
 #file-list-container.icon-view .file-item:hover {
   background-color: #f0f0f0;
 }
+#file-list-container.icon-view .file-item video {
+  border-radius: 5px;
+}
 #file-list-container.icon-view .file-icon {
-  width: 64px;
-  height: 64px;
+  width: 160px;
+  height: 90px;
   display: flex;
   align-items: center;
   justify-content: center;

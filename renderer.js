@@ -113,6 +113,16 @@ function getFileIcon(file) {
                 console.warn(`无法获取文件图标: ${filePath}`, error);
                 resolve(getDefaultIcon(file.name));
             });
+        } else if (['.jpg', '.jpeg', '.png', '.gif'].includes(ext)) {
+            const filePath = path.join(currentPath, file.name);
+            resolve(`<img src="${filePath}" class="file-icon">`);
+        } else if (['.mp4', '.avi', '.mov'].includes(ext)) {
+            const filePath = path.join(currentPath, file.name);
+            resolve(`
+                <video class="file-icon" src="${filePath}" controls>
+                    您的浏览器不支持 video 标签。
+                </video>
+            `);
         } else {
             resolve(getDefaultIcon(file.name));
         }
