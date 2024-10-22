@@ -54,7 +54,7 @@ const upIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" v
 
 let isGroupView = false; // 是否为分组视图
 
-// 修改视图模式相关的变量和函数
+// 修改视图模相关的变量和函数
 let currentViewMode = localStorage.getItem('viewMode') || 'list';
 
 
@@ -878,10 +878,11 @@ fileListContainer.addEventListener('click', (e) => {
             selectedItem.classList.remove('selected');
             selectedItem = null;
         }
+        removeSelectionBox(); // 移除选择框
     }
 })
 
-// 在 updateFileList 函数末尾添加以下代码
+// 在 updateFileList 函件末尾添加以下代码
 fileListContainer.addEventListener('contextmenu', (e) => {
     if (e.target === fileListContainer || e.target === fileListElement) {
         e.preventDefault();
@@ -893,7 +894,7 @@ fileListContainer.addEventListener('contextmenu', (e) => {
 let currentSortMethod = 'name';
 let currentSortOrder = 'asc';
 
-// 修改 updateFileList 函数
+// 修改 updateFileList 函件
 function updateFileList(dirPath, isQuickAccess = false) {
     fs.readdir(dirPath, { withFileTypes: true }, (err, files) => {
         if (err) {
@@ -1051,7 +1052,7 @@ function sortFiles(files) {
     });
 }
 
-// 修改 createFileItem 函数
+// 修改 createFileItem 函件
 function createFileItem(file, dirPath) {
     const fileItem = document.createElement('div');
     fileItem.className = 'file-item';
@@ -1076,6 +1077,19 @@ function createFileItem(file, dirPath) {
 
     fileItem.appendChild(icon);
     fileItem.appendChild(name);
+
+    // 添加拖拽事件监听器
+    fileItem.setAttribute('draggable', true); // 使元素可拖拽
+    fileItem.addEventListener('dragstart', (e) => {
+        e.preventDefault();
+        const filePath = path.join(dirPath, file.name); // 确保路径格式正确
+        const fileData = [new File([fs.readFileSync(filePath)], file.name, { type: 'application/octet-stream' })];
+
+        // 设置拖拽格式为 Files，Photoshop 需要文件句柄来识别
+        e.dataTransfer.setData('text/uri-list', `file://${filePath}`);
+        e.dataTransfer.effectAllowed = 'copy';  // 设置拖拽效果
+        console.log('Dragging file:', filePath);
+    });
 
     // 根据当前视图模式添加额外的样式或结构
     if (currentViewMode === 'list') {
@@ -1118,7 +1132,6 @@ function createFileItem(file, dirPath) {
                 shell.openPath(filePath);
             }
         });
-
 
         // 右键菜单
         fileItem.addEventListener('contextmenu', (e) => {
@@ -1295,7 +1308,7 @@ function stopPreviewResize() {
     document.removeEventListener('mouseup', stopPreviewResize);
 }
 
-// 修改 updatePreview 函数
+// 修改 updatePreview 函件
 function updatePreview(file) {
     if (!file) {
         previewContent.innerHTML = '<p>没有选中文件</p>';
@@ -1534,7 +1547,7 @@ function handleMouseMove(e) {
 function handleMouseUp(e) {
     if (!isSelecting) return;
     isSelecting = false;
-    removeSelectionBox();
+    removeSelectionBox(); // 确保在鼠标释放时移除选择框
 }
 
 // 选择框选择文件
