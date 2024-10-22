@@ -34,13 +34,14 @@ button:disabled {
   position: relative;
 }
 #file-list-container.list-view .file-list-list {
+  box-sizing: border-box;
   display: table;
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
+  padding: 20px;
 }
 #file-list-container.list-view .file-list-list .file-item {
-  display: table-row;
   transition: background-color 0.2s;
 }
 #file-list-container.list-view .file-list-list .file-item:hover {
@@ -51,18 +52,22 @@ button:disabled {
   padding: 8px 12px;
   vertical-align: middle;
 }
-#file-list-container.list-view .file-list-list .file-icon {
+#file-list-container.list-view .file-list-list .file-item .file-icon {
   width: 24px;
   padding-right: 16px;
 }
-#file-list-container.list-view .file-list-list .file-name {
+#file-list-container.list-view .file-list-list .file-item .file-icon svg {
+  width: 24px;
+  height: 24px;
+}
+#file-list-container.list-view .file-list-list .file-item .file-name {
   width: 40%;
 }
-#file-list-container.list-view .file-list-list .file-size {
+#file-list-container.list-view .file-list-list .file-item .file-size {
   width: 20%;
   text-align: right;
 }
-#file-list-container.list-view .file-list-list .file-date {
+#file-list-container.list-view .file-list-list .file-item .file-date {
   width: 25%;
   text-align: right;
 }
@@ -83,7 +88,6 @@ button:disabled {
   text-align: center;
   transition: background-color 0.2s;
   border-radius: 8px;
-  padding: 10px 10px;
 }
 #file-list-container.icon-view .file-item:hover {
   background-color: #f0f0f0;
@@ -91,10 +95,13 @@ button:disabled {
 #file-list-container.icon-view .file-icon {
   width: 64px;
   height: 64px;
-  margin-bottom: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+#file-list-container.icon-view .file-icon svg {
+  width: 64px;
+  height: 64px;
 }
 #file-list-container.icon-view .file-icon i {
   font-size: 48px;

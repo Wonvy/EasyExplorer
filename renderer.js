@@ -42,8 +42,11 @@ let history = []
 let currentHistoryIndex = -1
 let favorites = JSON.parse(localStorage.getItem('favorites')) || []
 
-const folderIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#f1c40f"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 1.99 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`
-const fileIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#3498db"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2h16c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`
+
+const favoriteIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" ><path d="M23.9986 5L17.8856 17.4776L4 19.4911L14.0589 29.3251L11.6544 43L23.9986 36.4192L36.3454 43L33.9586 29.3251L44 19.4911L30.1913 17.4776L23.9986 5Z" fill="#333" stroke="#333" stroke-width="4" stroke-linejoin="round"/></svg>`
+const driveIcon = `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M44 29H4V42H44V29Z" fill="#333" stroke="#333" stroke-width="4" stroke-linejoin="round"/><path d="M4 28.9998L9.03837 4.99902H39.0205L44 28.9998" stroke="#333" stroke-width="4" stroke-linejoin="round"/><path d="M19 12C16.2386 12 14 14.2386 14 17C14 19.7614 16.2386 22 19 22" stroke="#333" stroke-width="4" stroke-linecap="round"/><path d="M29 22C31.7614 22 34 19.7614 34 17C34 14.2386 31.7614 12 29 12" stroke="#333" stroke-width="4" stroke-linecap="round"/><path d="M20 17H28" stroke="#333" stroke-width="4" stroke-linecap="round"/></svg>`
+const folderIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#f1c40f"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 1.99 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`
+const fileIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#3498db"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2h16c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`
 const backIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#ffffff"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>`
 const forwardIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#ffffff"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>`
 const upIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#ffffff"><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></svg>`
@@ -100,17 +103,24 @@ function getFileIcon(file) {
             resolve(folderIcon);
             return;
         }
-
-        const filePath = path.join(currentPath, file.name);
-        ipcRenderer.invoke('get-file-icon', filePath).then(base64 => {
-            resolve(`<img src="${base64}" class="file-icon">`);
-        }).catch(error => {
-            console.warn(`无法获取文件图标: ${filePath}`, error);
+        // 只针对exe后缀的文件获取图标
+        const ext = path.extname(file.name).toLowerCase();
+        if (ext === '.exe') {
+            const filePath = path.join(currentPath, file.name);
+            ipcRenderer.invoke('get-file-icon', filePath).then(base64 => {
+                resolve(`<img src="${base64}" class="file-icon">`);
+            }).catch(error => {
+                console.warn(`无法获取文件图标: ${filePath}`, error);
+                resolve(getDefaultIcon(file.name));
+            });
+        } else {
             resolve(getDefaultIcon(file.name));
-        });
+        }
     });
 }
-//
+
+
+
 function getDefaultIcon(fileName) {
     const ext = path.extname(fileName).toLowerCase();
     switch (ext) {
@@ -320,7 +330,7 @@ function updateFavorites() {
       <ul id="favorites-list">
         ${favorites.map(fav => `
           <li class="favorite-item" data-path="${fav}">
-            <span class="file-icon">${folderIcon}</span>
+            <span class="file-icon">${favoriteIcon}</span>
             <span>${path.basename(fav)}</span>
           </li>
         `).join('')}
@@ -419,7 +429,7 @@ function showDrives() {
     <div class="sidebar-section-content">
       ${drives.map(drive => `
         <div class="drive-item" data-path="${drive.path}">
-          <span class="file-icon">${folderIcon}</span>
+          <span class="file-icon">${driveIcon}</span>
           <span>${drive.name || 'Local Disk'} (${drive.letter}:)</span>
         </div>
       `).join('')}
@@ -632,7 +642,7 @@ function updateFavorites() {
     <div class="sidebar-section-content">
       ${favorites.map(fav => `
         <div class="favorite-item" onclick="navigateTo('${fav.replace(/\\/g, '\\\\')}')">
-          <span class="file-icon">${folderIcon}</span>
+          <span class="file-icon">${favoriteIcon}</span>
           <span>${path.basename(fav)}</span>
         </div>
       `).join('')}
