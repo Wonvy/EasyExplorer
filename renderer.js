@@ -1699,7 +1699,7 @@ function showFullscreenPreview(filePath) {
     if (['.jpg', '.jpeg', '.png', '.gif', '.svg'].includes(fileExt)) {
         review_content_fullscreen.innerHTML = `<img src="file://${filePath}" alt="预览" style="max-width: 100%; max-height: 100%; object-fit: contain;">`;
     } else if (fileExt === '.pdf') {
-        review_content_fullscreen.innerHTML = `<iframe src="file://${filePath}" style="width: 100%; height: 100%; border: none;"></iframe>`;
+        review_content_fullscreen.innerHTML = `<div class="preview-content"><iframe src="file://${filePath}" style="width: 100%; height: 100%; border: none;"></iframe></div>`;
     } else if (['.mp4', '.avi', '.mov'].includes(fileExt)) {
         review_content_fullscreen.innerHTML = `<video controls style="width: 100%; height: 100%;">
             <source src="file://${filePath}" type="video/${fileExt.replace('.', '')}">
@@ -1708,17 +1708,17 @@ function showFullscreenPreview(filePath) {
     } else if (['.ppt', '.pptx', '.doc', '.docx'].includes(fileExt)) {
         const tempPdfPath = path.join(os.tmpdir(), `${path.basename(filePath, path.extname(filePath))}.pdf`);
         convertToPdf(filePath, tempPdfPath).then(() => {
-            review_content_fullscreen.innerHTML = `<iframe src="file://${tempPdfPath}" style="width: 100%; height: 100%; border: none;"></iframe>`;
+            review_content_fullscreen.innerHTML = `<div class="preview-content"><iframe src="file://${tempPdfPath}" style="width: 100%; height: 100%; border: none;"></iframe></div>`;
         }).catch(err => {
-            review_content_fullscreen.innerHTML = `<p>无法转换文件: ${err.message}</p>`;
+            review_content_fullscreen.innerHTML = `<div class="preview-content"><p>无法转换文件: ${err.message}</p></div>`;
         });
     } else if (['.txt', '.md', '.ini'].includes(fileExt)) {
         // 处理文本文件
         fs.readFile(filePath, 'utf8', (err, data) => {
             if (err) {
-                review_content_fullscreen.innerHTML = `<p>无法读取文件: ${err.message}</p>`;
+                review_content_fullscreen.innerHTML = `<div class="preview-content"><p>无法读取文件: ${err.message}</p></div>`;
             } else {
-                review_content_fullscreen.innerHTML = `<pre>${data}</pre>`;
+                review_content_fullscreen.innerHTML = `<div class="preview-content"><pre>${data}</pre></div>`;
             }
         });
     } else if (['.js', '.html', '.css', '.py', '.java', '.cpp', '.c', '.rb', '.ts', '.jsx', '.json'].includes(fileExt)) {
@@ -1728,7 +1728,7 @@ function showFullscreenPreview(filePath) {
                 review_content_fullscreen.innerHTML = `<p>无法读取文件: ${err.message}</p>`;
             } else {
                 const highlightedCode = hljs.highlightAuto(data).value; // 使用 highlight.js 进行高亮
-                review_content_fullscreen.innerHTML = `<pre><code class="${fileExt.replace('.', '')}">${highlightedCode}</code></pre>`;
+                review_content_fullscreen.innerHTML = `<div class="preview-content"><pre><code class="${fileExt.replace('.', '')}">${highlightedCode}</code></pre></div>`;
             }
         });
     } else {
