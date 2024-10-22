@@ -123,6 +123,23 @@ function getFileIcon(file) {
                     您的浏览器不支持 video 标签。
                 </video>
             `);
+        } else if (ext === '.svg') {
+            const filePath = path.join(currentPath, file.name);
+            fs.readFile(filePath, 'utf8', (err, data) => {
+                if (err) {
+                    console.warn(`无法读取SVG文件: ${filePath}`, err);
+                    resolve(getDefaultIcon(file.name));
+                } else {
+                    resolve(`<div class="file-icon">${data}</div>`);
+                }
+            });
+        } else if (['.mp3', '.wav'].includes(ext)) {
+            const filePath = path.join(currentPath, file.name);
+            resolve(`
+                <audio class="file-icon" src="${filePath}" controls>
+                    您的浏览器不支持 audio 标签。
+                </audio>
+            `);
         } else {
             resolve(getDefaultIcon(file.name));
         }
