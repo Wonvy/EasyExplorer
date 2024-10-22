@@ -1239,7 +1239,7 @@ ipcRenderer.on('favorite-menu-item-clicked', (event, action, path) => {
   }
 });
 
-// 在件底部添加以下代码来设置事件监听器
+// 在件底部添加以下代码来置事件监听器
 document.addEventListener('DOMContentLoaded', () => {
     // 设置侧边栏切换事件
     const sidebarSections = document.querySelectorAll('.sidebar-section');
@@ -1619,21 +1619,72 @@ document.addEventListener('keydown', (e) => {
         const selectedItem = document.querySelector('.file-item.selected');
         if (selectedItem) {
             const filePath = selectedItem.getAttribute('data-path'); // 假设文件路径存储在data-path属性中
-            console.log('filePath',filePath)
+            console.log('filePath', filePath);
             showFullscreenPreview(filePath);
         }
     } else if (e.code === 'Escape') {
         hideFullscreenPreview();
+    } else if (e.code === 'ArrowRight') { // 右切换到下一张
+        const nextItem = getNextSelectedItem();
+        if (nextItem) {
+            updateSelectedItem(nextItem); // 更新选中的项目
+            const filePath = nextItem.getAttribute('data-path');
+            showFullscreenPreview(filePath);
+        }
+    } else if (e.code === 'ArrowLeft') { // 左键切换到上一张
+        const prevItem = getPreviousSelectedItem();
+        if (prevItem) {
+            updateSelectedItem(prevItem); // 更新选中的项目
+            const filePath = prevItem.getAttribute('data-path');
+            showFullscreenPreview(filePath);
+        }
     }
 });
 
+// 更新选中的项目
+function updateSelectedItem(newSelectedItem) {
+    // 取消之前选中的项目
+    document.querySelectorAll('.file-item.selected').forEach(item => {
+        item.classList.remove('selected');
+    });
+    // 高亮当前选中的项目
+    newSelectedItem.classList.add('selected');
+}
+
+// 获取下一个选中的项目
+function getNextSelectedItem() {
+    const selectedItems = document.querySelectorAll('.file-item.selected');
+    if (selectedItems.length === 0) return null;
+    const currentIndex = Array.from(selectedItems).indexOf(selectedItems[selectedItems.length - 1]);
+    const nextIndex = (currentIndex + 1) % document.querySelectorAll('.file-item').length;
+    return document.querySelectorAll('.file-item')[nextIndex];
+}
+
+// 获取上一个选中的项目
+function getPreviousSelectedItem() {
+    const selectedItems = document.querySelectorAll('.file-item.selected');
+    if (selectedItems.length === 0) return null;
+    const currentIndex = Array.from(selectedItems).indexOf(selectedItems[selectedItems.length - 1]);
+    const prevIndex = (currentIndex - 1 + document.querySelectorAll('.file-item').length) % document.querySelectorAll('.file-item').length;
+    return document.querySelectorAll('.file-item')[prevIndex];
+}
+
+// 处理鼠标滚轮事件以放大缩小图片
+document.addEventListener('wheel', (e) => {
+    const img = review_content_fullscreen.querySelector('img');
+    if (img) {
+        e.preventDefault();
+        const scale = e.deltaY < 0 ? 1.1 : 0.9; // 向上滚动放大，向下滚动缩小
+        img.style.transform = `scale(${(parseFloat(img.style.transform.replace('scale(', '').replace(')', '')) || 1) * scale})`;
+    }
+});
 
 // 显示全屏预览
 function showFullscreenPreview(filePath) {
     // 根据文件类型加载内容
     const fileExt = path.extname(filePath).toLowerCase();
     if (['.jpg', '.jpeg', '.png', '.gif'].includes(fileExt)) {
-        review_content_fullscreen.innerHTML = `<img src="file://${filePath}" alt="预览">`;
+        review_content_fullscreen.innerHTML = `<img src="file://${filePath}" alt="预览" style="max-width: 100%; max-height: 100%; object-fit: contain;">`; // 添加样式以自适应宽高
     } else {
         review_content_fullscreen.innerHTML = `<p>无法预览此文件类型</p>`;
     }
