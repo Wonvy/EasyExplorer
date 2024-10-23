@@ -316,6 +316,113 @@ button:disabled {
   font-size: 14px;
 }
 
+#resizer {
+  position: relative;
+  width: 6px;
+  background-color: #ddd;
+  cursor: col-resize;
+  transition: background-color 0.01s;
+  touch-action: none;
+  z-index: 999;
+}
+#resizer:hover {
+  background-color: #bbb;
+}
+#resizer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 5px;
+  background-color: #007bff;
+  opacity: 0;
+  transition: opacity 0.01s;
+}
+
+#sidebar-toggle {
+  position: absolute;
+  left: 0px;
+  top: 50%;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-left: none;
+  padding: 5px;
+  cursor: pointer;
+  transition: left 0.3s ease;
+}
+#sidebar-toggle i {
+  transform: rotate(180deg);
+  transition: transform 0.01s ease;
+}
+
+#preview-resizer {
+  position: relative;
+  width: 5px;
+  background-color: #ddd;
+  cursor: col-resize;
+  transition: background-color 0.3s;
+  z-index: 999;
+}
+#preview-resizer:hover {
+  background-color: #bbb;
+}
+#preview-resizer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 5px;
+  background-color: #007bff;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+#preview-toggle {
+  position: absolute;
+  left: -40px;
+  top: 50%;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-right: none;
+  padding: 5px;
+  cursor: pointer;
+  transition: right 0.3s ease;
+}
+#preview-toggle i {
+  transition: transform 0.3s ease;
+}
+
+#preview-panel {
+  position: relative;
+  width: 300px;
+  background-color: #f9f9f9;
+  border-left: 1px solid #ddd;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s ease;
+}
+#preview-panel.collapsed {
+  width: 0;
+}
+#preview-panel.collapsed #psidebar-toggle {
+  right: 0;
+}
+#preview-panel.collapsed #psidebar-toggle i.fa-chevron-right {
+  transform: rotate(45deg);
+}
+#preview-panel #preview-content {
+  flex: 1;
+  overflow: auto;
+  padding: 10px;
+}
+
+#preview-resizer:hover::after,
+#preview-resizer.resizing::after {
+  opacity: 1;
+}
+
 .dark-theme {
   background-color: #121212;
   color: #ffffff;
@@ -419,8 +526,7 @@ html {
   height: 100%;
 }
 #app #sidebar {
-  min-width: 100px;
-  max-width: 50%;
+  max-width: 40%;
   background-color: #f0f0f0;
   border-right: 1px solid #ddd;
   transition: width 0.3s ease;
@@ -500,42 +606,6 @@ html {
 }
 #app #sidebar.collapsed {
   width: 0;
-}
-#app #sidebar-toggle {
-  position: absolute;
-  left: 250px;
-  top: 50%;
-  background-color: #f0f0f0;
-  border: 1px solid #ddd;
-  border-left: none;
-  padding: 5px;
-  cursor: pointer;
-  transition: left 0.3s ease;
-}
-#app #sidebar-toggle i {
-  transform: rotate(180deg);
-  transition: transform 0.3s ease;
-}
-#app #resizer {
-  width: 6px;
-  background-color: #ddd;
-  cursor: col-resize;
-  transition: background-color 0.3s;
-  touch-action: none;
-}
-#app #resizer:hover {
-  background-color: #bbb;
-}
-#app #resizer::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 5px;
-  background-color: #007bff;
-  opacity: 0;
-  transition: opacity 0.3s;
 }
 #app #main {
   flex: 1;
@@ -671,69 +741,6 @@ html {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #a1a1a1;
-}
-
-#preview-resizer {
-  width: 5px;
-  background-color: #ddd;
-  cursor: col-resize;
-  transition: background-color 0.3s;
-}
-#preview-resizer:hover {
-  background-color: #bbb;
-}
-#preview-resizer::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  right: 0;
-  width: 5px;
-  background-color: #007bff;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-#preview-panel {
-  width: 300px;
-  background-color: #f9f9f9;
-  border-left: 1px solid #ddd;
-  display: flex;
-  flex-direction: column;
-  transition: width 0.3s ease;
-}
-#preview-panel.collapsed {
-  width: 0;
-}
-#preview-panel.collapsed #preview-toggle {
-  right: 0;
-}
-#preview-panel.collapsed #preview-toggle i {
-  transform: rotate(180deg);
-}
-#preview-panel #preview-toggle {
-  position: absolute;
-  right: 300px;
-  top: 50%;
-  background-color: #f0f0f0;
-  border: 1px solid #ddd;
-  border-right: none;
-  padding: 5px;
-  cursor: pointer;
-  transition: right 0.3s ease;
-}
-#preview-panel #preview-toggle i {
-  transition: transform 0.3s ease;
-}
-#preview-panel #preview-content {
-  flex: 1;
-  overflow: auto;
-  padding: 10px;
-}
-
-#preview-resizer:hover::after,
-#preview-resizer.resizing::after {
-  opacity: 1;
 }
 
 .file-item {

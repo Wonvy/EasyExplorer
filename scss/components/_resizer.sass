@@ -1,0 +1,105 @@
+
+
+
+#resizer
+  position: relative
+  width: 6px
+  background-color: #ddd
+  cursor: col-resize
+  transition: background-color 0.01s
+  touch-action: none
+  z-index: 999
+  &:hover
+    background-color: #bbb
+  &::after
+    content: ''
+    position: absolute
+    top: 0
+    bottom: 0
+    left: 0
+    width: 5px
+    background-color: #007bff
+    opacity: 0
+    transition: opacity 0.01s
+
+
+
+#sidebar-toggle
+  position: absolute
+  left: 0px
+  top: 50%
+  background-color: #f0f0f0
+  border: 1px solid #ddd
+  border-left: none
+  padding: 5px
+  cursor: pointer
+  transition: left 0.3s ease
+  i
+    transform: rotate(180deg)
+    transition: transform 0.01s ease
+
+
+#preview-resizer
+  position: relative
+  width: 5px
+  background-color: #ddd
+  cursor: col-resize
+  transition: background-color 0.3s
+  z-index: 999
+  &:hover
+    background-color: #bbb
+  &::after
+    content: ''
+    position: absolute
+    top: 0
+    bottom: 0
+    right: 0
+    width: 5px
+    background-color: #007bff
+    opacity: 0
+    transition: opacity 0.3s
+
+
+
+  
+#preview-toggle
+  position: absolute
+  left: -40px
+  top: 50%
+  background-color: #f0f0f0
+  border: 1px solid #ddd
+  border-right: none
+  padding: 5px
+  cursor: pointer
+  transition: right 0.3s ease
+  i
+    transition: transform 0.3s ease
+
+
+#preview-panel
+  position: relative
+  width: 300px
+  background-color: #f9f9f9
+  border-left: 1px solid #ddd
+  display: flex
+  flex-direction: column
+  transition: width 0.3s ease
+
+  &.collapsed
+    width: 0
+    #psidebar-toggle
+      right: 0
+      i.fa-chevron-right
+        transform: rotate(45deg)
+
+  #preview-content
+    flex: 1
+    overflow: auto
+    padding: 10px
+
+
+
+
+#preview-resizer:hover::after,
+#preview-resizer.resizing::after
+  opacity: 1

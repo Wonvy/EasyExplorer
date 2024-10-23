@@ -1,6 +1,7 @@
 @use 'base/_base'
 @use 'base/_reset'
 @use '_view'
+@use 'components/_resizer'
 
 
 // 暗色主题样式
@@ -108,8 +109,8 @@ html
   height: 100%
 
   #sidebar
-    min-width: 100px
-    max-width: 50%
+    // min-width: 100px
+    max-width:40%
     background-color: #f0f0f0
     border-right: 1px solid #ddd
     transition: width 0.3s ease
@@ -185,41 +186,9 @@ html
     &.collapsed 
       width: 0
 
-  #sidebar-toggle
-    position: absolute
-    left: 250px
-    top: 50%
-    background-color: #f0f0f0
-    border: 1px solid #ddd
-    border-left: none
-    padding: 5px
-    cursor: pointer
-    transition: left 0.3s ease
 
-    i
-      transform: rotate(180deg)
-      transition: transform 0.3s ease
 
-  #resizer
-    width: 6px
-    background-color: #ddd
-    cursor: col-resize
-    transition: background-color 0.3s
-    touch-action: none
 
-    &:hover
-      background-color: #bbb
-
-    &::after
-      content: ''
-      position: absolute
-      top: 0
-      bottom: 0
-      left: 0
-      width: 5px
-      background-color: #007bff
-      opacity: 0
-      transition: opacity 0.3s
 
 
   #main
@@ -375,64 +344,7 @@ html
 
 
 
-#preview-resizer
-  width: 5px
-  background-color: #ddd
-  cursor: col-resize
-  transition: background-color 0.3s
-  &:hover
-    background-color: #bbb
-  &::after
-    content: ''
-    position: absolute
-    top: 0
-    bottom: 0
-    right: 0
-    width: 5px
-    background-color: #007bff
-    opacity: 0
-    transition: opacity 0.3s
   
-
-#preview-panel
-  width: 300px
-  background-color: #f9f9f9
-  border-left: 1px solid #ddd
-  display: flex
-  flex-direction: column
-  transition: width 0.3s ease
-
-  &.collapsed
-    width: 0
-
-    #preview-toggle
-      right: 0
-
-      i
-        transform: rotate(180deg)
-        
-  #preview-toggle
-    position: absolute
-    right: 300px
-    top: 50%
-    background-color: #f0f0f0
-    border: 1px solid #ddd
-    border-right: none
-    padding: 5px
-    cursor: pointer
-    transition: right 0.3s ease
-    i
-      transition: transform 0.3s ease
-
-  #preview-content
-    flex: 1
-    overflow: auto
-    padding: 10px
-
-
-#preview-resizer:hover::after,
-#preview-resizer.resizing::after
-  opacity: 1
 
 
 

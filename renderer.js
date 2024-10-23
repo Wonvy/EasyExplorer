@@ -49,7 +49,8 @@ let favorites = JSON.parse(localStorage.getItem('favorites')) || []
 
 
 const favoriteIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" ><path d="M23.9986 5L17.8856 17.4776L4 19.4911L14.0589 29.3251L11.6544 43L23.9986 36.4192L36.3454 43L33.9586 29.3251L44 19.4911L30.1913 17.4776L23.9986 5Z" fill="#333" stroke="#333" stroke-width="4" stroke-linejoin="round"/></svg>`
-const driveIcon = `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M44 29H4V42H44V29Z" fill="#333" stroke="#333" stroke-width="4" stroke-linejoin="round"/><path d="M4 28.9998L9.03837 4.99902H39.0205L44 28.9998" stroke="#333" stroke-width="4" stroke-linejoin="round"/><path d="M19 12C16.2386 12 14 14.2386 14 17C14 19.7614 16.2386 22 19 22" stroke="#333" stroke-width="4" stroke-linecap="round"/><path d="M29 22C31.7614 22 34 19.7614 34 17C34 14.2386 31.7614 12 29 12" stroke="#333" stroke-width="4" stroke-linecap="round"/><path d="M20 17H28" stroke="#333" stroke-width="4" stroke-linecap="round"/></svg>`
+const driveIconsvg1 = `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M44 29H4V42H44V29Z" fill="#333" stroke="#333" stroke-width="4" stroke-linejoin="round"/><path d="M4 28.9998L9.03837 4.99902H39.0205L44 28.9998" stroke="#333" stroke-width="4" stroke-linejoin="round"/><path d="M19 12C16.2386 12 14 14.2386 14 17C14 19.7614 16.2386 22 19 22" stroke="#333" stroke-width="4" stroke-linecap="round"/><path d="M29 22C31.7614 22 34 19.7614 34 17C34 14.2386 31.7614 12 29 12" stroke="#333" stroke-width="4" stroke-linecap="round"/><path d="M20 17H28" stroke="#333" stroke-width="4" stroke-linecap="round"/></svg>`
+const driveIcon = `<img src="./assets/icons/driveIcon.png" />`
 const folderIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#f1c40f"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 1.99 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`
 const fileIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#3498db"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2h16c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`
 const backIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#ffffff"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>`
@@ -119,32 +120,32 @@ function getFileIcon(file) {
                 resolve(getDefaultIcon(file.name));
             });
         } else if (['.ttf', '.otf'].includes(ext)) {
-            const fontName = path.basename(file.name, ext); // 获取字体名称
+            const fontName = path.basename(filePath, path.extname(filePath)); // 获取字体名称
             const isChinese = /[\u4e00-\u9fa5]/.test(fontName); // 检查是否包含中文
+            const encodedPath = encodeURIComponent(filePath).replace(/%5C/g, '/'); // 对路径进行编码并替换反斜杠为正斜杠
+            const fontFace = new FontFace(fontName, `url(file://${encodedPath})`);
 
-            // 调试信息
-            console.log(`字体名称: ${fontName}`);
-            console.log(`是否包含中文: ${isChinese}`);
+            fontFace.load().then(() => {
+                document.fonts.add(fontFace);
+                // 创建图标和文件名
+                const fontItem = document.createElement('div');
+                const fileIcon = document.createElement('div');
+                fileIcon.className = 'file-icon';
+                fileIcon.textContent = isChinese ? fontName : 'Abg'; // 根据字体内容设置
+                fileIcon.style.fontFamily = fontName; 
+                const fileName = document.createElement('div');
+                fileName.className = 'file-name';
+                fileName.textContent = file.name;
 
-            // 创建图标和文件名
-            const fileIcon = document.createElement('div');
-            fileIcon.className = 'file-icon';
-            fileIcon.textContent = isChinese ? fontName : 'Abg'; // 根据字体内容设置
+                // 将图标和文件名添加到文件项
+                fontItem.appendChild(fileIcon);
+                fontItem.appendChild(fileName);
+                resolve(fontItem);
 
-            // 设置字体路径
-            const fontPath = `file://${encodeURIComponent(path.join(dirPath, file.name))}`;
-            fileIcon.style.fontFamily = fontPath; // 设置字体
+            }).catch(err => {
+                // previewContent.innerHTML = `<p>无法加载字体: ${err.message}</p>`;
+            });
 
-            // 调试信息
-            console.log(`字体路径: ${fontPath}`);
-
-            const fileName = document.createElement('div');
-            fileName.className = 'file-name';
-            fileName.textContent = file.name;
-
-            // 将图标和文件名添加到文件项
-            fileItem.appendChild(fileIcon);
-            fileItem.appendChild(fileName);
         
         } else if (['.jpg', '.jpeg', '.png', '.gif'].includes(ext)) {
             const filePath = path.join(currentPath, file.name);
@@ -656,12 +657,17 @@ ipcRenderer.on('menu-item-clicked', (event, action, path) => {
     case 'paste':
         const filePaths = clipboardEx.readFilePaths(); // 获取剪贴板中的文件路径
         if (filePaths.length > 0) {
+            // 发送粘贴事件到主进程
+            ipcRenderer.send('perform-paste', currentPath, filePaths);
+        }
+        break;
+        if (filePaths.length > 0) {
             filePaths.forEach(filePath => {
                 pasteFile(currentPath, filePath); // 将文件粘贴到当前路径
             });
             updateFileList(currentPath); // 更新文件列表以显示新粘贴的文件
         }
-        break;
+
   }
 });
 
@@ -678,7 +684,11 @@ function copyFile(filePaths) {
     console.log('filePath:', copiedPaths);
 }
 
-
+ipcRenderer.on('copy-progress', (data) => {
+    // 解析进度信息并更新进度条
+    console.log('复制进度:', data);
+    // 更新进度条的逻辑
+});
 
 
 // 粘贴文件
@@ -838,10 +848,13 @@ const main = document.getElementById('main');
 let isResizing = false;
 let lastX = 0;
 
+
+
+
+// 拖拽-左栏
 resizer.addEventListener('mousedown', initResize);
 
-// 初始化拖拽排序
-function initResize(e) {
+function initResize(e) { // 初始化拖拽排序
     isResizing = true;
     resizer.classList.add('resizing');
     document.addEventListener('mousemove', resize);
@@ -849,18 +862,19 @@ function initResize(e) {
     document.body.style.userSelect = 'none';
 }
 
-// 拖拽排序
 function resize(e) {
     if (!isResizing) return;
     requestAnimationFrame(() => {
-        const newWidth = e.clientX;
-        if (newWidth > 100 && newWidth < window.innerWidth - 200) {
+        const newWidth = e.clientX < 0 ? 1 : e.clientX; // 修改这一行
+        console.log('e.clientX', e.clientX);
+        console.log('window.innerWidth', window.innerWidth);
+
+        if (newWidth > 0 && newWidth < window.innerWidth) {
             sidebar.style.width = `${newWidth}px`;
         }
     });
 }
 
-// 停止拖拽排序
 function stopResize() {
     isResizing = false;
     resizer.classList.remove('resizing');
@@ -868,6 +882,9 @@ function stopResize() {
     document.removeEventListener('mouseup', stopResize);
     document.body.style.userSelect = '';
 }
+
+
+
 
 // 修改现有的 sidebarToggle 件监听器
 sidebarToggle.addEventListener('click', () => {
@@ -877,6 +894,17 @@ sidebarToggle.addEventListener('click', () => {
     } else {
         sidebar.classList.add('collapsed');
         sidebar.style.width = '0';
+    }
+});
+
+// 预览面板切换
+previewToggle.addEventListener('click', () => {
+    if (previewPanel.classList.contains('collapsed')) {
+        previewPanel.classList.remove('collapsed');
+        previewPanel.style.width = '250px';  // 或者使用上次调整的宽度
+    } else {
+        previewPanel.classList.add('collapsed');
+        previewPanel.style.width = '0';
     }
 });
 
@@ -1332,12 +1360,10 @@ ipcRenderer.on('file-icon-result', (event, { base64, error }) => {
 });
 
 
-// 预览面板切换
-previewToggle.addEventListener('click', () => {
-    previewPanel.classList.toggle('collapsed');
-});
 
-// 预览面板拖拽调整宽度
+
+
+// 预览面板拖拽
 let isPreviewResizing = false;
 let lastPreviewX = 0;
 
@@ -1349,25 +1375,22 @@ function initPreviewResize(e) {
     document.addEventListener('mousemove', resizePreview);
     document.addEventListener('mouseup', stopPreviewResize);
 }
-
-
 function resizePreview(e) {
     if (!isPreviewResizing) return;
-    const delta = lastPreviewX - e.clientX;
     lastPreviewX = e.clientX;
-    const newWidth = parseInt(getComputedStyle(previewPanel).width) + delta;
-    if (newWidth > 100 && newWidth < window.innerWidth - 400) {
+    const newWidth = window.innerWidth  - e.clientX;
+    // console.log('e.clientX:', e.clientX, 'newWidth:', newWidth)
+    if (newWidth >= 0 && newWidth < window.innerWidth - 400) {
         previewPanel.style.width = `${newWidth}px`;
     }
 }
-
 function stopPreviewResize() {
     isPreviewResizing = false;
     document.removeEventListener('mousemove', resizePreview);
     document.removeEventListener('mouseup', stopPreviewResize);
 }
 
-// 修改 updatePreview 函件
+// 预览视图
 function updatePreview(file) {
     if (!file) {
         previewContent.innerHTML = '<p>没有选中文件</p>';
@@ -1391,15 +1414,39 @@ function updatePreview(file) {
                 ${files.length > 10 ? '<p>...</p>' : ''}
             `;
         });
-    } else if (['.jpg', '.jpeg', '.png', '.gif'].includes(fileExt)) {
+    } else if (['.ttf', '.otf'].includes(fileExt)) {
+        const fontName = path.basename(filePath, path.extname(filePath)); // 获取字体名称
+        const encodedPath = encodeURIComponent(filePath).replace(/%5C/g, '/'); // 对路径进行编码并替换反斜杠为正斜杠
+        const fontFace = new FontFace(fontName, `url(file://${encodedPath})`);
+
+        fontFace.load().then(() => {
+            document.fonts.add(fontFace);
+            previewContent.innerHTML = `
+            <div style="font-family: '${fontName}'; text-align: center;">
+                <h1 style="font-size: 48px;">${fontName}</h1>
+                <h2 style="font-size: 36px;">Font Preview</h2>
+                <p style="font-size: 24px;">中文测试: 你好，世界！</p>
+                <p style="font-size: 24px;">English Test: Hello, World!</p>
+                <p style="font-size: 24px;">数字测试: 1234567890</p>
+            </div>
+        `;
+        }).catch(err => {
+            previewContent.innerHTML = `<p>无法加载字体: ${err.message}</p>`;
+        });
+    
+    } else if (['.jpg', '.jpeg', '.png', '.gif', '.svg'].includes(fileExt)) {
         previewContent.innerHTML = `<img src="file://${filePath}" alt="${file.name}" style="max-width: 100%; max-height: 300px;">`;
-    } else if (['.txt', '.md', '.js', '.svg', '.html', '.css', '.tap', '.nc', '.ini'].includes(fileExt)) {
+    
+    } else if (['.txt', '.md', '.js', '.html', '.css', '.tap', '.nc', '.ini', '.ts'].includes(fileExt)) {
         fs.readFile(filePath, 'utf8', (err, data) => {
             if (err) {
                 previewContent.innerHTML = `<p>无法读取文件内容: ${err.message}</p>`;
                 return;
             }
-            previewContent.innerHTML = `<pre>${data.slice(0, 1000)}${data.length > 1000 ? '...' : ''}</pre>`;
+            // ${ data.slice(0, 1000) }${ data.length > 1000 ? '...' : '' }
+            const highlightedCode = hljs.highlightAuto(data).value; 
+            previewContent.innerHTML = ` <pre><code class="${fileExt.replace('.', '')}">${highlightedCode}</code></pre>`;
+           
         });
     } else {
         previewContent.innerHTML = `<p>无法预览此类型的文件</p>`;
@@ -1816,7 +1863,7 @@ function showFullscreenPreview(filePath) {
             // 创建字体预览内容
             review_content_fullscreen.innerHTML = `
             <div style="font-family: '${fontName}'; text-align: center;">
-                <h1 style="font-size: 48px;">测试字体</h1>
+                <h1 style="font-size: 48px;">${fontName}</h1>
                 <h2 style="font-size: 36px;">Font Preview</h2>
                 <p style="font-size: 24px;">中文测试: 你好，世界！</p>
                 <p style="font-size: 24px;">English Test: Hello, World!</p>

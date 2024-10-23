@@ -1,6 +1,7 @@
 const { app, BrowserWindow, Menu, ipcMain, clipboard, shell } = require('electron')
 const path = require('path')
 const fs = require('fs')
+const { exec } = require('child_process');
 
 let mainWindow;
 let devToolsWindow;
@@ -69,8 +70,7 @@ function createWindow () {
     template.push(
       {
         label: '粘贴',
-        click: () => event.reply('menu-item-clicked', 'paste', params.path),
-        enabled: clipboard.readText().startsWith('file://')
+        click: () => event.reply('menu-item-clicked', 'paste', params.path)
       }
     );
 
@@ -150,14 +150,30 @@ ipcMain.handle('get-file-icon', async (event, filePath) => {
   }
 });
 
-// 复制文件路径到剪贴板
-ipcMain.on('copy-files-to-clipboard', (event, filePaths) => {
-  console.log('接收到复制文件请求:', filePaths);
-  if (filePaths && filePaths.length > 0) {
-    const fileList = filePaths.map(file => `file://${file}`).join('\n');
-    clipboard.writeText(fileList);
-    console.log('文件路径已复制到剪贴板');
-  } else {
-    console.log('没有文件路径可复制');
-  }
+
+ipcMain.on('perform-paste', (event, targetPath, filePaths) => {
+  filePaths.forEach(filePath => {
+    const destination = path.join(targetPath, path.basename(filePath));
+
+    const command = `robocopy "${path.dirname(filePath)}" "${targetPath}" "${path.basename(filePath)}" /E /Z /R:3 /W:5`;
+
+    console.log('command', command);
+    const child = exec(command);
+    event.sender.send('copy-progress', command); // 发送进度信息
+
+    child.stdout.on('data', (data) => {
+      // 解析进度信息并发送到渲染进程
+      console.log(data);
+      event.sender.send('copy-progress', command); // 发送进度信息
+    });
+
+    child.stderr.on('data', (data) => {
+      console.error('错误信息:', data);
+    });
+
+    child.on('close', (code) => {
+      console.log(`复制过程结束，退出码: ${code}`);
+      event.sender.send('update-file-list', targetPath);
+    });
+  });
 });
