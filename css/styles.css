@@ -127,10 +127,12 @@ button:disabled {
   padding: 20px;
   justify-content: flex-start;
 }
-#file-list-container.icon-view .file-item {
+#file-list-container.icon-view #file-list {
+  gap: 15px;
+}
+#file-list-container.icon-view #file-list .file-item {
   width: 160px;
   height: 160px;
-  margin: 10px;
   row-gap: 10px;
   display: flex;
   flex-direction: column;
@@ -140,27 +142,27 @@ button:disabled {
   transition: background-color 0.2s;
   border-radius: 8px;
 }
-#file-list-container.icon-view .file-item:hover {
+#file-list-container.icon-view #file-list .file-item:hover {
   background-color: #f0f0f0;
 }
-#file-list-container.icon-view .file-item video {
+#file-list-container.icon-view #file-list .file-item video {
   border-radius: 5px;
 }
-#file-list-container.icon-view .file-icon {
+#file-list-container.icon-view #file-list .file-icon {
   width: 160px;
   height: 90px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-#file-list-container.icon-view .file-icon svg {
+#file-list-container.icon-view #file-list .file-icon svg {
   width: 64px;
   height: 64px;
 }
-#file-list-container.icon-view .file-icon i {
+#file-list-container.icon-view #file-list .file-icon i {
   font-size: 48px;
 }
-#file-list-container.icon-view .file-name {
+#file-list-container.icon-view #file-list .file-name {
   word-break: break-word;
   text-align: center;
   max-width: 100%;

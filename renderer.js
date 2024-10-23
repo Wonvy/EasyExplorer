@@ -12,6 +12,7 @@ const libre = require('libreoffice-convert');
 const fsExtra = require('fs-extra'); // 引入 fs-extra
 const hljs = require('highlight.js'); // 引入 highlight.js
 const PSD = require('psd'); // 引入psd.js库
+const clipboardEx = require('electron-clipboard-ex');
 
 
 let currentPath = ''
@@ -631,25 +632,9 @@ upBtn.addEventListener('click', () => {
     }
 })
 
-// 添加以下函数来处理复制粘贴
-function copyFile(filePath) {
-  clipboard.writeText(`file://${filePath}`);
-}
 
-// 文件
-function pasteFile(targetDir) {
-  const source = clipboard.readText().replace('file://', '');
-  const fileName = path.basename(source);
-  const destination = path.join(targetDir, fileName);
 
-  fs.copyFile(source, destination, (err) => {
-    if (err) {
-      console.error('复制文件时出错:', err);
-    } else {
-      updateFileList(targetDir);
-    }
-  });
-}
+
 
 // 修改 ipcRenderer.on('menu-item-clicked') 事件处理
 ipcRenderer.on('menu-item-clicked', (event, action, path) => {
@@ -664,15 +649,54 @@ ipcRenderer.on('menu-item-clicked', (event, action, path) => {
       removeFromFavorites(path);
       break;
     case 'copy':
-        //   copyFile(path);
-        console.warn('34343:', [path]);
-        ipcRenderer.send('copy-files-to-clipboard', [path]);
+        const selectedItems = fileListContainer.querySelectorAll('.file-item.selected'); // 获取选中的文件项
+        const selectedPaths = Array.from(selectedItems).map(item => item.getAttribute('data-path')); // 获取选中项的路径
+        copyFile(selectedPaths); // 传递选中项的路径
       break;
     case 'paste':
-      pasteFile(path);
-      break;
+        const filePaths = clipboardEx.readFilePaths(); // 获取剪贴板中的文件路径
+        if (filePaths.length > 0) {
+            filePaths.forEach(filePath => {
+                pasteFile(currentPath, filePath); // 将文件粘贴到当前路径
+            });
+            updateFileList(currentPath); // 更新文件列表以显示新粘贴的文件
+        }
+        break;
   }
 });
+
+
+// 复制文件
+function copyFile(filePaths) {
+    // 判断 filePaths 是否为字符串，如果是则转换为数组
+    if (typeof filePaths === 'string') {
+        filePaths = [filePaths]; // 将字符串包装在数组中
+    }
+
+    clipboardEx.writeFilePaths(filePaths); // 将 filePaths 写入剪贴板
+    const copiedPaths = clipboardEx.readFilePaths();
+    console.log('filePath:', copiedPaths);
+}
+
+
+
+
+// 粘贴文件
+function pasteFile(targetDir, source) {
+    const fileName = path.basename(source);
+    const destination = path.join(targetDir, fileName);
+
+    fs.copyFile(source, destination, (err) => {
+        if (err) {
+            console.error('复制文件时出错:', err);
+        } else {
+            console.log(`文件已粘贴到: ${destination}`);
+            // updateFileList(targetDir); // 更新文件列表
+        }
+    });
+}
+
+
 
 // 添加以下函数来处理左侧面板的展开/折叠
 function toggleSidebarSection(sectionId) {
@@ -1565,11 +1589,27 @@ function isElementInSelectionBox(element, box) {
 // 选择框开始
 function handleMouseDown(e) {
     if (e.button !== 0) return; // 只处理左键点击
-    isSelecting = true;
-    startX = e.clientX;
-    startY = e.clientY;
-    createSelectionBox(startX, startY);
+    const target = e.target;
+
+   
+    // 检查是否在文件项上
+    if (target.classList.contains('file-item') || target.closest('.file-item')) {
+        console.log('文件上:', target.closest('.file-item').getAttribute('data-path'));
+        // 如果在文件项上，开始拖拽
+        const filePath = target.closest('.file-item').getAttribute('data-path'); // 获取文件路径
+        const fileData = [Buffer.from(fs.readFileSync(filePath))]; 
+        e.dataTransfer.setData('text/uri-list', `file://${filePath}`);
+        e.dataTransfer.effectAllowed = 'copy';  // 设置拖拽效果
+    } else {
+        // 如果在空白处，开始框选
+        console.log('空白处');
+        isSelecting = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        createSelectionBox(startX, startY);
+    }
 }
+
 
 // 选择框移动
 function handleMouseMove(e) {

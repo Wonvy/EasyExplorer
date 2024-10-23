@@ -110,52 +110,54 @@
     padding: 20px
     justify-content: flex-start
 
-    .file-item 
-      width: 160px
-      height: 160px
-      margin: 10px
-      row-gap: 10px
-      display: flex
-      flex-direction: column
-      align-items: center
-      justify-content: flex-start
-      text-align: center
-      transition: background-color 0.2s
-      border-radius: 8px
-      // padding: 10px 10px
-      &:hover
-        background-color: #f0f0f0
-      video
-        border-radius: 5px
+    #file-list
+      gap: 15px
+
+      .file-item 
+        width: 160px
+        height: 160px
+        row-gap: 10px
+        display: flex
+        flex-direction: column
+        align-items: center
+        justify-content: flex-start
+        text-align: center
+        transition: background-color 0.2s
+        border-radius: 8px
+        // padding: 10px 10px
+        &:hover
+          background-color: #f0f0f0
+        video
+          border-radius: 5px
 
 
 
-    .file-icon
-      width: 160px
-      height: 90px
-      display: flex
-      align-items: center
-      justify-content: center
-      svg
-        width: 64px
-        height: 64px
-      i
-        font-size: 48px
-        
-    .file-name
-      word-break: break-word
-      text-align: center
-      max-width: 100%
-      font-size: 12px·
-      // line-height: 1.2
-      // max-height: 2.4em
-      overflow: hidden
-      text-overflow: ellipsis
-      display: -webkit-box
-      -webkit-line-clamp: 2
-      -webkit-box-orient: vertical
-      line-clamp: 2
-      box-orient: vertical
+      .file-icon
+        width: 160px
+        height: 90px
+        display: flex
+        align-items: center
+        justify-content: center
+        svg
+          width: 64px
+          height: 64px
+        i
+          font-size: 48px
+          
+      .file-name
+        word-break: break-word
+        text-align: center
+        max-width: 100%
+        font-size: 12px·
+        // line-height: 1.2
+        // max-height: 2.4em
+        overflow: hidden
+        text-overflow: ellipsis
+        display: -webkit-box
+        -webkit-line-clamp: 2
+        -webkit-box-orient: vertical
+        line-clamp: 2
+        box-orient: vertical
 
   // 分组视图样式
   &.group-view
