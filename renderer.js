@@ -116,6 +116,34 @@ function getFileIcon(file) {
                 console.warn(`无法获取文件图标: ${filePath}`, error);
                 resolve(getDefaultIcon(file.name));
             });
+        } else if (['.ttf', '.otf'].includes(ext)) {
+            const fontName = path.basename(file.name, ext); // 获取字体名称
+            const isChinese = /[\u4e00-\u9fa5]/.test(fontName); // 检查是否包含中文
+
+            // 调试信息
+            console.log(`字体名称: ${fontName}`);
+            console.log(`是否包含中文: ${isChinese}`);
+
+            // 创建图标和文件名
+            const fileIcon = document.createElement('div');
+            fileIcon.className = 'file-icon';
+            fileIcon.textContent = isChinese ? fontName : 'Abg'; // 根据字体内容设置
+
+            // 设置字体路径
+            const fontPath = `file://${encodeURIComponent(path.join(dirPath, file.name))}`;
+            fileIcon.style.fontFamily = fontPath; // 设置字体
+
+            // 调试信息
+            console.log(`字体路径: ${fontPath}`);
+
+            const fileName = document.createElement('div');
+            fileName.className = 'file-name';
+            fileName.textContent = file.name;
+
+            // 将图标和文件名添加到文件项
+            fileItem.appendChild(fileIcon);
+            fileItem.appendChild(fileName);
+        
         } else if (['.jpg', '.jpeg', '.png', '.gif'].includes(ext)) {
             const filePath = path.join(currentPath, file.name);
             resolve(`<img src="${filePath}" class="file-icon">`);
