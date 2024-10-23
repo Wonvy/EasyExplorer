@@ -1731,6 +1731,34 @@ function showFullscreenPreview(filePath) {
                 review_content_fullscreen.innerHTML = `<div class="preview-content"><pre><code class="${fileExt.replace('.', '')}">${highlightedCode}</code></pre></div>`;
             }
         });
+    } else if (['.ttf', '.otf'].includes(fileExt)) {
+        // 处理字体文件
+        const fontName = path.basename(filePath, path.extname(filePath)); // 获取字体名称
+        const encodedPath = encodeURIComponent(filePath).replace(/%5C/g, '/'); // 对路径进行编码并替换反斜杠为正斜杠
+
+        // 调试信息：打印字体名称和编码后的路径
+        console.log(`字体名称: ${fontName}`);
+        console.log(`编码后的路径: ${encodedPath}`);
+
+        const fontFace = new FontFace(fontName, `url(file://${encodedPath})`);
+
+        fontFace.load().then(() => {
+            document.fonts.add(fontFace);
+            // 创建字体预览内容
+            review_content_fullscreen.innerHTML = `
+            <div style="font-family: '${fontName}'; text-align: center;">
+                <h1 style="font-size: 48px;">测试字体</h1>
+                <h2 style="font-size: 36px;">Font Preview</h2>
+                <p style="font-size: 24px;">中文测试: 你好，世界！</p>
+                <p style="font-size: 24px;">English Test: Hello, World!</p>
+                <p style="font-size: 24px;">数字测试: 1234567890</p>
+            </div>
+        `;
+        }).catch(err => {
+            // 调试信息：打印错误信息
+            console.error('字体加载失败:', err);
+            review_content_fullscreen.innerHTML = `<p>无法加载字体: ${err.message}</p>`;
+        });
     } else {
         review_content_fullscreen.innerHTML = `<p>无法预览此文件类型</p>`;
     }
