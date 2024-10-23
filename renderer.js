@@ -11,6 +11,7 @@ const { console } = require('inspector')
 const libre = require('libreoffice-convert');
 const fsExtra = require('fs-extra'); // 引入 fs-extra
 const hljs = require('highlight.js'); // 引入 highlight.js
+const PSD = require('psd'); // 引入psd.js库
 
 
 let currentPath = ''
@@ -1787,11 +1788,53 @@ function showFullscreenPreview(filePath) {
             console.error('字体加载失败:', err);
             review_content_fullscreen.innerHTML = `<p>无法加载字体: ${err.message}</p>`;
         });
+    } else if (fileExt === '.psd') {
+        // 处理PSD文件
+        console.log(`尝试打开PSD文件: ${filePath}`); // 添加调试信息
+        
+        // 将 PSD 转换为 PNG 并保存到临时目录，然后读取并转换为 Base64
+        PSD.open(filePath).then(function (psdData) {
+            const tempFilePath = path.join(os.tmpdir(), 'output_temp_image.png');
+
+            // 保存 PNG 文件到临时目录
+            return psdData.image.saveAsPng(tempFilePath).then(() => {
+                // 读取保存的 PNG 文件并转换为 Base64
+                const imageBuffer = fs.readFileSync(tempFilePath);
+                const base64Image = `data:image/png;base64,${imageBuffer.toString('base64')}`;
+
+                // 将 Base64 图片插入到页面中显示
+                review_content_fullscreen.innerHTML = `<img src="${base64Image}" alt="PSD预览" style="max-width: 100%; max-height: 100%; object-fit: contain;">`;
+
+                // 删除临时文件（可选）
+                fs.unlinkSync(tempFilePath);
+            });
+        }).catch(err => {
+            console.error('处理PSD文件时出错:', err);
+            review_content_fullscreen.innerHTML = `<p>无法读取PSD文件: ${err.message}</p>`;
+        });
+
     } else {
         review_content_fullscreen.innerHTML = `<p>无法预览此文件类型</p>`;
     }
     fullscreen_preview.style.display = 'block';
 }
+
+// 将 buffer 转换为 Base64 格式
+function arrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return window.btoa(binary);
+}
+
+// 将 Buffer 转换为 Base64
+function bufferToBase64(buffer) {
+    return buffer.toString('base64');
+}
+
 
 // 添加转换函数
 function convertToPdf(inputPath, outputPath) {
