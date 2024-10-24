@@ -78,6 +78,11 @@ button:disabled {
   font-family: "Courier New", Courier, monospace;
 }
 
+#file-list svg {
+  width: 24px;
+  height: 24px;
+}
+
 #file-list-container {
   flex-grow: 1;
   overflow: auto;

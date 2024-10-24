@@ -47,6 +47,16 @@ let history = []
 let currentHistoryIndex = -1
 let favorites = JSON.parse(localStorage.getItem('favorites')) || []
 
+// 加载自定义图标
+let customIcons = {};
+fs.readFile(path.join(__dirname, 'icons.json'), 'utf8', (err, data) => {
+    if (err) {
+        console.error('无法加载图标文件:', err);
+        return;
+    }
+    customIcons = JSON.parse(data);
+});
+
 
 const favoriteIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" ><path d="M23.9986 5L17.8856 17.4776L4 19.4911L14.0589 29.3251L11.6544 43L23.9986 36.4192L36.3454 43L33.9586 29.3251L44 19.4911L30.1913 17.4776L23.9986 5Z" fill="#333" stroke="#333" stroke-width="4" stroke-linejoin="round"/></svg>`
 const driveIconsvg1 = `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M44 29H4V42H44V29Z" fill="#333" stroke="#333" stroke-width="4" stroke-linejoin="round"/><path d="M4 28.9998L9.03837 4.99902H39.0205L44 28.9998" stroke="#333" stroke-width="4" stroke-linejoin="round"/><path d="M19 12C16.2386 12 14 14.2386 14 17C14 19.7614 16.2386 22 19 22" stroke="#333" stroke-width="4" stroke-linecap="round"/><path d="M29 22C31.7614 22 34 19.7614 34 17C34 14.2386 31.7614 12 29 12" stroke="#333" stroke-width="4" stroke-linecap="round"/><path d="M20 17H28" stroke="#333" stroke-width="4" stroke-linecap="round"/></svg>`
@@ -111,13 +121,18 @@ function getFileIcon(file) {
         }
         // 只针对exe后缀的文件获取图标
         const ext = path.extname(file.name).toLowerCase();
-        if (ext === '.exe') {
+        if (['.exe', '.lnk'].includes(ext)) {
             const filePath = path.join(currentPath, file.name);
             ipcRenderer.invoke('get-file-icon', filePath).then(base64 => {
-                resolve(`<img src="${base64}" class="file-icon">`);
+                // 检查 base64 是否有效
+                if (base64) {
+                    resolve(`<img src="${base64}" class="file-icon">`);
+                } else {
+                    resolve(getUnknownIcon(ext));
+                }
             }).catch(error => {
                 console.warn(`无法获取文件图标: ${filePath}`, error);
-                resolve(getDefaultIcon(file.name));
+                resolve(getUnknownIcon(ext));
             });
         } else if (['.ttf', '.otf'].includes(ext)) {
             const fontName = path.basename(filePath, path.extname(filePath)); // 获取字体名称
@@ -143,10 +158,9 @@ function getFileIcon(file) {
                 resolve(fontItem);
 
             }).catch(err => {
-                // previewContent.innerHTML = `<p>无法加载字体: ${err.message}</p>`;
+                resolve(getUnknownIcon(ext));
             });
 
-        
         } else if (['.jpg', '.jpeg', '.png', '.gif'].includes(ext)) {
             const filePath = path.join(currentPath, file.name);
             resolve(`<img src="${filePath}" class="file-icon">`);
@@ -162,7 +176,7 @@ function getFileIcon(file) {
             fs.readFile(filePath, 'utf8', (err, data) => {
                 if (err) {
                     console.warn(`无法读取SVG文件: ${filePath}`, err);
-                    resolve(getDefaultIcon(file.name));
+                    resolve(getUnknownIcon(ext));
                 } else {
                     resolve(`<div class="file-icon">${data}</div>`);
                 }
@@ -175,39 +189,16 @@ function getFileIcon(file) {
                 </audio>
             `);
         } else {
-            resolve(getDefaultIcon(file.name));
+            const unknownSvg = getUnknownIcon(ext); // 使用新函数
+            resolve(unknownSvg);
         }
     });
 }
 
-
-
-function getDefaultIcon(fileName) {
-    const ext = path.extname(fileName).toLowerCase();
-    switch (ext) {
-        case '.txt': return `<i class="far fa-file-alt"></i>`;
-        case '.pdf': return `<i class="far fa-file-pdf"></i>`;
-        case '.doc':
-        case '.docx': return `<i class="far fa-file-word"></i>`;
-        case '.xls':
-        case '.xlsx': return `<i class="far fa-file-excel"></i>`;
-        case '.ppt':
-        case '.pptx': return `<i class="far fa-file-powerpoint"></i>`;
-        case '.jpg':
-        case '.jpeg':
-        case '.png':
-        case '.gif': return `<i class="far fa-file-image"></i>`;
-        case '.mp3':
-        case '.wav': return `<i class="far fa-file-audio"></i>`;
-        case '.mp4':
-        case '.avi':
-        case '.mov': return `<i class="far fa-file-video"></i>`;
-        case '.zip':
-        case '.rar':
-        case '.7z': return `<i class="far fa-file-archive"></i>`;
-        default: return `<i class="far fa-file"></i>`;
-    }
+function getUnknownIcon(ext) {
+    return customIcons[ext] || customIcons['.unknown'].replace('XXX', ext.replace(".", ""));
 }
+
 
 // 在文件顶部添加一个新的变量来跟踪选中的项目
 let selectedItem = null;
