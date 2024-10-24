@@ -401,6 +401,7 @@ function updateFavorites() {
       e.preventDefault();
       e.stopPropagation();
       const favPath = item.getAttribute('data-path');
+      console.log('favPath2222', favPath);
       showFavoriteContextMenu(favPath, e.clientX, e.clientY);
     });
 
@@ -727,7 +728,7 @@ function updateFavorites() {
     </div>
     <div class="sidebar-section-content">
       ${favorites.map(fav => `
-        <div class="favorite-item" onclick="navigateTo('${fav.replace(/\\/g, '\\\\')}')">
+        <div class="favorite-item" data-path="${fav.replace(/\\/g, '\\')}" onclick="navigateTo('${fav.replace(/\\/g, '\\\\')}')">
           <span class="file-icon">${favoriteIcon}</span>
           <span>${path.basename(fav)}</span>
         </div>
@@ -958,6 +959,20 @@ fileListContainer.addEventListener('click', (e) => {
         removeSelectionBox(); // 移除选择框
     }
 })
+
+// 右键菜单-左栏
+sidebar.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    const target = e.target.closest('.favorite-item'); // 检查是否在收藏夹项目上
+    if (target) {
+        const favPath = target.getAttribute('data-path'); // 获取收藏夹路径
+        console.log('favPath', favPath);
+        showFavoriteContextMenu(favPath, e.clientX, e.clientY); // 显示取消收藏菜单
+    } else {
+        showContextMenu(null, currentPath); // 显示默认菜单
+    }
+});
+
 
 // 在 updateFileList 函件末尾添加以下代码
 fileListContainer.addEventListener('contextmenu', (e) => {
@@ -1299,6 +1314,8 @@ function removeFromFavorites(dirPath) {
         favorites.splice(index, 1);
         localStorage.setItem('favorites', JSON.stringify(favorites));
         updateFavorites();
+    } else {
+        console.error('目录路径不在收藏夹中:', dirPath);
     }
 }
 
@@ -1830,7 +1847,7 @@ function showFullscreenPreview(filePath) {
                 review_content_fullscreen.innerHTML = `<div class="preview-content"><pre>${data}</pre></div>`;
             }
         });
-    } else if (['.js', '.html', '.css', '.py', '.java', '.cpp', '.c', '.rb', '.ts', '.jsx', '.json'].includes(fileExt)) {
+    } else if (['.js', '.vbs', '.ps1', '.reg', '.cmd', '.xml', '.au3', '.html', '.css', '.py', '.java', '.cpp', '.c', '.rb', '.ts', '.jsx', '.json'].includes(fileExt)) {
         // 处理代码文件
         fs.readFile(filePath, 'utf8', (err, data) => {
             if (err) {
