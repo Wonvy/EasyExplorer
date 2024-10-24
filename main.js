@@ -48,6 +48,12 @@ function createWindow () {
         {
           label: '复制',
           click: () => event.reply('menu-item-clicked', 'copy', params.path)
+        },
+        {
+          label: '打开方式',
+          click: () => {
+            ipcMain.emit('open-file-dialog', event, params.path); // 调用打开方式对话框
+          }
         }
       );
 
@@ -66,7 +72,7 @@ function createWindow () {
       }
     }
 
-    // 无论是否选中文件或文件夹，都添加粘贴选项
+    // 粘贴选项
     template.push(
       {
         label: '粘贴',
@@ -74,6 +80,7 @@ function createWindow () {
       }
     );
 
+    // 状态栏
     if (params.isCurrentDir) {
       // 如果是当前目录（空白处右键），修改第一个选项的标签
       if (template.length > 0 && template[0].label === '在资源管理器中打开') {
@@ -109,6 +116,7 @@ function createWindow () {
     }
   })
 
+  // 状态栏
   ipcMain.on('show-status-bar-menu', (event, options) => {
     const template = options.map(option => ({
       label: option.label,
@@ -150,7 +158,7 @@ ipcMain.handle('get-file-icon', async (event, filePath) => {
   }
 });
 
-
+// 复制文件
 ipcMain.on('perform-paste', (event, targetPath, filePaths) => {
   filePaths.forEach(filePath => {
     const destination = path.join(targetPath, path.basename(filePath));
@@ -175,5 +183,17 @@ ipcMain.on('perform-paste', (event, targetPath, filePaths) => {
       console.log(`复制过程结束，退出码: ${code}`);
       event.sender.send('update-file-list', targetPath);
     });
+  });
+});
+
+// 打开方式
+ipcMain.on('open-file-dialog', (event, filePath) => {
+  const command = `rundll32.exe shell32.dll,OpenAs_RunDLL "${filePath}"`; // 添加引号以处理路径中的空格
+  exec(command, (error, stdout, stderr) => {
+    if (error) {
+      console.error(`执行出错: ${error}`);
+      return;
+    }
+    console.log(`标准输出: ${stdout}`);
   });
 });
