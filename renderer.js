@@ -188,6 +188,8 @@ function getFileIcon(file) {
                     您的浏览器不支持 audio 标签。
                 </audio>
             `);
+        } else if (['.zip', '.rar', '.7z', '.tar', '.gz', '.bz2', '.xz', '.7zip', '.tgz', '.tar.gz', '.tar.bz2'].includes(ext)) {
+            resolve(getUnknownIcon(ext, ".zips"));
         } else {
             const unknownSvg = getUnknownIcon(ext); // 使用新函数
             resolve(unknownSvg);
@@ -195,8 +197,8 @@ function getFileIcon(file) {
     });
 }
 
-function getUnknownIcon(ext) {
-    return customIcons[ext] || customIcons['.unknown'].replace('XXX', ext.replace(".", ""));
+function getUnknownIcon(ext, defaultIcon = '.unknown') {
+    return customIcons[ext] || customIcons[defaultIcon].replace('XXX', ext.replace(".", ""));
 }
 
 
