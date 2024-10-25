@@ -161,7 +161,7 @@ function getFileIcon(file) {
             const filePath = path.join(currentPath, file.name);
             resolve(`
                 <video class="file-icon" src="${filePath}" controls>
-                    您的浏览器不支��� video 标签。
+                    您的浏览器不支 video 标签。
                 </video>
             `);
         } else if (ext === '.svg') {
@@ -1149,6 +1149,7 @@ function createFileItem(file, dirPath) {
 
     const icon = document.createElement('span');
     icon.className = 'file-icon';
+   
 
     const name = document.createElement('span');
     name.className = 'file-name';
@@ -1158,6 +1159,7 @@ function createFileItem(file, dirPath) {
     console.log('file', file);
     getFileIcon(file).then(iconHtml => {
         icon.innerHTML = iconHtml;
+        icon.setAttribute('data-svg', iconHtml);
     }).catch(error => {
         console.error('获取文件图标时出错:', error);
         icon.innerHTML = `<i class="far fa-file"></i>`;
@@ -1250,7 +1252,11 @@ function createFileItem(file, dirPath) {
             });
 
             fileItem.addEventListener('mouseout', () => {
-                icon.innerHTML = folderIcon; // 还原默认文件夹图标
+                if (icon.hasAttribute('data-svg')) {
+                    icon.innerHTML = icon.getAttribute('data-svg'); // 使用 data-svg 的内容还原图标
+                } else {
+                    icon.innerHTML = folderIcon; // 还原默认文件夹图标
+                }
                 updateStatusBar(currentPath);
                 updatePreview(null);
             });
