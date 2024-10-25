@@ -70,8 +70,7 @@ let currentViewMode = localStorage.getItem('viewMode') || 'list'; // 修改视�
 function setViewMode(mode) {
     currentViewMode = mode;
     localStorage.setItem('viewMode', mode);
-    // console.log('View mode set to:', mode);
-    
+
     // 更新 file-list 的 class
     const fileList = document.getElementById('file-list');
     fileList.className = mode === 'list' ? 'file-list-list' : mode === 'group' ? 'file-list-group' : 'file-list-icons'; // 修改这一行
@@ -1145,7 +1144,7 @@ function createFileItem(file, dirPath) {
     }
 
  
-    fileItem.setAttribute('data-path', path.join(dirPath, file.name)); // 确保设置 data-path
+    fileItem.setAttribute('data-path', path.join(dirPath, file.name)); 
 
     const icon = document.createElement('span');
     icon.className = 'file-icon';
@@ -1156,7 +1155,6 @@ function createFileItem(file, dirPath) {
     name.textContent = file.name;
 
     // 获取文件图标
-    console.log('file', file);
     getFileIcon(file).then(iconHtml => {
         icon.innerHTML = iconHtml;
         icon.setAttribute('data-svg', iconHtml);
@@ -1214,6 +1212,7 @@ function createFileItem(file, dirPath) {
 
         // 双击打开文件
         fileItem.addEventListener('dblclick', (e) => {
+            console.log('dblclick');    
             e.stopPropagation();
             const filePath = path.join(dirPath, file.name);
             if (typeof file.isDirectory === 'function' ? file.isDirectory() : file.isDirectory) {
@@ -1231,6 +1230,7 @@ function createFileItem(file, dirPath) {
         });
 
         if (!file.error) {
+
             // 将事件监听器移到这里
             fileItem.addEventListener('mouseover', () => {
                 updateStatusBar(path.join(dirPath, file.name));
@@ -1251,6 +1251,7 @@ function createFileItem(file, dirPath) {
                 }
             });
 
+            // 鼠标移出事件
             fileItem.addEventListener('mouseout', () => {
                 if (icon.hasAttribute('data-svg')) {
                     icon.innerHTML = icon.getAttribute('data-svg'); // 使用 data-svg 的内容还原图标
@@ -1286,7 +1287,7 @@ function handleSortClick(sortMethod) {
         currentSortMethod = sortMethod;
         currentSortOrder = 'asc';
     }
-    updateFileList(currentPath);
+    updateFileList(currentPath);//更新文件列表
 }
 
 document.getElementById('sort-name').addEventListener('click', () => handleSortClick('name'));
@@ -1338,14 +1339,7 @@ function showFavoriteContextMenu(favPath, x, y) {
   ipcRenderer.send('show-favorite-context-menu', { path: favPath, x, y });
 }
 
-// 在文件底部添加以下事件监听器
-ipcRenderer.on('favorite-menu-item-clicked', (event, action, path) => {
-  switch (action) {
-    case 'remove-from-favorites':
-      removeFromFavorites(path);
-      break;
-  }
-});
+
 
 // 在件底部添加以下代码来置事件监听器
 document.addEventListener('DOMContentLoaded', () => {
@@ -1380,6 +1374,15 @@ document.addEventListener('DOMContentLoaded', () => {
 ipcRenderer.on('file-icon-result', (event, { base64, error }) => {
     if (error) {
         console.warn('获取文件图标时出错:', error);
+    }
+});
+
+// 在文件底部添加以下事件监听器
+ipcRenderer.on('favorite-menu-item-clicked', (event, action, path) => {
+    switch (action) {
+        case 'remove-from-favorites':
+            removeFromFavorites(path);
+            break;
     }
 });
 

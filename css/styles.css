@@ -488,11 +488,6 @@ button:disabled {
   object-fit: contain;
 }
 
-::selection {
-  background: transparent;
-  color: inherit;
-}
-
 ::-moz-selection {
   background: transparent;
   color: inherit;
