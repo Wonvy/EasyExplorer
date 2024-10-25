@@ -438,6 +438,57 @@ button:disabled {
 .dark-theme #main {
   background-color: #2e2e2e;
 }
+.dark-theme #status-bar {
+  background-color: #1e1e1e;
+  color: #ffffff;
+}
+.dark-theme .file-item:hover {
+  background-color: #333333;
+}
+.dark-theme .file-item.selected {
+  background-color: #444444;
+  outline: 1px solid #555555;
+}
+.dark-theme .sidebar-section-header:hover {
+  background-color: #333333;
+}
+.dark-theme .sidebar-section-content {
+  background-color: #1e1e1e;
+}
+.dark-theme #toolbar {
+  background-color: #1e1e1e;
+  border-bottom-color: #333333;
+}
+.dark-theme #toolbar button {
+  color: #ffffff;
+}
+.dark-theme #toolbar button:hover {
+  background-color: #333333;
+}
+.dark-theme #path {
+  background-color: #2e2e2e;
+  color: #ffffff;
+  border-color: #444444;
+}
+.dark-theme #file-list-container {
+  background-color: #2e2e2e;
+}
+.dark-theme ::-webkit-scrollbar-track {
+  background: #1e1e1e;
+}
+.dark-theme ::-webkit-scrollbar-thumb {
+  background: #444444;
+}
+.dark-theme ::-webkit-scrollbar-thumb:hover {
+  background: #555555;
+}
+.dark-theme #preview-panel {
+  background-color: #1e1e1e;
+  border-left-color: #333333;
+}
+.dark-theme #fullscreen-preview {
+  background-color: rgba(0, 0, 0, 0.95);
+}
 
 .fas {
   font-family: "Font Awesome 5 Free";
