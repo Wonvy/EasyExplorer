@@ -370,3 +370,127 @@ html
 
   .file-icon
     margin-right: 5px
+
+// 时间轴视图样式
+#file-list-container.timeline-view
+  padding: 20px
+
+  .timeline-container
+    position: relative
+    padding-left: 120px
+
+    &::before
+      content: ''
+      position: absolute
+      left: 100px
+      top: 0
+      bottom: 0
+      width: 2px
+      background: #ddd
+
+  .timeline-year-header,
+  .timeline-month-header
+    cursor: pointer
+    user-select: none
+
+  .timeline-year-header
+    font-weight: bold
+    font-size: 24px
+    margin-top: 30px
+    margin-bottom: 20px
+    position: relative
+    left: -100px
+    width: 80px
+    text-align: right
+    display: flex
+    justify-content: flex-end
+    align-items: center
+
+    .year-text
+      margin-right: 10px
+
+    i
+      font-size: 16px
+
+  .timeline-month-header
+    font-weight: bold
+    font-size: 18px
+    margin-top: 20px
+    margin-bottom: 10px
+    position: relative
+    display: flex
+    align-items: center
+
+    &::before
+      content: ''
+      position: absolute
+      left: -24px
+      top: 50%
+      width: 16px
+      height: 16px
+      background: #fff
+      border: 2px solid #007bff
+      border-radius: 50%
+      transform: translateY(-50%)
+
+    .month-text
+      margin-right: 10px
+
+    i
+      font-size: 14px
+
+  .timeline-year-items,
+  .timeline-month-items
+    max-height: 1000px // 一个足够大的初始值
+    overflow: hidden
+    transition: max-height 0.3s ease-out
+
+  .timeline-item
+    position: relative
+    margin-bottom: 15px
+
+    &::before
+      content: ''
+      position: absolute
+      left: -20px
+      top: 50%
+      width: 10px
+      height: 10px
+      background: #007bff
+      border-radius: 50%
+      transform: translateY(-50%)
+
+    .timeline-item-content
+      background: #f8f9fa
+      padding: 10px
+      border-radius: 5px
+      display: flex
+      align-items: center
+      cursor: pointer
+      transition: background-color 0.2s
+
+      &:hover
+        background-color: #e9ecef
+
+      .file-icon
+        margin-right: 10px
+
+      .file-name
+        flex-grow: 1
+
+      .file-time
+        font-size: 0.8em
+        color: #6c757d
+        text-align: right
+        min-width: 300px
+
+  .collapsed
+    & + .timeline-year-items,
+    & + .timeline-month-items
+      max-height: 0 !important
+      overflow: hidden
+
+  .timeline-year-header.collapsed,
+  .timeline-month-header.collapsed
+    & > i
+      transform: rotate(-90deg)

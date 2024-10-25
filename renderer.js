@@ -36,6 +36,7 @@ const statusBarElement = document.getElementById('status-bar')
 const listViewBtn = document.getElementById('list-view-btn')
 const iconViewBtn = document.getElementById('icon-view-btn')
 const groupViewBtn = document.getElementById('group-view-btn');
+const timelineViewBtn = document.getElementById('timeline-view-btn');
 
 const fileListContainer = document.getElementById('file-list-container')
 
@@ -74,27 +75,33 @@ function setViewMode(mode) {
 
     // 更新 file-list 的 class
     const fileList = document.getElementById('file-list');
-    fileList.className = mode === 'list' ? 'file-list-list' : mode === 'group' ? 'file-list-group' : 'file-list-icons'; // 修改这一行
+    fileList.className = mode === 'list' ? 'file-list-list' : 
+                         mode === 'group' ? 'file-list-group' : 
+                         mode === 'timeline' ? 'file-list-timeline' : 'file-list-icons';
 
     // 添加类样式到 file-list-container
     const fileListContainer = document.getElementById('file-list-container');
-    fileListContainer.className = mode === 'list' ? 'list-view' : mode === 'group' ? 'group-view' : 'icon-view'; // 修改这一行
+    fileListContainer.className = mode === 'list' ? 'list-view' : 
+                                  mode === 'group' ? 'group-view' : 
+                                  mode === 'timeline' ? 'timeline-view' : 'icon-view';
 
     // 更新视图按钮的激活状态
     const viewButtons = document.querySelectorAll('#view-options button');
     viewButtons.forEach(button => {
-        console.log('mode', mode);
         if (button.id === `${mode}-view-btn`) {
-            button.classList.add('active'); // 添加激活类
+            button.classList.add('active');
         } else {
-            button.classList.remove('active'); // 移除激活类
+            button.classList.remove('active');
         }
     });
-
 
     updateFileList(currentPath);
 }
 
+// 添加时间轴视图按钮的事件监听器
+timelineViewBtn.addEventListener('click', () => {
+    setViewMode('timeline');
+});
 
 // 添加地址栏输入跳转功能
 pathElement.addEventListener('keydown', (e) => {
@@ -224,7 +231,11 @@ function updateFileList(dirPath, isQuickAccess = false) {
             .then(fileDetails => {
                 sortFiles(fileDetails);
                 fileListElement.innerHTML = '';
-                if (isGroupView) {
+
+                if (currentViewMode === 'timeline') {
+                    const timelineItems = createTimelineItems(fileDetails);
+                    fileListElement.appendChild(timelineItems);
+                } else if (isGroupView) {
                     const groupedFiles = groupFilesByType(fileDetails);
                     Object.entries(groupedFiles).forEach(([groupName, groupFiles]) => {
                         const groupElement = document.createElement('div');
@@ -659,7 +670,7 @@ ipcRenderer.on('menu-item-clicked', (event, action, path) => {
 });
 
 
-// 复制文件
+// 复制件
 function copyFile(filePaths) {
     // 判断 filePaths 是否为字符串，如果是则转换为数组
     if (typeof filePaths === 'string') {
@@ -791,6 +802,125 @@ function updateQuickAccess() {
   });
 }
 
+// 添加新的函数来创建时间轴项目
+function createTimelineItems(fileDetails) {
+    const timelineContainer = document.createElement('div');
+    timelineContainer.className = 'timeline-container';
+
+    // 按修改日期排序文件
+    fileDetails.sort((a, b) => b.stats.mtime - a.stats.mtime);
+
+    let currentYear = null;
+    let currentMonth = null;
+    const monthNames = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
+
+    fileDetails.forEach(file => {
+        const fileDate = new Date(file.stats.mtime);
+        const fileYear = fileDate.getFullYear();
+        const fileMonth = fileDate.getMonth();
+
+        if (fileYear !== currentYear) {
+            currentYear = fileYear;
+            const yearHeader = document.createElement('div');
+            yearHeader.className = 'timeline-year-header';
+            yearHeader.innerHTML = `
+                <span class="year-text">${currentYear}</span>
+                <i class="fas fa-chevron-down"></i>
+            `;
+            yearHeader.addEventListener('click', toggleYearItems);
+            timelineContainer.appendChild(yearHeader);
+
+            const yearItems = document.createElement('div');
+            yearItems.className = 'timeline-year-items';
+            timelineContainer.appendChild(yearItems);
+
+            currentMonth = null; // 重置月份，确保新的一年会显示所有月份
+        }
+
+        if (fileMonth !== currentMonth) {
+            currentMonth = fileMonth;
+            const monthHeader = document.createElement('div');
+            monthHeader.className = 'timeline-month-header';
+            monthHeader.innerHTML = `
+                <span class="month-text">${monthNames[currentMonth]}</span>
+                <i class="fas fa-chevron-down"></i>
+            `;
+            monthHeader.addEventListener('click', toggleMonthItems);
+            timelineContainer.lastElementChild.appendChild(monthHeader);
+
+            const monthItems = document.createElement('div');
+            monthItems.className = 'timeline-month-items';
+            timelineContainer.lastElementChild.appendChild(monthItems);
+        }
+
+        const timelineItem = document.createElement('div');
+        timelineItem.className = 'timeline-item';
+        timelineItem.innerHTML = `
+            <div class="timeline-item-content">
+                <span class="file-icon">${file.isDirectory ? folderIcon : getUnknownIcon(path.extname(file.name))}</span>
+                <span class="file-name">${file.name}</span>
+                <span class="file-time">
+                    创建: ${formatDate(file.stats.birthtime)} | 修改: ${formatDate(file.stats.mtime)}
+                </span>
+            </div>
+        `;
+
+        // 添加事件监听器
+        timelineItem.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const filePath = path.join(currentPath, file.name);
+            if (file.isDirectory) {
+                navigateTo(filePath);
+            } else {
+                shell.openPath(filePath);
+            }
+        });
+
+        // 添加鼠标移入事件监听器
+        timelineItem.addEventListener('mouseover', () => {
+            updateStatusBar(path.join(currentPath, file.name));
+            updatePreview(file);
+        });
+
+        // 添加鼠标移出事件监听器
+        timelineItem.addEventListener('mouseout', () => {
+            updateStatusBar(currentPath);
+            updatePreview(null);
+        });
+
+        timelineContainer.lastElementChild.lastElementChild.appendChild(timelineItem);
+    });
+
+    return timelineContainer;
+}
+
+function toggleYearItems(e) {
+    const yearHeader = e.currentTarget;
+    const yearItems = yearHeader.nextElementSibling;
+    let isCollapsed = yearHeader.classList.toggle('collapsed');
+    
+    if (yearItems && yearItems.classList.contains('timeline-year-items')) {
+        yearItems.style.maxHeight = isCollapsed ? '0' : `${yearItems.scrollHeight}px`;
+    }
+    
+    yearHeader.querySelector('i').className = isCollapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-down';
+}
+
+function toggleMonthItems(e) {
+    const monthHeader = e.currentTarget;
+    const monthItems = monthHeader.nextElementSibling;
+    let isCollapsed = monthHeader.classList.toggle('collapsed');
+    
+    if (monthItems && monthItems.classList.contains('timeline-month-items')) {
+        monthItems.style.maxHeight = isCollapsed ? '0' : `${monthItems.scrollHeight}px`;
+    }
+    
+    monthHeader.querySelector('i').className = isCollapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-down';
+}
+
+function formatDate(date) {
+    return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+}
 
 updateFavorites() // 更新收藏夹
 showDrives() // 显示驱动器
@@ -978,7 +1108,10 @@ function updateFileList(dirPath, isQuickAccess = false) {
                 sortFiles(fileDetails);
                 fileListElement.innerHTML = '';
 
-                if (isGroupView) {
+                if (currentViewMode === 'timeline') {
+                    const timelineItems = createTimelineItems(fileDetails);
+                    fileListElement.appendChild(timelineItems);
+                } else if (isGroupView) {
                     const groupedFiles = groupFilesByType(fileDetails);
                     Object.entries(groupedFiles).forEach(([groupName, groupFiles]) => {
                         const groupElement = document.createElement('div');
@@ -1200,7 +1333,7 @@ function createFileItem(file, dirPath) {
             }
         });
 
-        // 右键菜单
+        // 右键单
         fileItem.addEventListener('contextmenu', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -1214,7 +1347,7 @@ function createFileItem(file, dirPath) {
                 updateStatusBar(path.join(dirPath, file.name));
                 updatePreview(file);
                 if (file.isDirectory) {
-                    const folderPath = path.join(dirPath, file.name); // 构建文件夹���完整路径
+                    const folderPath = path.join(dirPath, file.name); // 构建文件夹完整路径
                     // 获取文件夹中的文件/文件夹数量
                     fs.readdir(folderPath, (err, items) => {
                         if (err) {
@@ -1898,7 +2031,7 @@ function showFullscreenPreview(filePath) {
             <div style="font-family: '${fontName}'; text-align: center;">
                 <h1 style="font-size: 48px;">${fontName}</h1>
                 <h2 style="font-size: 36px;">Font Preview</h2>
-                <p style="font-size: 24px;">中文测试: 你好，世界！</p>
+                <p style="font-size: 24px;">中文测试: 你好，世���</p>
                 <p style="font-size: 24px;">English Test: Hello, World!</p>
                 <p style="font-size: 24px;">数字测试: 1234567890</p>
             </div>
