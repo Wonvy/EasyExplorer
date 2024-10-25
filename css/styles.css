@@ -498,10 +498,6 @@ button:disabled {
   border: 1px solid #007bff;
   background-color: rgba(0, 123, 255, 0.1);
   pointer-events: none;
-  position: fixed;
-  border: 1px solid #007bff;
-  background-color: rgba(0, 123, 255, 0.1);
-  pointer-events: none;
 }
 
 .toolbar-separator {
@@ -526,13 +522,13 @@ html {
   height: 100%;
 }
 #app #sidebar {
+  position: relative;
   max-width: 40%;
   background-color: #f0f0f0;
   border-right: 1px solid #ddd;
   transition: width 0.3s ease;
   overflow: hidden;
   will-change: width;
-  pointer-events: none;
 }
 #app #sidebar .sidebar-content {
   width: 270px;
@@ -561,10 +557,10 @@ html {
   background: #12bdaf;
 }
 #app #sidebar #settings {
+  position: absolute;
   display: flex;
-  background-color: aqua;
-  height: 50px;
-  bottom: 20px;
+  height: 30px;
+  bottom: 7px;
   left: 20px;
   cursor: pointer;
 }

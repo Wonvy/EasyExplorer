@@ -189,6 +189,7 @@ function getFileIcon(file) {
     });
 }
 
+// 获取未知图标
 function getUnknownIcon(ext, defaultIcon = '.unknown') {
     return customIcons[ext] || customIcons[defaultIcon].replace('XXX', ext.replace(".", ""));
 }
@@ -436,6 +437,7 @@ function addToFavorites(dirPath) {
   }
 }
 
+
 // 显示驱动器
 function showDrives() {
   const drives = [];
@@ -620,9 +622,6 @@ upBtn.addEventListener('click', () => {
 })
 
 
-
-
-
 // 修改 ipcRenderer.on('menu-item-clicked') 事件处理
 ipcRenderer.on('menu-item-clicked', (event, action, path) => {
   switch (action) {
@@ -691,8 +690,6 @@ function pasteFile(targetDir, source) {
         }
     });
 }
-
-
 
 // 添加以下函数来处理左侧面板的展开/折叠
 function toggleSidebarSection(sectionId) {
@@ -792,23 +789,6 @@ function updateQuickAccess() {
   });
 }
 
-// 修改 openQuickAccessItem 函数
-function openQuickAccessItem(filePath) {
-  console.warn('openQuickAccessItem:', filePath);
-  console.log('openQuickAccessItem:', filePath);
-  fs.stat(filePath, (err, stats) => {
-    if (err) {
-      console.error('无法获取文件信息:', err);
-      return;
-    }
-    if (stats.isDirectory()) {
-      updateFileList(filePath, true);
-    } else {
-      shell.openPath(filePath);
-    }
-  });
-}
-
 
 updateFavorites() // 更新收藏夹
 showDrives() // 显示驱动器
@@ -869,9 +849,6 @@ function stopResize() {
     document.body.style.userSelect = '';
 }
 
-
-
-
 // 修改现有的 sidebarToggle 件监听器
 sidebarToggle.addEventListener('click', () => {
     if (sidebar.classList.contains('collapsed')) {
@@ -893,7 +870,6 @@ previewToggle.addEventListener('click', () => {
         previewPanel.style.width = '0';
     }
 });
-
 
 // 在 updateFileList 函件的末加以下代码
 fileListContainer.ondblclick = (e) => {
@@ -1295,9 +1271,6 @@ document.getElementById('sort-date').addEventListener('click', () => handleSortC
 document.getElementById('sort-modified').addEventListener('click', () => handleSortClick('modified'));
 document.getElementById('sort-type').addEventListener('click', () => handleSortClick('type'));
 
-function debug(message) {
-    console.log(`[DEBUG] ${message}`);
-}
 
 // 在文件底部添加
 document.addEventListener('DOMContentLoaded', () => {
@@ -1388,11 +1361,8 @@ ipcRenderer.on('favorite-menu-item-clicked', (event, action, path) => {
 
 
 
-
-
 // 预览面板拖拽
 let isPreviewResizing = false;
-let lastPreviewX = 0;
 
 previewResizer.addEventListener('mousedown', initPreviewResize);
 
@@ -1617,6 +1587,10 @@ statusBar.addEventListener('mousedown', (e) => {
 
 
 
+// ===============================
+// 文件选择框
+// ===============================
+
 let isSelecting = false;
 let selectionBox = null;
 let startX, startY;
@@ -1684,7 +1658,6 @@ function handleMouseDown(e) {
     }
 }
 
-
 // 选择框移动
 function handleMouseMove(e) {
     if (!isSelecting) return;
@@ -1711,6 +1684,10 @@ function selectItemsInBox() {
     });
 }
 
+
+
+
+
 // 排序
 function sortGroupFiles(groupContent, sortType, isAscending) {
     const fileItems = Array.from(groupContent.children);
@@ -1732,12 +1709,21 @@ function sortGroupFiles(groupContent, sortType, isAscending) {
     fileItems.forEach(item => groupContent.appendChild(item));
 }
 
-// 添加设置图标的事件监听器
+
+
+
+
+// ===============================
+// 设置
+// ===============================
+
 const settingsIcon = document.getElementById('settings');
 const settingsMenu = document.getElementById('settings-menu');
 
+console.log(settingsIcon,settingsMenu);
+
 // 当点击设置图标时，切换菜单的隐藏状态
-settingsIcon.addEventListener('click', () => {
+settingsIcon.addEventListener('click', (e) => {
     settingsMenu.classList.toggle('hidden');
 });
 
@@ -1753,8 +1739,12 @@ document.getElementById('open-settings').addEventListener('click', () => {
 });
 
 
-// 全屏窗口
 
+
+
+
+
+// 全屏窗口
 let fullscreen_preview = document.getElementById('fullscreen-preview');
 let review_content_fullscreen = document.getElementById('preview-content-fullscreen');
 let isPreviewOpen = false; // 添加一个变量来跟踪预览状态
@@ -1833,7 +1823,6 @@ document.addEventListener('wheel', (e) => {
         img.style.transform = `scale(${(parseFloat(img.style.transform.replace('scale(', '').replace(')', '')) || 1) * scale})`;
     }
 });
-
 
 
 // 修改 showFullscreenPreview 函数
@@ -1931,22 +1920,6 @@ function showFullscreenPreview(filePath) {
         review_content_fullscreen.innerHTML = `<p>无法预览此文件类型</p>`;
     }
     fullscreen_preview.style.display = 'block';
-}
-
-// 将 buffer 转换为 Base64 格式
-function arrayBufferToBase64(buffer) {
-    let binary = '';
-    const bytes = new Uint8Array(buffer);
-    const len = bytes.byteLength;
-    for (let i = 0; i < len; i++) {
-        binary += String.fromCharCode(bytes[i]);
-    }
-    return window.btoa(binary);
-}
-
-// 将 Buffer 转换为 Base64
-function bufferToBase64(buffer) {
-    return buffer.toString('base64');
 }
 
 
