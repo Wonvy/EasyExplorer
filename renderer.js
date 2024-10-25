@@ -315,10 +315,18 @@ function getFileDetails(dirPath, file) {
                     error: err.code
                 });
             } else {
+                // 使用 birthtime 如果可用，否则使用 mtime
+                const creationTime = stats.birthtime && stats.birthtime.getTime() > 0 
+                    ? stats.birthtime 
+                    : stats.mtime;
+                
                 resolve({
                     name: file.name,
                     isDirectory: stats.isDirectory(),
-                    stats: stats
+                    stats: {
+                        ...stats,
+                        birthtime: creationTime
+                    }
                 });
             }
         });
@@ -670,7 +678,7 @@ ipcRenderer.on('menu-item-clicked', (event, action, path) => {
 });
 
 
-// 复制件
+// 复制
 function copyFile(filePaths) {
     // 判断 filePaths 是否为字符串，如果是则转换为数组
     if (typeof filePaths === 'string') {
@@ -683,7 +691,7 @@ function copyFile(filePaths) {
 }
 
 ipcRenderer.on('copy-progress', (data) => {
-    // 解析进度信息并更新进度条
+    // 解析进度信息��更新进度条
     console.log('复制进度:', data);
     // 更新进度条的逻辑
 });
@@ -807,88 +815,91 @@ function createTimelineItems(fileDetails) {
     const timelineContainer = document.createElement('div');
     timelineContainer.className = 'timeline-container';
 
-    // 按修改日期排序文件
-    fileDetails.sort((a, b) => b.stats.mtime - a.stats.mtime);
+    // 按创建日期排序文件
+    fileDetails.sort((a, b) => b.stats.birthtime - a.stats.birthtime);
 
     let currentYear = null;
     let currentMonth = null;
     const monthNames = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
 
     fileDetails.forEach(file => {
-        const fileDate = new Date(file.stats.mtime);
-        const fileYear = fileDate.getFullYear();
-        const fileMonth = fileDate.getMonth();
+        if (file.stats && file.stats.birthtime) {
+            const fileDate = new Date(file.stats.birthtime);
+            const fileYear = fileDate.getFullYear();
+            const fileMonth = fileDate.getMonth();
 
-        if (fileYear !== currentYear) {
-            currentYear = fileYear;
-            const yearHeader = document.createElement('div');
-            yearHeader.className = 'timeline-year-header';
-            yearHeader.innerHTML = `
-                <span class="year-text">${currentYear}</span>
-                <i class="fas fa-chevron-down"></i>
-            `;
-            yearHeader.addEventListener('click', toggleYearItems);
-            timelineContainer.appendChild(yearHeader);
+            if (fileYear !== currentYear) {
+                currentYear = fileYear;
+                const yearHeader = document.createElement('div');
+                yearHeader.className = 'timeline-year-header';
+                yearHeader.innerHTML = `
+                    <span class="year-text">${currentYear}</span>
+                    <i class="fas fa-chevron-down"></i>
+                `;
+                yearHeader.addEventListener('click', toggleYearItems);
+                timelineContainer.appendChild(yearHeader);
 
-            const yearItems = document.createElement('div');
-            yearItems.className = 'timeline-year-items';
-            timelineContainer.appendChild(yearItems);
+                const yearItems = document.createElement('div');
+                yearItems.className = 'timeline-year-items';
+                timelineContainer.appendChild(yearItems);
 
-            currentMonth = null; // 重置月份，确保新的一年会显示所有月份
-        }
-
-        if (fileMonth !== currentMonth) {
-            currentMonth = fileMonth;
-            const monthHeader = document.createElement('div');
-            monthHeader.className = 'timeline-month-header';
-            monthHeader.innerHTML = `
-                <span class="month-text">${monthNames[currentMonth]}</span>
-                <i class="fas fa-chevron-down"></i>
-            `;
-            monthHeader.addEventListener('click', toggleMonthItems);
-            timelineContainer.lastElementChild.appendChild(monthHeader);
-
-            const monthItems = document.createElement('div');
-            monthItems.className = 'timeline-month-items';
-            timelineContainer.lastElementChild.appendChild(monthItems);
-        }
-
-        const timelineItem = document.createElement('div');
-        timelineItem.className = 'timeline-item';
-        timelineItem.innerHTML = `
-            <div class="timeline-item-content">
-                <span class="file-icon">${file.isDirectory ? folderIcon : getUnknownIcon(path.extname(file.name))}</span>
-                <span class="file-name">${file.name}</span>
-                <span class="file-time">
-                    创建: ${formatDate(file.stats.birthtime)} | 修改: ${formatDate(file.stats.mtime)}
-                </span>
-            </div>
-        `;
-
-        // 添加事件监听器
-        timelineItem.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const filePath = path.join(currentPath, file.name);
-            if (file.isDirectory) {
-                navigateTo(filePath);
-            } else {
-                shell.openPath(filePath);
+                currentMonth = null; // 重置月份，确保新的一年会显示所有月份
             }
-        });
 
-        // 添加鼠标移入事件监听器
-        timelineItem.addEventListener('mouseover', () => {
-            updateStatusBar(path.join(currentPath, file.name));
-            updatePreview(file);
-        });
+            if (fileMonth !== currentMonth) {
+                currentMonth = fileMonth;
+                const monthHeader = document.createElement('div');
+                monthHeader.className = 'timeline-month-header';
+                monthHeader.innerHTML = `
+                    <span class="month-text">${monthNames[currentMonth]}</span>
+                    <i class="fas fa-chevron-down"></i>
+                `;
+                monthHeader.addEventListener('click', toggleMonthItems);
+                timelineContainer.lastElementChild.appendChild(monthHeader);
 
-        // 添加鼠标移出事件监听器
-        timelineItem.addEventListener('mouseout', () => {
-            updateStatusBar(currentPath);
-            updatePreview(null);
-        });
+                const monthItems = document.createElement('div');
+                monthItems.className = 'timeline-month-items';
+                timelineContainer.lastElementChild.appendChild(monthItems);
+            }
 
-        timelineContainer.lastElementChild.lastElementChild.appendChild(timelineItem);
+            const timelineItem = document.createElement('div');
+            timelineItem.className = 'timeline-item';
+            timelineItem.innerHTML = `
+                <div class="timeline-item-content">
+                    <span class="file-icon">${file.isDirectory ? folderIcon : getUnknownIcon(path.extname(file.name))}</span>
+                    <span class="file-name">${file.name}</span>
+                    <div class="file-time">
+                        <span>创建: ${formatDate(file.stats.birthtime)}</span>
+                        <span>修改: ${formatDate(file.stats.mtime)}</span>
+                    </div>
+                </div>
+            `;
+
+            // 添加事件监听器
+            timelineItem.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const filePath = path.join(currentPath, file.name);
+                if (file.isDirectory) {
+                    navigateTo(filePath);
+                } else {
+                    shell.openPath(filePath);
+                }
+            });
+
+            // 添加鼠标移入事件监听器
+            timelineItem.addEventListener('mouseover', () => {
+                updateStatusBar(path.join(currentPath, file.name));
+                updatePreview(file);
+            });
+
+            // 添加鼠标移出事件监听器
+            timelineItem.addEventListener('mouseout', () => {
+                updateStatusBar(currentPath);
+                updatePreview(null);
+            });
+
+            timelineContainer.lastElementChild.lastElementChild.appendChild(timelineItem);
+        }
     });
 
     return timelineContainer;
@@ -1197,7 +1208,7 @@ function getFileDetails(dirPath, file) {
         const filePath = path.join(dirPath, file.name);
         fs.stat(filePath, (err, stats) => {
             if (err) {
-                // console.warn(`无法获文件 ${filePath} 的详细信息: ${err.message}`);
+                console.warn(`无法获取文件 ${filePath} 的详细信息: ${err.message}`);
                 resolve({
                     name: file.name,
                     isDirectory: file.isDirectory(),
@@ -1205,10 +1216,18 @@ function getFileDetails(dirPath, file) {
                     error: err.code
                 });
             } else {
+                // 使用 birthtime 如果可用，否则使用 mtime
+                const creationTime = stats.birthtime && stats.birthtime.getTime() > 0 
+                    ? stats.birthtime 
+                    : stats.mtime;
+                
                 resolve({
                     name: file.name,
                     isDirectory: stats.isDirectory(),
-                    stats: stats
+                    stats: {
+                        ...stats,
+                        birthtime: creationTime
+                    }
                 });
             }
         });
@@ -1603,6 +1622,13 @@ iconViewBtn.addEventListener('click', () => {
 groupViewBtn.addEventListener('click', () => {
     setViewMode('group');
     isGroupView = !isGroupView;
+    updateFileList(currentPath);
+});
+
+// 时间轴视图
+timelineViewBtn.addEventListener('click', () => {
+    setViewMode('timeline');
+    isGroupView = false;
     updateFileList(currentPath);
 });
 
@@ -2031,7 +2057,7 @@ function showFullscreenPreview(filePath) {
             <div style="font-family: '${fontName}'; text-align: center;">
                 <h1 style="font-size: 48px;">${fontName}</h1>
                 <h2 style="font-size: 36px;">Font Preview</h2>
-                <p style="font-size: 24px;">中文测试: 你好，世���</p>
+                <p style="font-size: 24px;">中文测试: 你好，世</p>
                 <p style="font-size: 24px;">English Test: Hello, World!</p>
                 <p style="font-size: 24px;">数字测试: 1234567890</p>
             </div>

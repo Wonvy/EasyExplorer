@@ -483,6 +483,12 @@ html
         color: #6c757d
         text-align: right
         min-width: 300px
+        display: flex
+        flex-direction: column
+        align-items: flex-end
+
+        span
+          white-space: nowrap
 
   .collapsed
     & + .timeline-year-items,
@@ -494,3 +500,27 @@ html
   .timeline-month-header.collapsed
     & > i
       transform: rotate(-90deg)
+
+// 预览栏样式
+#preview-content
+  .preview-file-list
+    list-style-type: none
+    padding: 0
+
+    li
+      display: flex
+      align-items: center
+      margin-bottom: 5px
+
+      .file-icon
+        margin-right: 5px
+        width: 16px
+        height: 16px
+        display: inline-flex
+        align-items: center
+        justify-content: center
+
+        svg
+          width: 100%
+          height: 100%
+
