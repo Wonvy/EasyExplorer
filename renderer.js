@@ -15,6 +15,7 @@ const PSD = require('psd'); // 引入psd.js库
 const clipboardEx = require('electron-clipboard-ex');
 
 
+
 let currentPath = ''
 const pathElement = document.createElement('input')
 pathElement.id = 'path'
@@ -194,6 +195,11 @@ function getUnknownIcon(ext, defaultIcon = '.unknown') {
     return customIcons[ext] || customIcons[defaultIcon].replace('XXX', ext.replace(".", ""));
 }
 
+
+// 在 document.getElementById('open-settings').addEventListener('click', ...) 中修改
+document.getElementById('open-settings').addEventListener('click', () => {
+    ipcRenderer.send('open-settings');
+});
 
 // 在文件顶部添加一个新的变量来跟踪选中的项目
 let selectedItem = null;
@@ -683,7 +689,7 @@ function pasteFile(targetDir, source) {
 
     fs.copyFile(source, destination, (err) => {
         if (err) {
-            console.error('复制文件时出错:', err);
+            console.error('复制件时出错:', err);
         } else {
             console.log(`文件已粘贴到: ${destination}`);
             // updateFileList(targetDir); // 更新文件列表
@@ -1734,14 +1740,8 @@ document.getElementById('theme-toggle').addEventListener('click', () => {
 
 // 打开设置窗口
 document.getElementById('open-settings').addEventListener('click', () => {
-    // 这里可以实现打开设置窗口的逻辑
-    console.log('打开设置窗口');
+    ipcRenderer.send('open-settings');
 });
-
-
-
-
-
 
 
 // 全屏窗口

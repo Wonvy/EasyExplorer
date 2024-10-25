@@ -1,0 +1,52 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f0f0f0;
+}
+
+#settings-container {
+    display: flex;
+    height: 100vh;
+}
+
+#settings-sidebar {
+    width: 200px;
+    background-color: #333;
+    color: #fff;
+    padding: 20px 0;
+}
+
+#settings-sidebar ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+#settings-sidebar li {
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#settings-sidebar li:hover {
+    background-color: #444;
+}
+
+#settings-sidebar li.active {
+    background-color: #555;
+}
+
+#settings-content {
+    flex-grow: 1;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}

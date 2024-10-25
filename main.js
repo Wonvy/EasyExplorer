@@ -5,6 +5,7 @@ const { exec } = require('child_process');
 
 let mainWindow;
 let devToolsWindow;
+let settingsWindow = null;
 
 // 创建主窗口
 function createWindow () {
@@ -127,6 +128,36 @@ function createWindow () {
 
     const menu = Menu.buildFromTemplate(template);
     menu.popup(BrowserWindow.fromWebContents(event.sender));
+  });
+
+  // 在文件顶部添加
+  function createSettingsWindow() {
+    if (settingsWindow) {
+      settingsWindow.focus();
+      return;
+    }
+
+    settingsWindow = new BrowserWindow({
+      width: 800,
+      height: 600,
+      parent: mainWindow,
+      modal: true,
+      webPreferences: {
+        nodeIntegration: true,
+        contextIsolation: false
+      }
+    });
+
+    settingsWindow.loadFile('settings.html');
+
+    settingsWindow.on('closed', () => {
+      settingsWindow = null;
+    });
+  }
+
+  // 在 ipcMain.on('show-context-menu', ...) 之前添加以下监听器
+  ipcMain.on('open-settings', () => {
+    createSettingsWindow();
   });
 }
 
