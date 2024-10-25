@@ -59,20 +59,12 @@ fs.readFile(path.join(__dirname, 'icons.json'), 'utf8', (err, data) => {
 
 
 const favoriteIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" ><path d="M23.9986 5L17.8856 17.4776L4 19.4911L14.0589 29.3251L11.6544 43L23.9986 36.4192L36.3454 43L33.9586 29.3251L44 19.4911L30.1913 17.4776L23.9986 5Z" fill="#333" stroke="#333" stroke-width="4" stroke-linejoin="round"/></svg>`
-const driveIconsvg1 = `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M44 29H4V42H44V29Z" fill="#333" stroke="#333" stroke-width="4" stroke-linejoin="round"/><path d="M4 28.9998L9.03837 4.99902H39.0205L44 28.9998" stroke="#333" stroke-width="4" stroke-linejoin="round"/><path d="M19 12C16.2386 12 14 14.2386 14 17C14 19.7614 16.2386 22 19 22" stroke="#333" stroke-width="4" stroke-linecap="round"/><path d="M29 22C31.7614 22 34 19.7614 34 17C34 14.2386 31.7614 12 29 12" stroke="#333" stroke-width="4" stroke-linecap="round"/><path d="M20 17H28" stroke="#333" stroke-width="4" stroke-linecap="round"/></svg>`
 const driveIcon = `<img src="./assets/icons/driveIcon.png" />`
-const folderIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#f1c40f"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 1.99 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`
-const fileIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#3498db"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2h16c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`
-const backIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#ffffff"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>`
-const forwardIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#ffffff"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>`
-const upIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#ffffff"><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></svg>`
+const folderIcon = `<?xml version='1.0' encoding='utf-8'?><svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 70 61.3' style='enable-background:new 0 0 70 61.3;'>    <title>图标示例</title>    <path fill='#FFC446' d='M63.4,8.7H40.2c-0.1,0-0.3,0-0.4-0.1c-0.1,0-0.3-0.1-0.4-0.2l-6.7-6.8c-0.5-0.5-1.1-0.9-1.7-1.2        C30.2,0.2,29.5,0,28.8,0H6.6C2.9,0,0,2.9,0,6.6v48.1c0,3.6,2.9,6.5,6.6,6.6h56.9c3.6,0,6.6-2.9,6.6-6.6V15.3        C70,11.7,67.1,8.8,63.4,8.7z'/>    <text x='35' y='37' fill='#EFA348' font-family='Arial-BoldMT' font-size='31.504' text-anchor='middle' dominant-baseline='middle'></text></svg>`
 
 
 let isGroupView = false; // 是否为分组视图
-
-// 修改视图模相关的变量和函数
-let currentViewMode = localStorage.getItem('viewMode') || 'list';
-
+let currentViewMode = localStorage.getItem('viewMode') || 'list'; // 修改视图模相关的变量和函数
 
 // 修改视图模式
 function setViewMode(mode) {
@@ -115,6 +107,7 @@ pathElement.addEventListener('keydown', (e) => {
 function getFileIcon(file) {
     return new Promise((resolve) => {
         const isDir = typeof file.isDirectory === 'function' ? file.isDirectory() : file.isDirectory;
+        // 如果是文件夹，则返回文件夹图标
         if (isDir) {
             resolve(folderIcon);
             return;
@@ -168,7 +161,7 @@ function getFileIcon(file) {
             const filePath = path.join(currentPath, file.name);
             resolve(`
                 <video class="file-icon" src="${filePath}" controls>
-                    您的浏览器不支持 video 标签。
+                    您的浏览器不支��� video 标签。
                 </video>
             `);
         } else if (ext === '.svg') {
@@ -1060,7 +1053,6 @@ function updateFileList(dirPath, isQuickAccess = false) {
                         const fileItem = createFileItem(file, dirPath);
                         fileListElement.appendChild(fileItem);
                     });
-
                 }
 
             })
@@ -1163,6 +1155,7 @@ function createFileItem(file, dirPath) {
     name.textContent = file.name;
 
     // 获取文件图标
+    console.log('file', file);
     getFileIcon(file).then(iconHtml => {
         icon.innerHTML = iconHtml;
     }).catch(error => {
@@ -1240,9 +1233,24 @@ function createFileItem(file, dirPath) {
             fileItem.addEventListener('mouseover', () => {
                 updateStatusBar(path.join(dirPath, file.name));
                 updatePreview(file);
+                if (file.isDirectory) {
+                    const folderPath = path.join(dirPath, file.name); // 构建文件夹的完整路径
+                    // 获取文件夹中的文件/文件夹数量
+                    fs.readdir(folderPath, (err, items) => {
+                        if (err) {
+                            console.warn(`无法读取文件夹内容: ${folderPath}`, err);
+                            return;
+                        }
+                        const folderCount = items.length; // 计算数量
+                        // 替换SVG图标中的文本
+                        const updatedFolderIcon = folderIcon.replace(/(<text[^>]*>)(.*?)(<\/text>)/, `$1${folderCount}$3`);
+                        icon.innerHTML = updatedFolderIcon; // 更新图标
+                    });
+                }
             });
 
             fileItem.addEventListener('mouseout', () => {
+                icon.innerHTML = folderIcon; // 还原默认文件夹图标
                 updateStatusBar(currentPath);
                 updatePreview(null);
             });
