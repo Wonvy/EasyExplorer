@@ -1214,7 +1214,7 @@ function createFileItem(file, dirPath) {
                 updateStatusBar(path.join(dirPath, file.name));
                 updatePreview(file);
                 if (file.isDirectory) {
-                    const folderPath = path.join(dirPath, file.name); // 构建文件夹的完整路径
+                    const folderPath = path.join(dirPath, file.name); // 构建文件夹���完整路径
                     // 获取文件夹中的文件/文件夹数量
                     fs.readdir(folderPath, (err, items) => {
                         if (err) {
@@ -1730,17 +1730,20 @@ settingsIcon.addEventListener('click', (e) => {
 });
 
 // 主题切换功能
-document.getElementById('theme-toggle').addEventListener('click', () => {
+const themeToggleButton = document.getElementById('theme-toggle');
+
+function updateThemeButtonText() {
+    const isDarkTheme = document.body.classList.contains('dark-theme');
+    themeToggleButton.textContent = isDarkTheme ? '亮色主题' : '暗色主题';
+}
+
+themeToggleButton.addEventListener('click', () => {
     console.log('切换主题按钮被点击');
     document.body.classList.toggle('dark-theme');
     const isDarkTheme = document.body.classList.contains('dark-theme');
     localStorage.setItem('theme', isDarkTheme ? 'dark' : 'light');
     console.log('当前主题：', isDarkTheme ? 'dark' : 'light');
-});
-
-// 打开设置窗口
-document.getElementById('open-settings').addEventListener('click', () => {
-    ipcRenderer.send('open-settings');
+    updateThemeButtonText();
 });
 
 // 在页面加载时应用保存的主题
@@ -1752,6 +1755,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         document.body.classList.remove('dark-theme');
     }
+    updateThemeButtonText();
 });
 
 

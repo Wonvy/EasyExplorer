@@ -2,69 +2,17 @@
 @use 'base/_reset'
 @use '_view'
 @use 'components/_resizer'
+@use '_theme'
 
+// 应用亮色主题
+body
+  @include theme.light-theme
 
-
-// 暗色主题样式
+// 应用暗色主题
 .dark-theme 
-  background-color: #121212
-  color: #ffffff
+  @include theme.dark-theme
 
-  #sidebar 
-    background-color: #1e1e1e
-
-  #main 
-    background-color: #2e2e2e
-
-  #status-bar
-    background-color: #1e1e1e
-    color: #ffffff
-
-  .file-item:hover
-    background-color: #333333
-
-  .file-item.selected
-    background-color: #444444
-    outline: 1px solid #555555
-
-  .sidebar-section-header:hover
-    background-color: #333333
-
-  .sidebar-section-content
-    background-color: #1e1e1e
-
-  #toolbar
-    background-color: #1e1e1e
-    border-bottom-color: #333333
-
-    button
-      color: #ffffff
-      &:hover
-        background-color: #333333
-
-  #path
-    background-color: #2e2e2e
-    color: #ffffff
-    border-color: #444444
-
-  #file-list-container
-    background-color: #2e2e2e
-
-  ::-webkit-scrollbar-track
-    background: #1e1e1e
-
-  ::-webkit-scrollbar-thumb
-    background: #444444
-    &:hover
-      background: #555555
-
-  #preview-panel
-    background-color: #1e1e1e
-    border-left-color: #333333
-
-  #fullscreen-preview
-    background-color: rgba(0, 0, 0, 0.95)
-
+// 通用样式
 .fas
   font-family: 'Font Awesome 5 Free'
   font-weight: 900
@@ -73,23 +21,17 @@
   display: inline-block
   text-align: center
 
-
 #sort-options,
 #view-options
   display: flex
-
 
 #sort-options button,
 #view-options button
   margin-right: 5px
 
-
-
 #resizer:hover::after,
 #resizer.resizing::after
   opacity: 1
-
-
 
 /* 加右侧小图标的样式 */
 .file-actions
@@ -114,15 +56,9 @@
   height: 100%
   object-fit: contain
 
-// ::selection
-//   background: transparent
-//   color: inherit
-
-
 ::-moz-selection
   background: transparent
   color: inherit
-
 
 .selection-box
   position: fixed
@@ -136,8 +72,6 @@
   background-color: #ddd
   margin: 0 10px
 
-
-
 body,
 html
   margin: 0
@@ -146,17 +80,14 @@ html
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif
   background-color: #f0f0f0
 
-
 #app
   display: flex
   overflow: hidden
   height: 100%
 
   #sidebar
-    // min-width: 100px
     position: relative
-    max-width:40%
-    background-color: #f0f0f0
+    max-width: 40%
     border-right: 1px solid #ddd
     transition: width 0.3s ease
     overflow: hidden
@@ -173,16 +104,15 @@ html
       &>*
         direction: ltr
       &::-webkit-scrollbar
-        width: 5px // 设置滚动条的宽度
+        width: 5px
       &::-webkit-scrollbar-track
-        background: #ffffff // 滚动条轨道的背景颜色
-        border-radius: 10px // 轨道的圆角
+        background: #ffffff
+        border-radius: 10px
       &::-webkit-scrollbar-thumb
-        background: #868686 // 滚动条的颜色
-        border-radius: 10px // 滚动条的圆角
+        background: #868686
+        border-radius: 10px
         &:hover
-          background: #12bdaf // 鼠标悬停时的颜色
-
+          background: #12bdaf
 
     #settings
       position: absolute
@@ -196,7 +126,6 @@ html
         width: 500px
         position: absolute
         bottom: 40px
-        background-color: white
         border: 1px solid #ddd
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1)
         z-index: 1000
@@ -213,7 +142,6 @@ html
         &.hidden
           display: none
             
-   
     .sidebar-section-header
       cursor: pointer
       display: flex
@@ -226,20 +154,14 @@ html
     .sidebar-section-content
       padding-left: 15px
 
-
     &.collapsed 
       width: 0
-
-
-
-
-
 
   #main
     flex: 1
     display: flex
     flex-direction: column
-    background-color: white
+    // background-color: white
     height: 100%
     min-width: 200px
 
@@ -265,16 +187,12 @@ html
               background-color: #007bff
               color: #fff
 
-
-
     #path
       width: 100%
       padding: 5px
       margin-bottom: 10px
       border: 1px solid #ddd
       border-radius: 3px
-
-
 
 .sidebar-section
   margin-bottom: 20px
@@ -283,7 +201,6 @@ html
     margin-bottom: 10px
     color: #2c3e50
     font-size: 14px
-
 
 #status-bar
   display: flex
@@ -300,8 +217,6 @@ html
   height: 20px
   cursor: ns-resize
 
-
-
 .file-item,
 .favorite-item,
 .quick-access-item,
@@ -314,8 +229,6 @@ html
 
   &:hover
     background-color: #e5f3ff
-
-
 
 .file-icon
   width: 24px
@@ -333,8 +246,6 @@ html
   i
     font-size: 24px
 
-
-
 .status-item 
   flex: 1
   white-space: nowrap
@@ -342,7 +253,6 @@ html
   text-overflow: ellipsis
   &:first-child
     margin-right: 10px
-
 
 #file-list
   padding: 10px
@@ -360,38 +270,12 @@ html
   background: #f1f1f1
   border-radius: 10px
 
-
 ::-webkit-scrollbar-thumb
   background: #c1c1c1
   border-radius: 10px
   transition: background-color 0.3s ease
   &:hover
     background: #a1a1a1
-
-
-// #sidebar,
-// #file-list-container,
-// .file-list-details,
-// .file-list-thumbnails,
-// .file-list-large-icons
-//   scrollbar-width: thin
-//   scrollbar-color: #c1c1c1 #f1f1f1
-
-
-// #sidebar:hover,
-// #file-list-container:hover,
-// .file-list-details:hover,
-// .file-list-thumbnails:hover,
-// .file-list-large-icons:hover
-//   scrollbar-color: #a1a1a1 #f1f1f1
-
-
-
-
-  
-
-
-
 
 // 针对列表视图的特殊样式 
 .file-item
@@ -405,7 +289,6 @@ html
 
   &:hover
     background-color: #f0f0f0
-    background-color: #f0f0f0
 
     .file-preview
       display: inline-flex
@@ -418,24 +301,15 @@ html
   &.selected
     background-color: #e5f3ff
     outline: 1px solid #99d1ff
-    background-color: #e5f3ff
-    background-color: transparent
-    outline: 1px solid #99d1ff
-    background-color: #e5f3ff
-    outline: 1px solid #99d1ff
 
     &:hover
       background-color: #d0e8ff
-      background-color: #f0f0f0
 
     .file-name
       font-weight: bold
       color: #0066cc
     
-
   &.error
-    opacity: 0.5
-    cursor: not-allowed
     opacity: 0.5
     cursor: not-allowed
 
@@ -452,15 +326,10 @@ html
     top: 50%
     transform: translateY(-50%)
 
-
 .file-name
   flex-grow: 1
   display: flex
   align-items: center
-
-
-
-
 
 .quick-access-item
   display: flex
@@ -470,14 +339,11 @@ html
   cursor: pointer
   flex-direction: row
 
-
 .quick-access-name
   flex-grow: 1
 
-
 .quick-access-preview
   padding: 0 5px
-
 
 #quick-preview
   position: fixed
