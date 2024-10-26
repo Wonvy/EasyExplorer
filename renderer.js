@@ -307,7 +307,7 @@ sidebar.addEventListener('contextmenu', (e) => {
     }
 });
 
-// 收藏夹���键菜单
+// 收藏夹右键菜单
 ipcRenderer.on('favorite-menu-item-clicked', (event, action, path) => {
     switch (action) {
         case 'remove-from-favorites':
@@ -369,6 +369,7 @@ ipcRenderer.on('menu-item-clicked', (event, action, path) => {
 // #endregion
 
 // #region 文件-视图-时间轴
+
 // 创建时间轴项目
 function createTimelineItems(fileDetails) {
     const timelineContainer = document.createElement('div');
@@ -827,16 +828,21 @@ function updateFileList(dirPath, isQuickAccess = false) {
         }
 
         // 取文件详细信息并排序
-        Promise.all(files.map(file => getFileDetails(dirPath, file)))
+        Promise.all(files.map(file => getFileDetails(dirPath, file).catch(err => {
+            console.error(`获取文件 ${file.name} 的详情时出错: ${err}`);
+            return null; // 如果获取详情失败，返回null以跳过该文件
+        })))
             .then(fileDetails => {
-                sortFiles(fileDetails);
+                // 过滤掉获取详情失败的文件
+                const validFileDetails = fileDetails.filter(detail => detail !== null);//过滤
+                sortFiles(validFileDetails);//排序
                 fileListElement.innerHTML = '';
 
                 if (currentViewMode === 'timeline') {
-                    const timelineItems = createTimelineItems(fileDetails);
+                    const timelineItems = createTimelineItems(validFileDetails);
                     fileListElement.appendChild(timelineItems);
                 } else if (currentViewMode === 'group') {
-                    const groupedFiles = groupFilesByType(fileDetails);
+                    const groupedFiles = groupFilesByType(validFileDetails) || {};
                     Object.entries(groupedFiles).forEach(([groupName, groupFiles]) => {
                         const groupElement = document.createElement('div');
                         groupElement.className = 'file-list-group';
@@ -883,7 +889,7 @@ function updateFileList(dirPath, isQuickAccess = false) {
                         fileListElement.appendChild(groupElement);
                     });
                 } else {
-                    fileDetails.forEach(file => {
+                    validFileDetails.forEach(file => {
                         const fileItem = createFileItem(file, dirPath);
                         fileListElement.appendChild(fileItem);
                     });
@@ -891,7 +897,7 @@ function updateFileList(dirPath, isQuickAccess = false) {
             })
             .catch(error => {
                 console.error('获取文件详情时出错:', error);
-                fileListElement.innerHTML = `<div class="error-message">获取文件详情时出错: ${error.message}</div>`;
+                // fileListElement.innerHTML = `<div class="error-message">获取文件详情时出错: ${error.message}</div>`;
             });
     });
 
