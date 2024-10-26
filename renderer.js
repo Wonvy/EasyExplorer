@@ -1,3 +1,4 @@
+// #region 库
 const fs = require('fs')
 const path = require('path')
 const { shell, ipcRenderer, clipboard } = require('electron')
@@ -13,17 +14,12 @@ const fsExtra = require('fs-extra'); // 引入 fs-extra
 const hljs = require('highlight.js'); // 引入 highlight.js
 const PSD = require('psd'); // 引入psd.js库
 const clipboardEx = require('electron-clipboard-ex');
+// #endregion
 
+// #region Dom元素
 
-let currentPath = ''
 const pathElement = document.createElement('input')
-pathElement.id = 'path'
-pathElement.type = 'text'
-document.querySelector('#main').insertBefore(pathElement, document.querySelector('#path-container'))
 const fileListElement = document.getElementById('file-list')
-if (!fileListElement) {
-    console.error('无法找到 file-list 元素');
-}
 const backBtn = document.getElementById('back-btn')
 const forwardBtn = document.getElementById('forward-btn')
 const upBtn = document.getElementById('up-btn')
@@ -31,35 +27,45 @@ const favoritesElement = document.getElementById('favorites')
 const drivesElement = document.getElementById('drives')
 const quickAccessElement = document.getElementById('quick-access')
 const statusBarElement = document.getElementById('status-bar')
-
 const listViewBtn = document.getElementById('list-view-btn')
 const iconViewBtn = document.getElementById('icon-view-btn')
 const groupViewBtn = document.getElementById('group-view-btn');
 const timelineViewBtn = document.getElementById('timeline-view-btn');
-
 const fileListContainer = document.getElementById('file-list-container')
-
 const previewPanel = document.getElementById('preview-panel')
 const previewToggle = document.getElementById('preview-toggle')
 const previewResizer = document.getElementById('preview-resizer')
 const previewContent = document.getElementById('preview-content')
+const sidebarToggle = document.getElementById('sidebar-toggle');
+const sidebar = document.getElementById('sidebar');
+const main = document.getElementById('main');
 
+// #endregion
+
+// #region 变量
+
+let currentPath = ''
+pathElement.id = 'path'
+pathElement.type = 'text'
+let isResizing = false;
+let lastX = 0;
 let history = []
 let currentHistoryIndex = -1
 let favorites = JSON.parse(localStorage.getItem('favorites')) || []
 let selectedItem = null; // 选中项
 
-// 在文件末尾添加以下代码
-const sidebarToggle = document.getElementById('sidebar-toggle');
-const sidebar = document.getElementById('sidebar');
-const main = document.getElementById('main');
-let isResizing = false;
-let lastX = 0;
+let customIcons = {};
+const favoriteIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" ><path d="M23.9986 5L17.8856 17.4776L4 19.4911L14.0589 29.3251L11.6544 43L23.9986 36.4192L36.3454 43L33.9586 29.3251L44 19.4911L30.1913 17.4776L23.9986 5Z" fill="#333" stroke="#333" stroke-width="4" stroke-linejoin="round"/></svg>`
+const driveIcon = `<img src="./assets/icons/driveIcon.png" />`
+const folderIcon = `<?xml version='1.0' encoding='utf-8'?><svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 70 61.3' style='enable-background:new 0 0 70 61.3;'>    <title>图标示例</title>    <path fill='#FFC446' d='M63.4,8.7H40.2c-0.1,0-0.3,0-0.4-0.1c-0.1,0-0.3-0.1-0.4-0.2l-6.7-6.8c-0.5-0.5-1.1-0.9-1.7-1.2        C30.2,0.2,29.5,0,28.8,0H6.6C2.9,0,0,2.9,0,6.6v48.1c0,3.6,2.9,6.5,6.6,6.6h56.9c3.6,0,6.6-2.9,6.6-6.6V15.3        C70,11.7,67.1,8.8,63.4,8.7z'/>    <text x='35' y='37' fill='#EFA348' font-family='Arial-BoldMT' font-size='31.504' text-anchor='middle' dominant-baseline='middle'></text></svg>`
 
 
+// #endregion
+
+// #region 启动预处理
+document.querySelector('#main').insertBefore(pathElement, document.querySelector('#path-container'))
 
 // 加载自定义图标
-let customIcons = {};
 fs.readFile(path.join(__dirname, 'icons.json'), 'utf8', (err, data) => {
     if (err) {
         console.error('无法加载图标文件:', err);
@@ -68,50 +74,8 @@ fs.readFile(path.join(__dirname, 'icons.json'), 'utf8', (err, data) => {
     customIcons = JSON.parse(data);
 });
 
-
-const favoriteIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" ><path d="M23.9986 5L17.8856 17.4776L4 19.4911L14.0589 29.3251L11.6544 43L23.9986 36.4192L36.3454 43L33.9586 29.3251L44 19.4911L30.1913 17.4776L23.9986 5Z" fill="#333" stroke="#333" stroke-width="4" stroke-linejoin="round"/></svg>`
-const driveIcon = `<img src="./assets/icons/driveIcon.png" />`
-const folderIcon = `<?xml version='1.0' encoding='utf-8'?><svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 70 61.3' style='enable-background:new 0 0 70 61.3;'>    <title>图标示例</title>    <path fill='#FFC446' d='M63.4,8.7H40.2c-0.1,0-0.3,0-0.4-0.1c-0.1,0-0.3-0.1-0.4-0.2l-6.7-6.8c-0.5-0.5-1.1-0.9-1.7-1.2        C30.2,0.2,29.5,0,28.8,0H6.6C2.9,0,0,2.9,0,6.6v48.1c0,3.6,2.9,6.5,6.6,6.6h56.9c3.6,0,6.6-2.9,6.6-6.6V15.3        C70,11.7,67.1,8.8,63.4,8.7z'/>    <text x='35' y='37' fill='#EFA348' font-family='Arial-BoldMT' font-size='31.504' text-anchor='middle' dominant-baseline='middle'></text></svg>`
-
+// 视图模式
 let currentViewMode = localStorage.getItem('viewMode') || 'list'; // 修改视图模相关的变量和函数
-
-
-// 添加函数来显示文件夹预览
-function showFolderPreview(folderPath, previewElement) {
-    fs.readdir(folderPath, (err, files) => {
-        if (err) {
-            console.error('无法取目:', err)
-            return
-        }
-
-        const previewItems = files.slice(0, 5)
-        previewElement.innerHTML = previewItems.map(item => {
-            const itemPath = path.join(folderPath, item).replace(/\\/g, '\\\\')
-            return `<span class="preview-item" data-path="${itemPath}">${item}</span>`
-        }).join('')
-
-        // 为预览项添加点击事件
-        previewElement.querySelectorAll('.preview-item').forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.stopPropagation() // 阻止事件冒泡
-                e.preventDefault() // 阻止默认行为
-                const itemPath = e.target.getAttribute('data-path').replace(/\\\\/g, '\\')
-                fs.stat(itemPath, (err, stats) => {
-                    if (err) {
-                        console.error('无法获取文件信息:', err)
-                        return
-                    }
-                    if (stats.isDirectory()) {
-                        navigateTo(itemPath)
-                    } else {
-                        shell.openPath(itemPath)
-                    }
-                })
-            })
-        })
-    })
-}
-
 
 
 // 初始化
@@ -162,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateQuickAccess(); // 更新快速访问
 });
 
-
+// #endregion
 
 // #region 通用函数-文件
 
@@ -1641,6 +1605,41 @@ let fullscreen_preview = document.getElementById('fullscreen-preview');
 let review_content_fullscreen = document.getElementById('preview-content-fullscreen');
 let isPreviewOpen = false; // 添加一个变量来跟踪预览状态
 
+// 添加函数来显示文件夹预览
+function showFolderPreview(folderPath, previewElement) {
+    fs.readdir(folderPath, (err, files) => {
+        if (err) {
+            console.error('无法取目:', err)
+            return
+        }
+
+        const previewItems = files.slice(0, 5)
+        previewElement.innerHTML = previewItems.map(item => {
+            const itemPath = path.join(folderPath, item).replace(/\\/g, '\\\\')
+            return `<span class="preview-item" data-path="${itemPath}">${item}</span>`
+        }).join('')
+
+        // 为预览项添加点击事件
+        previewElement.querySelectorAll('.preview-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation() // 阻止事件冒泡
+                e.preventDefault() // 阻止默认行为
+                const itemPath = e.target.getAttribute('data-path').replace(/\\\\/g, '\\')
+                fs.stat(itemPath, (err, stats) => {
+                    if (err) {
+                        console.error('无法获取文件信息:', err)
+                        return
+                    }
+                    if (stats.isDirectory()) {
+                        navigateTo(itemPath)
+                    } else {
+                        shell.openPath(itemPath)
+                    }
+                })
+            })
+        })
+    })
+}
 
 // 处理空格键和ESC键事件
 document.addEventListener('keydown', (e) => {
