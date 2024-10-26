@@ -556,6 +556,7 @@ html
     position: relative
     margin-top: 6px
     margin-bottom: 6px
+    user-select: none
 
     &::before
       content: ""
@@ -570,16 +571,12 @@ html
       transform: translateY(-50%)
 
     .timeline-item-content
-      padding: 0 10px
-      border-radius: 5px
+      padding: 3px 10px
+      border-radius: 3px
       display: flex
       align-items: center
       cursor: pointer
       transition: background-color 0.2s
-      height: 16px
-
-      &:hover
-        background-color: #f0f0f0
 
       .file-time
         position: absolute
@@ -602,3 +599,12 @@ html
         white-space: nowrap
         overflow: hidden
         text-overflow: ellipsis
+        &:hover
+          text-decoration: underline
+
+      .file-parent-dir
+        color: #6c757d
+        &:hover
+          color: #FFC446
+          text-decoration: underline
+

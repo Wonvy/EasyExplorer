@@ -1275,6 +1275,7 @@ html {
   position: relative;
   margin-top: 6px;
   margin-bottom: 6px;
+  user-select: none;
 }
 #recent-tab .timeline-item::before {
   content: "";
@@ -1289,16 +1290,12 @@ html {
   transform: translateY(-50%);
 }
 #recent-tab .timeline-item .timeline-item-content {
-  padding: 0 10px;
-  border-radius: 5px;
+  padding: 3px 10px;
+  border-radius: 3px;
   display: flex;
   align-items: center;
   cursor: pointer;
   transition: background-color 0.2s;
-  height: 16px;
-}
-#recent-tab .timeline-item .timeline-item-content:hover {
-  background-color: #f0f0f0;
 }
 #recent-tab .timeline-item .timeline-item-content .file-time {
   position: absolute;
@@ -1321,6 +1318,16 @@ html {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+#recent-tab .timeline-item .timeline-item-content .file-name:hover {
+  text-decoration: underline;
+}
+#recent-tab .timeline-item .timeline-item-content .file-parent-dir {
+  color: #6c757d;
+}
+#recent-tab .timeline-item .timeline-item-content .file-parent-dir:hover {
+  color: #FFC446;
+  text-decoration: underline;
 }
 
 /*# sourceMappingURL=styles.css.map */

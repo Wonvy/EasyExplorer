@@ -217,16 +217,16 @@ function updateRecentTab() {
                         if (Buffer.isBuffer(targetPath)) {
                             targetPath = iconv.decode(targetPath, 'gbk');
                         }
-                        const parentDir = path.dirname(targetPath);
-                        fs.stat(parentDir, (err, stats) => {
+                        fs.stat(targetPath, (err, stats) => {
                             if (err) {
                                 resolve(null);
                             } else {
                                 resolve({ 
-                                    path: parentDir, 
-                                    name: path.basename(parentDir),
-                                    isDirectory: true,
-                                    mtime: stats.mtime
+                                    path: targetPath, 
+                                    name: path.basename(targetPath),
+                                    parentDir: path.dirname(targetPath),
+                                    isDirectory: stats.isDirectory(),
+                                    atime: stats.atime // 使用访问时间而不是修改时间
                                 });
                             }
                         });
@@ -234,19 +234,19 @@ function updateRecentTab() {
                 });
             })))
             .then(recentItems => {
-                recentItems = recentItems.filter(item => item !== null);
+                recentItems = recentItems.filter(item => item !== null && !item.isDirectory);
                 
                 // 去除重复项，只保留最近的一条
                 const uniqueItems = {};
                 recentItems.forEach(item => {
-                    if (!uniqueItems[item.path] || item.mtime > uniqueItems[item.path].mtime) {
+                    if (!uniqueItems[item.path] || item.atime > uniqueItems[item.path].atime) {
                         uniqueItems[item.path] = item;
                     }
                 });
                 recentItems = Object.values(uniqueItems);
 
-                // 按修改时间排序，最新的排在前面
-                recentItems.sort((a, b) => b.mtime - a.mtime);
+                // 按访问时间排序，最新的排在前面
+                recentItems.sort((a, b) => b.atime - a.atime);
 
                 const timelineContainer = document.createElement('div');
                 timelineContainer.className = 'timeline-container';
@@ -254,14 +254,14 @@ function updateRecentTab() {
                 let currentDate = null;
 
                 recentItems.forEach(item => {
-                    const itemDate = item.mtime.toDateString();
+                    const itemDate = item.atime.toDateString();
                     
                     if (itemDate !== currentDate) {
                         currentDate = itemDate;
                         const dateHeader = document.createElement('div');
                         dateHeader.className = 'timeline-date-header';
                         dateHeader.innerHTML = `
-                            <span class="date-text">${item.mtime.toISOString().split('T')[0]}</span>
+                            <span class="date-text">${item.atime.toISOString().split('T')[0]}</span>
                             <i class="fas fa-chevron-down"></i>
                         `;
                         dateHeader.addEventListener('click', toggleDateItems);
@@ -276,14 +276,24 @@ function updateRecentTab() {
                     timelineItem.className = 'timeline-item';
                     timelineItem.innerHTML = `
                         <div class="timeline-item-content">
-                            <span class="file-time">${formatTime(item.mtime)}</span>
-                            <span class="file-icon">${folderIcon}</span>
-                            <span class="file-name">${item.name}</span>
+                            <span class="file-time">${formatTime(item.atime)}</span>
+                            <span class="file-icon">${getUnknownIcon(path.extname(item.name))}</span>
+                            <span class="file-name" title="${item.name}">${item.name}</span>
+                            <span class="file-parent-dir" title="${item.parentDir}">${path.basename(item.parentDir)}</span>
                         </div>
                     `;
 
-                    timelineItem.addEventListener('click', () => {
-                        navigateTo(item.path);
+                    const fileName = timelineItem.querySelector('.file-name');
+                    const parentDir = timelineItem.querySelector('.file-parent-dir');
+
+                    fileName.addEventListener('dblclick', (e) => {
+                        e.stopPropagation();
+                        shell.openPath(item.path);
+                    });
+
+                    parentDir.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        navigateTo(item.parentDir);
                     });
 
                     timelineContainer.lastElementChild.appendChild(timelineItem);
@@ -1808,7 +1818,7 @@ function showFolderPreview(folderPath, previewElement) {
         // 为预览项添加点击事件
         previewElement.querySelectorAll('.preview-item').forEach(item => {
             item.addEventListener('click', (e) => {
-                e.stopPropagation() // 阻止事件冒泡
+                e.stopPropagation() // 阻止事件���
                 e.preventDefault() // 阻止默认行为
                 const itemPath = e.target.getAttribute('data-path').replace(/\\\\/g, '\\')
                 fs.stat(itemPath, (err, stats) => {
@@ -1970,7 +1980,7 @@ function showFullscreenPreview(filePath) {
         });
     } else if (fileExt === '.psd') {
         // 处理PSD文件
-        console.log(`尝试打开PSD文件: ${filePath}`); // 添加调试信��
+        console.log(`尝试打开PSD��件: ${filePath}`); // 添加调试信
 
         // 将 PSD 转换为 PNG 并保存到临时目录，然后读取并转换为 Base64
         PSD.open(filePath).then(function (psdData) {
