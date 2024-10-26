@@ -289,6 +289,7 @@ function updateRecentTab() {
                     fileName.addEventListener('dblclick', (e) => {
                         e.stopPropagation();
                         shell.openPath(item.path);
+                        debouncedUpdateRecentTab();
                     });
 
                     parentDir.addEventListener('click', (e) => {
@@ -1170,13 +1171,13 @@ function createFileItem(file, dirPath) {
 
         // 双击打开文件
         fileItem.addEventListener('dblclick', (e) => {
-            console.log('dblclick');
             e.stopPropagation();
             const filePath = path.join(dirPath, file.name);
             if (typeof file.isDirectory === 'function' ? file.isDirectory() : file.isDirectory) {
                 navigateTo(filePath);
             } else {
                 shell.openPath(filePath);
+                debouncedUpdateRecentTab();
             }
         });
 
@@ -2125,6 +2126,7 @@ pathElement.addEventListener('keydown', (e) => {
 // #endregion
 
 // #region 左栏-驱动器
+
 // 显示驱动器
 function showDrives() {
     const drives = [];
@@ -2185,3 +2187,23 @@ updateFavorites() // 更新收藏夹
 showDrives() // 显示驱动器
 updateQuickAccess() // 新快速访问
 // #endregion
+
+
+
+
+
+// 防抖函数
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// 创建一个防抖版本的 updateRecentTab 函数
+const debouncedUpdateRecentTab = debounce(updateRecentTab, 1000); // 1秒延迟
