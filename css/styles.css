@@ -35,7 +35,7 @@ button:disabled {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.9);
+  background-color: rgba(0, 0, 0, 0.95);
   color: white;
   z-index: 1000;
   overflow: auto;
@@ -46,7 +46,7 @@ button:disabled {
 #fullscreen-preview #preview-content-fullscreen {
   height: 100%;
 }
-#fullscreen-preview #preview-content-fullscreen .preview-content {
+#fullscreen-preview .preview-content {
   max-width: 100%;
   height: 100%;
   margin: auto;
@@ -55,18 +55,18 @@ button:disabled {
   border-radius: 8px;
   overflow: hidden;
 }
-#fullscreen-preview #preview-content-fullscreen img {
+#fullscreen-preview img {
   max-width: 100%;
   max-height: 100%;
   display: block;
   margin: auto;
   border-radius: 5px;
 }
-#fullscreen-preview #preview-content-fullscreen video {
+#fullscreen-preview video {
   max-width: 100%;
   border-radius: 5px;
 }
-#fullscreen-preview #preview-content-fullscreen pre {
+#fullscreen-preview pre {
   background: rgb(0, 43, 54);
   padding: 10px;
   border-radius: 5px;
@@ -74,7 +74,7 @@ button:disabled {
   white-space: pre-wrap;
   word-wrap: break-word;
 }
-#fullscreen-preview #preview-content-fullscreen code {
+#fullscreen-preview code {
   font-family: "Courier New", Courier, monospace;
 }
 
@@ -100,7 +100,7 @@ button:disabled {
   transition: background-color 0.2s;
 }
 #file-list-container.list-view .file-list-list .file-item:hover {
-  background-color: #f0f0f0;
+  background-color: rgba(240, 240, 240, 0.1);
 }
 #file-list-container.list-view .file-list-list .file-item > * {
   display: table-cell;
@@ -148,7 +148,7 @@ button:disabled {
   border-radius: 8px;
 }
 #file-list-container.icon-view #file-list .file-item:hover {
-  background-color: #f0f0f0;
+  background-color: rgba(240, 240, 240, 0.1);
 }
 #file-list-container.icon-view #file-list .file-item video {
   border-radius: 5px;
@@ -196,13 +196,13 @@ button:disabled {
   box-sizing: border-box;
   padding: 30px;
   padding-top: 15px;
-  border: 1px solid #f5f5f5;
+  border: 1px solid rgba(245, 245, 245, 0.1);
   border-left: none;
   display: inline-block;
   vertical-align: top;
 }
 #file-list-container.group-view #file-list .file-list-group .file-list-group-header {
-  background-color: #f9f9f9;
+  background-color: rgba(249, 249, 249, 0.05);
   font-weight: bold;
   display: flex;
   column-gap: 10px;
@@ -215,7 +215,7 @@ button:disabled {
   z-index: 1;
 }
 #file-list-container.group-view #file-list .file-list-group .file-list-group-header:hover {
-  background: #acacac;
+  background: rgba(172, 172, 172, 0.2);
 }
 #file-list-container.group-view #file-list .file-list-group .file-list-group-header .group-count {
   font-size: 0.8em;
@@ -248,15 +248,13 @@ button:disabled {
   width: 5px;
 }
 #file-list-container.group-view #file-list .file-list-group .file-list-group-content::-webkit-scrollbar-track {
-  background: #ffffff;
-  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
 }
 #file-list-container.group-view #file-list .file-list-group .file-list-group-content::-webkit-scrollbar-thumb {
-  background: #bebebe;
-  border-radius: 10px;
+  background: rgba(190, 190, 190, 0.3);
 }
 #file-list-container.group-view #file-list .file-list-group .file-list-group-content::-webkit-scrollbar-thumb:hover {
-  background: #838383;
+  background: rgba(131, 131, 131, 0.5);
 }
 #file-list-container.group-view #file-list .file-list-group .file-list-group-content .file-item {
   box-sizing: border-box;
@@ -270,7 +268,7 @@ button:disabled {
   transition: background-color 0.15s;
 }
 #file-list-container.group-view #file-list .file-list-group .file-list-group-content .file-item:hover {
-  background-color: rgb(240, 240, 240);
+  background-color: rgba(240, 240, 240, 0.1);
 }
 #file-list-container.group-view #file-list .file-list-group .file-list-group-content .file-item .file-icon {
   width: 25px;
@@ -299,7 +297,7 @@ button:disabled {
   transition: background-color 0.2s;
 }
 #file-list-container.group-view #file-list .folder-item:hover {
-  background-color: #f5f5f5;
+  background-color: rgba(240, 240, 240, 0.1);
 }
 #file-list-container.group-view #file-list .folder-icon {
   width: 24px;
@@ -434,7 +432,14 @@ body {
 }
 body #sidebar {
   background-color: #f0f0f0;
+  border-right: 1px solid #3a3a3a;
   border-right-color: #ddd;
+}
+body #sidebar #settings-menu {
+  border: 1px solid #ddd;
+}
+body #sidebar #settings-menu button:hover {
+  background-color: #e5e5e5;
 }
 body #main {
   background-color: #ffffff;
@@ -459,7 +464,7 @@ body .sidebar-section-content {
 }
 body #toolbar {
   background-color: #f0f0f0;
-  border-bottom-color: #ddd;
+  border-bottom: 1px solid #ddd;
 }
 body #toolbar button {
   color: #262626;
@@ -513,6 +518,21 @@ body .selection-box {
   border-color: #262626;
   background-color: rgba(38, 38, 38, 0.1);
 }
+body .timeline-item-content {
+  border-bottom: 1px solid #ddd;
+}
+body .timeline-item-content:hover {
+  background-color: #e5e5e5;
+}
+body .timeline-container::before {
+  background: #ddd;
+}
+body .file-item:hover,
+body .favorite-item:hover,
+body .quick-access-item:hover,
+body .drive-item:hover {
+  background-color: #e5e5e5;
+}
 
 .dark-theme {
   background-color: #121212;
@@ -520,7 +540,14 @@ body .selection-box {
 }
 .dark-theme #sidebar {
   background-color: #1e1e1e;
+  border-right: 1px solid #3a3a3a;
   border-right-color: #3a3a3a;
+}
+.dark-theme #sidebar #settings-menu {
+  border: 1px solid #3a3a3a;
+}
+.dark-theme #sidebar #settings-menu button:hover {
+  background-color: #3a3a3a;
 }
 .dark-theme #main {
   background-color: #2e2e2e;
@@ -545,7 +572,7 @@ body .selection-box {
 }
 .dark-theme #toolbar {
   background-color: #2e2e2e;
-  border-bottom-color: #3a3a3a;
+  border-bottom: 1px solid #3a3a3a;
 }
 .dark-theme #toolbar button {
   color: #b0b0b0;
@@ -598,6 +625,21 @@ body .selection-box {
 .dark-theme .selection-box {
   border-color: #b0b0b0;
   background-color: rgba(176, 176, 176, 0.1);
+}
+.dark-theme .timeline-item-content {
+  border-bottom: 1px solid #3a3a3a;
+}
+.dark-theme .timeline-item-content:hover {
+  background-color: #3a3a3a;
+}
+.dark-theme .timeline-container::before {
+  background: #3a3a3a;
+}
+.dark-theme .file-item:hover,
+.dark-theme .favorite-item:hover,
+.dark-theme .quick-access-item:hover,
+.dark-theme .drive-item:hover {
+  background-color: #3a3a3a;
 }
 
 .fas {
@@ -685,7 +727,6 @@ html {
 #app #sidebar {
   position: relative;
   max-width: 40%;
-  border-right: 1px solid #ddd;
   transition: width 0.3s ease;
   overflow: hidden;
   will-change: width;
@@ -728,7 +769,6 @@ html {
   width: 500px;
   position: absolute;
   bottom: 40px;
-  border: 1px solid #ddd;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   z-index: 1000;
 }
@@ -740,9 +780,6 @@ html {
   cursor: pointer;
   width: 100%;
   text-align: left;
-}
-#app #sidebar #settings #settings-menu button:hover {
-  background-color: #f0f0f0;
 }
 #app #sidebar #settings #settings-menu.hidden {
   display: none;
@@ -773,17 +810,12 @@ html {
   display: flex;
   align-items: center;
   padding: 10px;
-  border-radius: 4px;
-  border-bottom: 1px solid #ddd;
 }
 #app #main #toolbar button {
   text-align: center;
   color: #262626;
   width: 30px;
   height: 30px;
-}
-#app #main #toolbar button:hover {
-  background-color: #ddd;
 }
 #app #main #toolbar #view-options {
   margin-left: auto;
@@ -835,12 +867,6 @@ html {
   padding: 5px;
   cursor: pointer;
   transition: background-color 0.2s;
-}
-.file-item:hover,
-.favorite-item:hover,
-.quick-access-item:hover,
-.drive-item:hover {
-  background-color: #e5f3ff;
 }
 
 .file-icon {
@@ -905,9 +931,6 @@ html {
   transition: background-color 0.1s;
   position: relative;
   cursor: pointer;
-}
-.file-item:hover {
-  background-color: #f0f0f0;
 }
 .file-item:hover .file-preview {
   display: inline-flex;
@@ -992,9 +1015,6 @@ html {
   align-items: center;
   padding: 5px;
 }
-.favorite-item:hover {
-  background-color: #e5f3ff;
-}
 .favorite-item .file-icon {
   margin-right: 5px;
 }
@@ -1013,7 +1033,6 @@ html {
   top: 0;
   bottom: 0;
   width: 2px;
-  background: #ddd;
 }
 #file-list-container.timeline-view .timeline-year-header,
 #file-list-container.timeline-view .timeline-month-header {
@@ -1032,6 +1051,7 @@ html {
   display: flex;
   justify-content: flex-end;
   align-items: center;
+  flex-direction: column;
 }
 #file-list-container.timeline-view .timeline-year-header .year-text {
   margin-right: 10px;
@@ -1088,16 +1108,12 @@ html {
   transform: translateY(-50%);
 }
 #file-list-container.timeline-view .timeline-item .timeline-item-content {
-  background: #f8f9fa;
   padding: 10px;
   border-radius: 5px;
   display: flex;
   align-items: center;
   cursor: pointer;
   transition: background-color 0.2s;
-}
-#file-list-container.timeline-view .timeline-item .timeline-item-content:hover {
-  background-color: #e9ecef;
 }
 #file-list-container.timeline-view .timeline-item .timeline-item-content .file-icon {
   margin-right: 10px;

@@ -88,7 +88,7 @@ html
   #sidebar
     position: relative
     max-width: 40%
-    border-right: 1px solid #ddd
+    // border-right: 1px solid #ddd
     transition: width 0.3s ease
     overflow: hidden
     will-change: width
@@ -126,7 +126,6 @@ html
         width: 500px
         position: absolute
         bottom: 40px
-        border: 1px solid #ddd
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1)
         z-index: 1000
         button
@@ -137,8 +136,6 @@ html
           cursor: pointer
           width: 100%
           text-align: left
-          &:hover
-            background-color: #f0f0f0
         &.hidden
           display: none
             
@@ -169,15 +166,11 @@ html
       display: flex
       align-items: center
       padding: 10px
-      border-radius: 4px
-      border-bottom: 1px solid #ddd
       button
         text-align: center
         color: #262626
         width: 30px
         height: 30px
-        &:hover
-          background-color: #ddd
 
       #view-options
         margin-left: auto
@@ -226,9 +219,6 @@ html
   padding: 5px
   cursor: pointer
   transition: background-color 0.2s
-
-  &:hover
-    background-color: #e5f3ff
 
 .file-icon
   width: 24px
@@ -288,8 +278,6 @@ html
   cursor: pointer
 
   &:hover
-    background-color: #f0f0f0
-
     .file-preview
       display: inline-flex
       flex-wrap: wrap
@@ -301,7 +289,6 @@ html
   &.selected
     background-color: #e5f3ff
     outline: 1px solid #99d1ff
-
     &:hover
       background-color: #d0e8ff
 
@@ -365,8 +352,6 @@ html
   display: flex
   align-items: center
   padding: 5px
-  &:hover
-    background-color: #e5f3ff
 
   .file-icon
     margin-right: 5px
@@ -386,7 +371,6 @@ html
       top: 0
       bottom: 0
       width: 2px
-      background: #ddd
 
   .timeline-year-header,
   .timeline-month-header
@@ -405,6 +389,7 @@ html
     display: flex
     justify-content: flex-end
     align-items: center
+    flex-direction: column
 
     .year-text
       margin-right: 10px
@@ -461,16 +446,12 @@ html
       transform: translateY(-50%)
 
     .timeline-item-content
-      background: #f8f9fa
       padding: 10px
       border-radius: 5px
       display: flex
       align-items: center
       cursor: pointer
       transition: background-color 0.2s
-
-      &:hover
-        background-color: #e9ecef
 
       .file-icon
         margin-right: 10px

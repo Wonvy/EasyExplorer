@@ -1,3 +1,4 @@
+@import 'theme'
 
 // 添加全屏预览的样式
 #fullscreen-preview
@@ -7,7 +8,7 @@
   left: 0
   width: 100%
   height: 100%
-  background-color: rgba(0, 0, 0, 0.9) // 更深的背景色
+  background-color: rgba(0, 0, 0, 0.95) // 更深的背景色
   color: white
   z-index: 1000
   overflow: auto
@@ -18,42 +19,38 @@
   #preview-content-fullscreen
     height: 100%
 
-
-    // 预览内容的样式
-    .preview-content
-      max-width: 100% // 限制最大宽度
-      height: 100%
-      margin: auto // 居中
-      padding: 20px // 内边距
-      background: rgb( 0, 43, 54)// 轻微的背景色
-      border-radius: 8px// 圆角边框
-      overflow: hidden // 隐藏溢出内容
+  // 预览内容的样式
+  .preview-content
+    max-width: 100% // 限制最大宽度
+    height: 100%
+    margin: auto // 居中
+    padding: 20px // 内边距
+    background: rgb( 0, 43, 54)// 轻微的背景色
+    border-radius: 8px// 圆角边框
+    overflow: hidden // 隐藏溢出内容
     
+  img
+    max-width: 100%
+    max-height: 100%
+    display: block
+    margin: auto
+    border-radius: 5px// 图片圆角
 
-    img
-      max-width: 100%
-      max-height: 100%
-      display: block
-      margin: auto
-      border-radius: 5px// 图片圆角
+  video
+    max-width: 100%
+    border-radius: 5px // 视频圆角
 
+  pre
+    background: rgb( 0, 43, 54) // 代码块背景
+    padding: 10px // 内边距
+    border-radius: 5px // 圆角
+    overflow: auto // 允许滚动
+    white-space: pre-wrap // 允许换行
+    word-wrap: break-word // 处理长单词
 
-    video
-      max-width: 100%
-      border-radius: 5px // 视频圆角
-
-
-    pre
-      background: rgb( 0, 43, 54) // 代码块背景
-      padding: 10px // 内边距
-      border-radius: 5px // 圆角
-      overflow: auto // 允许滚动
-      white-space: pre-wrap // 允许换行
-      word-wrap: break-word // 处理长单词
-
-    code
-      font-family: 'Courier New', Courier, monospace
-      // color: #f8f8f2
+  code
+    font-family: 'Courier New', Courier, monospace
+    // color: #f8f8f2
 
 
 #file-list
@@ -66,7 +63,6 @@
   flex-grow: 1
   overflow: auto
   position: relative
-
 
   // 列表视图样式
   &.list-view
@@ -82,7 +78,7 @@
         // display: table-row
         transition: background-color 0.2s
         &:hover
-          background-color: #f0f0f0
+          background-color: $hover-bg-light // 使用半透明的亮色
         &>*
           display: table-cell
           padding: 8px 12px
@@ -129,11 +125,9 @@
         border-radius: 8px
         // padding: 10px 10px
         &:hover
-          background-color: #f0f0f0
+          background-color: $hover-bg-light // 使用半透明的亮色
         video
           border-radius: 5px
-
-
 
       .file-icon
         width: 160px
@@ -179,13 +173,13 @@
         box-sizing: border-box 
         padding: 30px
         padding-top: 15px
-        border: 1px solid #f5f5f5
+        border: 1px solid rgba(245, 245, 245, 0.1) // 使用半透明的边框色
         border-left: none
         display: inline-block
         vertical-align: top
 
         .file-list-group-header
-          background-color: #f9f9f9
+          background-color: rgba(249, 249, 249, 0.05) // 使用半透明的背景色
           font-weight: bold
           display: flex
           column-gap: 10px
@@ -197,7 +191,7 @@
           top: 0
           z-index: 1
           &:hover
-            background: #acacac
+            background: rgba(172, 172, 172, 0.2) // 使用半透明的hover背景色
 
           .group-count
             font-size: 0.8em
@@ -227,13 +221,11 @@
           &::-webkit-scrollbar
             width: 5px // 设置滚动条的宽度
           &::-webkit-scrollbar-track
-            background: #ffffff // 滚动条轨道的背景颜色
-            border-radius: 10px // 轨道的圆角
+            background: rgba(255, 255, 255, 0.05) // 滚动条轨道的背景颜色
           &::-webkit-scrollbar-thumb
-            background: #bebebe // 滚动条的颜色
-            border-radius: 10px // 滚动条的圆角
+            background: rgba(190, 190, 190, 0.3) // 滚动条的颜色
             &:hover
-              background: #838383 // 鼠标悬停时的颜色
+              background: rgba(131, 131, 131, 0.5) // 鼠标悬停时的颜色
 
           .file-item
             box-sizing: border-box
@@ -246,7 +238,7 @@
             justify-content: center
             transition: background-color 0.15s
             &:hover
-              background-color: rgb(240,240,240)
+              background-color: $hover-bg-light // 使用半透明的亮色
 
             .file-icon
               width: 25px
@@ -280,7 +272,7 @@
         transition: background-color 0.2s
 
         &:hover
-          background-color: #f5f5f5
+          background-color: $hover-bg-light // 使用半透明的亮色
         
       
 

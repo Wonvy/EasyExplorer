@@ -27,6 +27,11 @@ $dark-toolbar-icon: #b0b0b0
 $dark-resizer-bg: #2e2e2e
 $dark-resizer-icon: #4a4a4a
 
+$hover-bg-light: rgba(240, 240, 240, 0.1)
+$border-color-dark: rgba(245, 245, 245, 0.1)
+$header-bg-dark: rgba(249, 249, 249, 0.05)
+$header-hover-bg-dark: rgba(172, 172, 172, 0.2)
+
 // 定义主题 mixin
 @mixin theme($bg, $text, $sidebar-bg, $main-bg, $status-bar-bg, $hover-bg, $selected-bg, $border, $icon, $toolbar-bg, $toolbar-icon, $resizer-bg, $resizer-icon)
   background-color: $bg
@@ -34,8 +39,14 @@ $dark-resizer-icon: #4a4a4a
 
   #sidebar 
     background-color: $sidebar-bg
+    border-right: 1px solid $dark-border
     border-right-color: $border
 
+    #settings-menu
+      border: 1px solid $border
+      button
+        &:hover
+            background-color: $hover-bg
   #main 
     background-color: $main-bg
 
@@ -59,7 +70,7 @@ $dark-resizer-icon: #4a4a4a
 
   #toolbar
     background-color: $toolbar-bg
-    border-bottom-color: $border
+    border-bottom: 1px solid $border
 
     button
       color: $toolbar-icon
@@ -74,6 +85,7 @@ $dark-resizer-icon: #4a4a4a
   #file-list-container
     background-color: $main-bg
 
+    
   ::-webkit-scrollbar-track
     background: $sidebar-bg
 
@@ -108,6 +120,29 @@ $dark-resizer-icon: #4a4a4a
   .selection-box
     border-color: $icon
     background-color: rgba($icon, 0.1)
+
+  .timeline-item-content
+    border-bottom: 1px solid $border
+    &:hover
+      background-color: $hover-bg 
+
+
+  .timeline-container
+    &::before
+      background: $border
+
+  .file-item,
+  .favorite-item,
+  .quick-access-item,
+  .drive-item
+    &:hover
+      background-color: $hover-bg
+
+
+
+
+
+
 
 // 定义亮色主题 mixin
 @mixin light-theme
