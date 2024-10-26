@@ -15,7 +15,6 @@ const PSD = require('psd'); // 引入psd.js库
 const clipboardEx = require('electron-clipboard-ex');
 
 
-
 let currentPath = ''
 const pathElement = document.createElement('input')
 pathElement.id = 'path'
@@ -48,9 +47,7 @@ const previewContent = document.getElementById('preview-content')
 let history = []
 let currentHistoryIndex = -1
 let favorites = JSON.parse(localStorage.getItem('favorites')) || []
-
-// 在文件顶部添加一个新的变量来跟踪选中的项目
-let selectedItem = null;
+let selectedItem = null; // 选中项
 
 // 在文件末尾添加以下代码
 const sidebarToggle = document.getElementById('sidebar-toggle');
@@ -78,582 +75,98 @@ const folderIcon = `<?xml version='1.0' encoding='utf-8'?><svg xmlns='http://www
 
 let currentViewMode = localStorage.getItem('viewMode') || 'list'; // 修改视图模相关的变量和函数
 
-// 修改视图模式
-function setViewMode(mode) {
-    currentViewMode = mode;
-    localStorage.setItem('viewMode', mode);
 
-    // 更新 file-list 的 class
-    const fileList = document.getElementById('file-list');
-    fileList.className = mode === 'list' ? 'file-list-list' : 
-                         mode === 'group' ? 'file-list-group' : 
-                         mode === 'timeline' ? 'file-list-timeline' : 'file-list-icons';
-
-    // 添加类样式到 file-list-container
-    const fileListContainer = document.getElementById('file-list-container');
-    fileListContainer.className = mode === 'list' ? 'list-view' : 
-                                  mode === 'group' ? 'group-view' : 
-                                  mode === 'timeline' ? 'timeline-view' : 'icon-view';
-
-    // 更新视图按钮的激活状态
-    const viewButtons = document.querySelectorAll('#view-options button');
-    viewButtons.forEach(button => {
-        if (button.id === `${mode}-view-btn`) {
-            button.classList.add('active');
-        } else {
-            button.classList.remove('active');
-        }
-    });
-
-    updateFileList(currentPath);
-}
-
-// 添加时间轴视图按钮的事件监听器
-timelineViewBtn.addEventListener('click', () => {
-    setViewMode('timeline');
-});
-
-// 添加地址栏输入跳转功能
-pathElement.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-        navigateTo(pathElement.value)
-    }
-})
-
-// 修改 updateFileList 函数中的文件图标逻辑
-function getFileIcon(file) {
-    return new Promise((resolve) => {
-        const isDir = typeof file.isDirectory === 'function' ? file.isDirectory() : file.isDirectory;
-        // 如果是文件夹，则返回文件夹图标
-        if (isDir) {
-            resolve(folderIcon);
-            return;
-        }
-        // 只针对exe后缀的文件获取图标
-        const ext = path.extname(file.name).toLowerCase();
-        if (['.exe', '.lnk'].includes(ext)) {
-            const filePath = path.join(currentPath, file.name);
-            ipcRenderer.invoke('get-file-icon', filePath).then(base64 => {
-                // 检查 base64 是否有效
-                if (base64) {
-                    resolve(`<img src="${base64}" class="file-icon">`);
-                } else {
-                    resolve(getUnknownIcon(ext));
-                }
-            }).catch(error => {
-                console.warn(`无法获取文件图标: ${filePath}`, error);
-                resolve(getUnknownIcon(ext));
-            });
-        } else if (['.ttf', '.otf'].includes(ext)) {
-            const fontName = path.basename(filePath, path.extname(filePath)); // 获取字体名称
-            const isChinese = /[\u4e00-\u9fa5]/.test(fontName); // 检查是否包含中文
-            const encodedPath = encodeURIComponent(filePath).replace(/%5C/g, '/'); // 对路径进行编码并替换反斜杠为正斜杠
-            const fontFace = new FontFace(fontName, `url(file://${encodedPath})`);
-
-            fontFace.load().then(() => {
-                document.fonts.add(fontFace);
-                // 创建图标和文件名
-                const fontItem = document.createElement('div');
-                const fileIcon = document.createElement('div');
-                fileIcon.className = 'file-icon';
-                fileIcon.textContent = isChinese ? fontName : 'Abg'; // 根据字体内容设置
-                fileIcon.style.fontFamily = fontName; 
-                const fileName = document.createElement('div');
-                fileName.className = 'file-name';
-                fileName.textContent = file.name;
-
-                // 将图标和文件名添加到文件项
-                fontItem.appendChild(fileIcon);
-                fontItem.appendChild(fileName);
-                resolve(fontItem);
-
-            }).catch(err => {
-                resolve(getUnknownIcon(ext));
-            });
-
-        } else if (['.jpg', '.jpeg', '.png', '.gif'].includes(ext)) {
-            const filePath = path.join(currentPath, file.name);
-            resolve(`<img src="${filePath}" class="file-icon">`);
-        } else if (['.mp4', '.avi', '.mov'].includes(ext)) {
-            const filePath = path.join(currentPath, file.name);
-            resolve(`
-                <video class="file-icon" src="${filePath}" controls>
-                    您的浏览器不支 video 标签。
-                </video>
-            `);
-        } else if (ext === '.svg') {
-            const filePath = path.join(currentPath, file.name);
-            fs.readFile(filePath, 'utf8', (err, data) => {
-                if (err) {
-                    console.warn(`无法读取SVG文件: ${filePath}`, err);
-                    resolve(getUnknownIcon(ext));
-                } else {
-                    resolve(`<div class="file-icon">${data}</div>`);
-                }
-            });
-        } else if (['.mp3', '.wav'].includes(ext)) {
-            const filePath = path.join(currentPath, file.name);
-            resolve(`
-                <audio class="file-icon" src="${filePath}" controls>
-                    您的浏览器不支持 audio 标签。
-                </audio>
-            `);
-        } else if (['.zip', '.rar', '.7z', '.tar', '.gz', '.bz2', '.xz', '.7zip', '.tgz', '.tar.gz', '.tar.bz2'].includes(ext)) {
-            resolve(getUnknownIcon(ext, ".zips"));
-        } else {
-            const unknownSvg = getUnknownIcon(ext); // 使用新函数
-            resolve(unknownSvg);
-        }
-    });
-}
-
-// 获取未知图标
-function getUnknownIcon(ext, defaultIcon = '.unknown') {
-    return customIcons[ext] || customIcons[defaultIcon].replace('XXX', ext.replace(".", ""));
-}
-
-
-
-
-
-// 更新文件列表
-function updateFileList(dirPath, isQuickAccess = false) {
- 
-    fileListElement.innerHTML = ''; 
-    updatePreview(null); 
-
-    fs.readdir(dirPath, { withFileTypes: true }, (err, files) => {
+// 添加函数来显示文件夹预览
+function showFolderPreview(folderPath, previewElement) {
+    fs.readdir(folderPath, (err, files) => {
         if (err) {
-            console.error('无法读取目录:', err, dirPath);
-            fileListElement.innerHTML = `<div class="error-message">无法读取目录: ${err.message}</div>`;
-            return;
-        }
-
-        // 更新路径
-        if (!isQuickAccess) {
-            currentPath = dirPath;
-            pathElement.value = dirPath;
-        }
-
-        // 取文件详细信息并排序
-        Promise.all(files.map(file => getFileDetails(dirPath, file)))
-            .then(fileDetails => {
-                sortFiles(fileDetails);
-                fileListElement.innerHTML = '';
-
-                if (currentViewMode === 'timeline') {
-                    const timelineItems = createTimelineItems(fileDetails);
-                    fileListElement.appendChild(timelineItems);
-                } else if (currentViewMode === 'group') {
-                    const groupedFiles = groupFilesByType(fileDetails);
-                    Object.entries(groupedFiles).forEach(([groupName, groupFiles]) => {
-                        const groupElement = document.createElement('div');
-                        groupElement.className = 'file-list-group';
-
-                        const groupHeader = document.createElement('div');
-                        groupHeader.className = 'file-list-group-header';
-                        groupHeader.innerHTML = `
-                            <span>${groupName}</span>
-                            <span class="group-count">${groupFiles.length} 项</span>
-                            <div class="group-sort-buttons">
-                                <button class="group-sort-button" data-sort="name" title="按名称排序">
-                                    <i class="fas fa-sort-alpha-down"></i>
-                                </button>
-                                <button class="group-sort-button" data-sort="date" title="按日期排序">
-                                    <i class="fas fa-calendar-alt"></i>
-                                </button>
-                            </div>
-                        `;
-                        groupElement.appendChild(groupHeader);
-
-                        const groupContent = document.createElement('div');
-                        groupContent.className = 'file-list-group-content';
-                        groupFiles.forEach(file => {
-                            const fileItem = createFileItem(file, dirPath);
-                            groupContent.appendChild(fileItem);
-                        });
-                        groupElement.appendChild(groupContent);
-
-                        // 添加排序按钮的事件监听器
-                        const sortButtons = groupHeader.querySelectorAll('.group-sort-button');
-                        sortButtons.forEach(button => {
-                            button.addEventListener('click', (e) => {
-                                const sortType = e.currentTarget.getAttribute('data-sort');
-                                const isAscending = !e.currentTarget.classList.contains('sorted-asc');
-                                
-                                sortGroupFiles(groupContent, sortType, isAscending);
-                                
-                                // 更新排序按钮的状态
-                                sortButtons.forEach(btn => btn.classList.remove('sorted-asc', 'sorted-desc'));
-                                e.currentTarget.classList.add(isAscending ? 'sorted-asc' : 'sorted-desc');
-                            });
-                        });
-
-                        fileListElement.appendChild(groupElement);
-                    });
-                } else{
-                    fileDetails.forEach(file => {
-                        const fileItem = createFileItem(file, dirPath);
-                        fileListElement.appendChild(fileItem);
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('获取文件详情时出错:', error);
-                fileListElement.innerHTML = `<div class="error-message">获取文件详情时出错: ${error.message}</div>`;
-            });
-    });
-
-}
-
-
-// 导航到新路径
-function navigateTo(newPath) {
-    if (!newPath) {
-        console.error('无效的路径');
-        return;
-    }
-
-    newPath = newPath.replace(/\\\\/g, '\\');
-    if (process.platform === 'win32' && newPath.length === 2 && newPath[1] === ':') {
-        newPath += '\\';  // 确保驱动器路径以反斜杠结尾
-    }
-
-    fs.access(newPath, fs.constants.R_OK, (err) => {
-        if (err) {
-            console.error('无法访问目录:', err);
-            return;
-        }
-        fs.stat(newPath, (err, stats) => {
-            if (err) {
-                console.error('无法获取文件/目录信息:', err);
-                return;
-            }
-            if (stats.isDirectory()) {
-                if (!newPath.endsWith(path.sep)) {
-                    newPath += path.sep;
-                }
-                history = history.slice(0, currentHistoryIndex + 1);
-                history.push(currentPath);
-                currentHistoryIndex++;
-                currentPath = newPath;
-                updateFileList(newPath);
-                pathElement.value = newPath;
-            } else {
-                shell.openPath(newPath);
-            }
-        });
-    });
-}
-
-// 显示上下文菜单
-function showContextMenu(file, dirPath) {
-    const isDirectory = file ? (typeof file.isDirectory === 'function' ? file.isDirectory() : file.isDirectory) : true;
-    const filePath = file ? path.join(dirPath, file.name) : dirPath;
-    const isFavorite = favorites.includes(filePath);
-    
-    ipcRenderer.send('show-context-menu', {
-        isDirectory: isDirectory,
-        path: filePath,
-        isCurrentDir: !file,
-        isFavorite: isFavorite,
-        hasSelection: !!file
-    });
-}
-
-
-
-// 更新收藏夹
-function updateFavorites() {
-  favoritesElement.innerHTML = `
-    <div class="sidebar-section-header" onclick="toggleSidebarSection('favorites')">
-      <i class="fas fa-chevron-down sidebar-section-icon"></i>
-      <span>收藏</span>
-    </div>
-    <div class="sidebar-section-content">
-      <ul id="favorites-list">
-        ${favorites.map(fav => `
-          <li class="favorite-item" data-path="${fav}">
-            <span class="file-icon">${favoriteIcon}</span>
-            <span>${path.basename(fav)}</span>
-          </li>
-        `).join('')}
-      </ul>
-    </div>
-  `;
-
-  const favoritesList = document.getElementById('favorites-list');
-  
-  // 为收藏项添加右键菜单和鼠标移入事件
-  const favoriteItems = favoritesList.querySelectorAll('.favorite-item');
-  favoriteItems.forEach(item => {
-    item.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const favPath = item.getAttribute('data-path');
-      console.log('favPath2222', favPath);
-      showFavoriteContextMenu(favPath, e.clientX, e.clientY);
-    });
-
-    item.addEventListener('mouseover', () => {
-      const favPath = item.getAttribute('data-path');
-      updateStatusBar(favPath);
-    });
-
-    item.addEventListener('mouseout', () => {
-      updateStatusBar('');
-    });
-
-    item.addEventListener('click', () => {
-      const favPath = item.getAttribute('data-path');
-      navigateTo(favPath);
-    });
-  });
-
-  // 初始化拖拽排序
-  if (favoritesList) {
-    Sortable.create(favoritesList, {
-      animation: 150,
-      onEnd: function (evt) {
-        const newOrder = Array.from(favoritesList.children).map(item => item.getAttribute('data-path'));
-        favorites = newOrder;
-        localStorage.setItem('favorites', JSON.stringify(favorites));
-      }
-    });
-  } else {
-    console.error('favorites-list element not found');
-  }
-}
-
-// 添加到收藏夹
-function addToFavorites(dirPath) {
-  if (!favorites.includes(dirPath)) {
-    favorites.push(dirPath);
-    localStorage.setItem('favorites', JSON.stringify(favorites));
-    updateFavorites();
-  }
-}
-
-// 显示驱动器
-function showDrives() {
-  const drives = [];
-  if (process.platform === 'win32') {
-    for (let i = 65; i <= 90; i++) {
-      const driveLetter = String.fromCharCode(i);
-      if (fs.existsSync(`${driveLetter}:`)) {
-        const drivePath = `${driveLetter}:\\`;
-        let volumeName = '';
-        try {
-          const volOutputBuffer = execSync(`vol ${driveLetter}:`);
-          const volOutput = iconv.decode(volOutputBuffer, 'gbk');
-        //   console.warn('卷标内容', '|' + volOutput + '|');
-          
-          // 更新正则表达式匹配模式
-          const volumeNameMatch = volOutput.match(/驱动器\s+\w+\s+中的卷是\s+(.+)/);
-          
-          if (volumeNameMatch && volumeNameMatch[1]) {
-            volumeName = volumeNameMatch[1].trim();
-          }
-        //   console.warn('volumeName', volumeName);   
-        } catch (error) {
-          console.error(`无法获取驱动器 ${driveLetter}: 的卷标名称`, error);
-        }
-        drives.push({ letter: driveLetter, path: drivePath, name: volumeName });
-      }
-    }
-  } else {
-    drives.push({ letter: '/', path: '/', name: 'Root' });
-  }
-
-
-  drivesElement.innerHTML = `
-    <div class="sidebar-section-header" onclick="toggleSidebarSection('drives')">
-      <i class="fas fa-chevron-down sidebar-section-icon"></i>
-      <span>此电脑</span>
-    </div>
-    <div class="sidebar-section-content">
-      ${drives.map(drive => `
-        <div class="drive-item" data-path="${drive.path}">
-          <span class="file-icon">${driveIcon}</span>
-          <span>${drive.name || 'Local Disk'} (${drive.letter}:)</span>
-        </div>
-      `).join('')}
-    </div>
-  `;
-
-  // 为每个驱动器项添加点击事件监听器
-  document.querySelectorAll('.drive-item').forEach(item => {
-    item.addEventListener('click', () => {
-      const drivePath = item.getAttribute('data-path');
-      navigateTo(drivePath);
-    });
-  });
-}
-
-// 显示快速访问
-function updateQuickAccess() {
-    const quickAccessPath = path.join(os.homedir(), 'AppData', 'Roaming', 'Microsoft', 'Windows', 'Recent')
-    console.log('quickAccessPath:', quickAccessPath);
-    fs.readdir(quickAccessPath, (err, files) => {
-        if (err) {
-            console.error('无法读取快速访问目录:', err)
+            console.error('无法取目:', err)
             return
         }
-        // 过滤并处理快捷方式
-        Promise.all(files.filter(file => path.extname(file).toLowerCase() === '.lnk')
-            .map(file => new Promise((resolve) => {
-                const filePath = path.join(quickAccessPath, file);
-                windowsShortcuts.query(filePath, (error, shortcut) => {
-                    if (error) {
-                        console.error('无法读取快捷方式:', error);
-                        resolve(null);
-                    } else {
-                        let targetPath = shortcut.target;
-                        if (Buffer.isBuffer(targetPath)) {
-                            targetPath = iconv.decode(targetPath, 'gbk');
-                        }
-                        fs.stat(targetPath, (err, stats) => {
-                            if (err || !stats.isDirectory()) {
-                                resolve(null);
-                            } else {
-                                resolve({ path: targetPath, name: path.basename(targetPath) });
-                            }
-                        });
+
+        const previewItems = files.slice(0, 5)
+        previewElement.innerHTML = previewItems.map(item => {
+            const itemPath = path.join(folderPath, item).replace(/\\/g, '\\\\')
+            return `<span class="preview-item" data-path="${itemPath}">${item}</span>`
+        }).join('')
+
+        // 为预览项添加点击事件
+        previewElement.querySelectorAll('.preview-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation() // 阻止事件冒泡
+                e.preventDefault() // 阻止默认行为
+                const itemPath = e.target.getAttribute('data-path').replace(/\\\\/g, '\\')
+                fs.stat(itemPath, (err, stats) => {
+                    if (err) {
+                        console.error('无法获取文件信息:', err)
+                        return
                     }
-                });
-            })))
-            .then(quickAccessItems => {
-                quickAccessItems = quickAccessItems.filter(item => item !== null);
-
-                quickAccessElement.innerHTML = `
-          <div class="sidebar-section-header" onclick="toggleSidebarSection('quick-access')">
-            <i class="fas fa-chevron-down sidebar-section-icon"></i>
-            <span>快速访问</span>
-          </div>
-          <div class="sidebar-section-content">
-            ${quickAccessItems.slice(0, 10).map(item => `
-              <div class="quick-access-item" data-path="${encodeURIComponent(item.path)}">
-                <span class="file-icon">${folderIcon}</span>
-                <span>${item.name}</span>
-              </div>
-            `).join('')}
-          </div>
-        `;
-
-            // 为快速访问项添加点击事件监听器
-            const quickAccessElements = quickAccessElement.querySelectorAll('.quick-access-item');
-            quickAccessElements.forEach(item => {
-                item.addEventListener('click', () => {
-                    let filePath = decodeURIComponent(item.getAttribute('data-path'));
-                    navigateTo(filePath);
-                });
-            });
-        });
+                    if (stats.isDirectory()) {
+                        navigateTo(itemPath)
+                    } else {
+                        shell.openPath(itemPath)
+                    }
+                })
+            })
+        })
     })
 }
 
-// 更新状态栏
-function updateStatusBar(filePath) {
-    if (!filePath) {
-        statusBarElement.textContent = '';
-        return;
+
+
+// 初始化
+document.addEventListener('DOMContentLoaded', () => {
+    let initialPath;
+    if (process.platform === 'win32') {
+        initialPath = process.env.USERPROFILE || 'C:\\';
+    } else {
+        initialPath = process.env.HOME || '/';
     }
 
-    fs.stat(filePath, (err, stats) => {
+    currentViewMode = localStorage.getItem('viewMode') || 'list';
+    // console.log('Initial view mode:', currentViewMode);
+    setViewMode(currentViewMode); // 初始化视图模式
+
+    // 确保路径存在
+    fs.access(initialPath, fs.constants.R_OK, (err) => {
         if (err) {
-            statusBarElement.textContent = `错误: ${err.message}`;
-            return;
+            console.error('无法访问初始路径:', err);
+            initialPath = process.platform === 'win32' ? 'C:\\' : '/';
         }
-
-        let statusText = '';
-        
-        if (statusBarDisplayOptions.showPath) {
-            statusText += `路径: ${filePath} | `;
-        }
-        
-        statusText += `名称: ${path.basename(filePath)}`;
-        
-        if (statusBarDisplayOptions.showType && !stats.isDirectory()) {
-            statusText += ` | 类型: ${path.extname(filePath) || '文件'}`;
-        }
-        
-        if (statusBarDisplayOptions.showSize) {
-            statusText += ` | 大小: ${formatFileSize(stats.size)}`;
-        }
-        
-        if (statusBarDisplayOptions.showDate) {
-            statusText += ` | 修改日期: ${formatDate(stats.mtime)}`;
-        }
-
-        statusBarElement.textContent = statusText;
+        updateFileList(initialPath);
     });
-}
 
-
-// 后退按钮
-backBtn.addEventListener('click', () => {
-    console.warn('backBtn clicked');
-    if (currentHistoryIndex > 0) {
-        currentHistoryIndex--
-        updateFileList(history[currentHistoryIndex])
-    }
-})
-
-// 前进按钮
-forwardBtn.addEventListener('click', () => {
-    if (currentHistoryIndex < history.length - 1) {
-        currentHistoryIndex++
-        updateFileList(history[currentHistoryIndex])
-    }
-})
-
-// 向上按钮
-upBtn.addEventListener('click', () => {
-    const parentPath = path.dirname(currentPath)
-    if (parentPath !== currentPath) {
-        navigateTo(parentPath)
-    } else if (process.platform === 'win32' && /^[A-Z]:$/.test(currentPath)) {
-        showDrives()
-    }
-})
-
-
-// 修改 ipcRenderer.on('menu-item-clicked') 事件处理
-ipcRenderer.on('menu-item-clicked', (event, action, path) => {
-  switch (action) {
-    case 'open-in-explorer':
-      shell.showItemInFolder(path);
-      break;
-    case 'add-to-favorites':
-      addToFavorites(path);
-      break;
-    case 'remove-from-favorites':
-      removeFromFavorites(path);
-      break;
-    case 'copy':
-        const selectedItems = fileListContainer.querySelectorAll('.file-item.selected'); // 获取选中的文件项
-        const selectedPaths = Array.from(selectedItems).map(item => item.getAttribute('data-path')); // 获取选中项的路径
-        copyFile(selectedPaths); // 传递选中项的路径
-      break;
-    case 'paste':
-        const filePaths = clipboardEx.readFilePaths(); // 获取剪贴板中的文件路径
-        if (filePaths.length > 0) {
-            // 发送粘贴事件到主进程
-            ipcRenderer.send('perform-paste', currentPath, filePaths);
-        }
-        break;
-        if (filePaths.length > 0) {
-            filePaths.forEach(filePath => {
-                pasteFile(currentPath, filePath); // 将文件粘贴到当前路径
+    // 设置侧边栏切换事件
+    const sidebarSections = document.querySelectorAll('.sidebar-section');
+    sidebarSections.forEach(section => {
+        const header = section.querySelector('.sidebar-section-header');
+        if (header) {
+            header.addEventListener('click', () => {
+                toggleSidebarSection(section.id);
             });
-            updateFileList(currentPath); // 更新文件列表以显示新粘贴的文件
         }
+    });
 
-  }
+    // 设置排序按钮事件
+    document.getElementById('sort-name').addEventListener('click', () => handleSortClick('name'));
+    document.getElementById('sort-date').addEventListener('click', () => handleSortClick('date'));
+    document.getElementById('sort-modified').addEventListener('click', () => handleSortClick('modified'));
+    document.getElementById('sort-type').addEventListener('click', () => handleSortClick('type'));
+
+    // 初始化文件列表
+    updateFileList(initialPath);
+
+    // 更新侧边栏内容
+    updateFavorites(); // 更新收藏夹
+    showDrives(); // 显示驱动器
+    updateQuickAccess(); // 更新快速访问
 });
 
 
-// 复制
+
+// #region 通用函数-文件
+
+// 复制文件
 function copyFile(filePaths) {
     // 判断 filePaths 是否为字符串，如果是则转换为数组
     if (typeof filePaths === 'string') {
@@ -664,13 +177,6 @@ function copyFile(filePaths) {
     const copiedPaths = clipboardEx.readFilePaths();
     console.log('filePath:', copiedPaths);
 }
-
-ipcRenderer.on('copy-progress', (data) => {
-    // 解析进度信息��更新进度条
-    console.log('复制进度:', data);
-    // 更新进度条的逻辑
-});
-
 
 // 粘贴文件
 function pasteFile(targetDir, source) {
@@ -687,105 +193,190 @@ function pasteFile(targetDir, source) {
     });
 }
 
-// 添加以下函数来处理左侧面板的展开/折叠
+// 复制进度
+ipcRenderer.on('copy-progress', (data) => {
+    // 解析进度信息更新进度条
+    console.log('复制进度:', data);
+    // 更新进度条的逻辑
+});
+
+
+
+// #endregion
+
+// #region 通用函数-日期
+
+// 格式化文件大小
+function formatFileSize(size) {
+    if (size < 1024) return size + ' B';
+    if (size < 1024 * 1024) return (size / 1024).toFixed(2) + ' KB';
+    if (size < 1024 * 1024 * 1024) return (size / (1024 * 1024)).toFixed(2) + ' MB';
+    return (size / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+}
+
+// 格式化日期
+function formatDate(date) {
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+}
+
+// #endregion
+
+// #region 布局-调整
+
+// 侧栏切换
 function toggleSidebarSection(sectionId) {
-  const section = document.getElementById(sectionId);
-  const content = section.querySelector('.sidebar-section-content');
-  const icon = section.querySelector('.sidebar-section-icon');
-  
-  if (content.style.display === 'none') {
-    content.style.display = 'block';
-    icon.classList.remove('fa-chevron-right');
-    icon.classList.add('fa-chevron-down');
-  } else {
-    content.style.display = 'none';
-    icon.classList.remove('fa-chevron-down');
-    icon.classList.add('fa-chevron-right');
-  }
-}
+    const section = document.getElementById(sectionId);
+    const content = section.querySelector('.sidebar-section-content');
+    const icon = section.querySelector('.sidebar-section-icon');
 
-// 修改 updateFavorites, showDrives, 和 updateQuickAccess 数
-function updateFavorites() {
-  favoritesElement.innerHTML = `
-    <div class="sidebar-section-header" onclick="toggleSidebarSection('favorites')">
-      <i class="fas fa-chevron-down sidebar-section-icon"></i>
-      <span>收藏夹</span>
-    </div>
-    <div class="sidebar-section-content">
-      ${favorites.map(fav => `
-        <div class="favorite-item" data-path="${fav.replace(/\\/g, '\\')}" onclick="navigateTo('${fav.replace(/\\/g, '\\\\')}')">
-          <span class="file-icon">${favoriteIcon}</span>
-          <span>${path.basename(fav)}</span>
-        </div>
-      `).join('')}
-    </div>
-  `;
-}
-
-// 更新快速访问
-function updateQuickAccess() {
-  const quickAccessPath = path.join(os.homedir(), 'AppData', 'Roaming', 'Microsoft', 'Windows', 'Recent'); // 快速访问路径
-  // 快速访问路径
-  fs.readdir(quickAccessPath, (err, files) => {
-    if (err) {
-      console.error('无法读快速访问目录:', err);
-      return;
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        icon.classList.remove('fa-chevron-right');
+        icon.classList.add('fa-chevron-down');
+    } else {
+        content.style.display = 'none';
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-right');
     }
-      // 过滤并处理快捷方式
-    Promise.all(files.filter(file => path.extname(file).toLowerCase() === '.lnk')
-          .map(file => new Promise((resolve) => {
-              const filePath = path.join(quickAccessPath, file);
-              windowsShortcuts.query(filePath, (error, shortcut) => {
-                  if (error) {
-                    //   console.error('无法读取快捷方式:', error);
-                      resolve(null);
-                  } else {
-                      let targetPath = shortcut.target;
-                      if (Buffer.isBuffer(targetPath)) {
-                          targetPath = iconv.decode(targetPath, 'gbk');
-                      }
-                      fs.stat(targetPath, (err, stats) => {
-                          if (err || !stats.isDirectory()) {
-                              resolve(null);
-                          } else {
-                              resolve({ path: targetPath, name: path.basename(targetPath) });
-                          }
-                      });
-                  }
-              });
-    })))
-    .then(quickAccessItems => {
-        quickAccessItems = quickAccessItems.filter(item => item !== null);
-
-        quickAccessElement.innerHTML = `
-    <div class="sidebar-section-header" onclick="toggleSidebarSection('quick-access')">
-    <i class="fas fa-chevron-down sidebar-section-icon"></i>
-    <span>快速访问</span>
-    </div>
-    <div class="sidebar-section-content">
-    ${quickAccessItems.slice(0, 10).map(item => `
-        <div class="quick-access-item" data-path="${encodeURIComponent(item.path)}">
-        <span class="file-icon">${folderIcon}</span>
-        <span>${item.name}</span>
-        </div>
-    `).join('')}
-    </div>
-`;
-
-        // 为快速访问项添加点击事件监听器
-        const quickAccessElements = quickAccessElement.querySelectorAll('.quick-access-item');
-        quickAccessElements.forEach(item => {
-            item.addEventListener('click', () => {
-                let filePath = decodeURIComponent(item.getAttribute('data-path'));
-                navigateTo(filePath);
-            });
-        });
-    });
-
-  });
 }
 
-// 添加新的函数来创建时间轴项目
+// 拖拽-左栏
+resizer.addEventListener('mousedown', initResize);
+
+// 初始化拖拽排序
+function initResize(e) { // 初始化拖拽排序
+    isResizing = true;
+    resizer.classList.add('resizing');
+    document.addEventListener('mousemove', resize);
+    document.addEventListener('mouseup', stopResize);
+    document.body.style.userSelect = 'none';
+}
+
+// 拖拽调整
+function resize(e) {
+    if (!isResizing) return;
+    requestAnimationFrame(() => {
+        const newWidth = e.clientX < 0 ? 1 : e.clientX; // 修改这一行
+        console.log('e.clientX', e.clientX);
+        console.log('window.innerWidth', window.innerWidth);
+
+        if (newWidth > 0 && newWidth < window.innerWidth) {
+            sidebar.style.width = `${newWidth}px`;
+        }
+    });
+}
+
+// 停止拖拽调整
+function stopResize() {
+    isResizing = false;
+    resizer.classList.remove('resizing');
+    document.removeEventListener('mousemove', resize);
+    document.removeEventListener('mouseup', stopResize);
+    document.body.style.userSelect = '';
+}
+
+// 侧栏切换
+sidebarToggle.addEventListener('click', () => {
+    if (sidebar.classList.contains('collapsed')) {
+        sidebar.classList.remove('collapsed');
+        sidebar.style.width = '250px';  // 或者使用上次调整的宽度
+    } else {
+        sidebar.classList.add('collapsed');
+        sidebar.style.width = '0';
+    }
+});
+
+// 预览面板切换
+previewToggle.addEventListener('click', () => {
+    if (previewPanel.classList.contains('collapsed')) {
+        previewPanel.classList.remove('collapsed');
+        previewPanel.style.width = '250px';  // 或者使用上次调整的宽度
+    } else {
+        previewPanel.classList.add('collapsed');
+        previewPanel.style.width = '0';
+    }
+});
+
+// #endregion
+
+// #region 右键菜单
+
+// 右键菜单-左栏
+sidebar.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    const target = e.target.closest('.favorite-item'); // 检查是否在收藏夹项目上
+    if (target) {
+        const favPath = target.getAttribute('data-path'); // 获取收藏夹路径
+        console.log('favPath', favPath);
+        showFavoriteContextMenu(favPath, e.clientX, e.clientY); // 显示取消收藏菜单
+    } else {
+        showContextMenu(null, currentPath); // 显示默认菜单
+    }
+});
+
+// 收藏夹右键菜单
+ipcRenderer.on('favorite-menu-item-clicked', (event, action, path) => {
+    switch (action) {
+        case 'remove-from-favorites':
+            removeFromFavorites(path);
+            break;
+    }
+});
+
+// 显示上下文菜单
+function showContextMenu(file, dirPath) {
+    const isDirectory = file ? (typeof file.isDirectory === 'function' ? file.isDirectory() : file.isDirectory) : true;
+    const filePath = file ? path.join(dirPath, file.name) : dirPath;
+    const isFavorite = favorites.includes(filePath);
+
+    ipcRenderer.send('show-context-menu', {
+        isDirectory: isDirectory,
+        path: filePath,
+        isCurrentDir: !file,
+        isFavorite: isFavorite,
+        hasSelection: !!file
+    });
+}
+
+// 右键菜单点击事件
+ipcRenderer.on('menu-item-clicked', (event, action, path) => {
+    switch (action) {
+        case 'open-in-explorer':
+            shell.showItemInFolder(path);
+            break;
+        case 'add-to-favorites':
+            addToFavorites(path);
+            break;
+        case 'remove-from-favorites':
+            removeFromFavorites(path);
+            break;
+        case 'copy':
+            const selectedItems = fileListContainer.querySelectorAll('.file-item.selected'); // 获取选中的文件项
+            const selectedPaths = Array.from(selectedItems).map(item => item.getAttribute('data-path')); // 获取选中项的路径
+            copyFile(selectedPaths); // 传递选中项的路径
+            break;
+        case 'paste':
+            const filePaths = clipboardEx.readFilePaths(); // 获取剪贴板中的文件路径
+            if (filePaths.length > 0) {
+                // 发送粘贴事件到主进程
+                ipcRenderer.send('perform-paste', currentPath, filePaths);
+            }
+            break;
+            if (filePaths.length > 0) {
+                filePaths.forEach(filePath => {
+                    pasteFile(currentPath, filePath); // 将文件粘贴到当前路径
+                });
+                updateFileList(currentPath); // 更新文件列表以显示新粘贴的文件
+            }
+
+    }
+});
+
+
+// #endregion
+
+// #region 文件-视图-时间轴
+// 创建时间轴项目
 function createTimelineItems(fileDetails) {
     const timelineContainer = document.createElement('div');
     timelineContainer.className = 'timeline-container';
@@ -880,253 +471,450 @@ function createTimelineItems(fileDetails) {
     return timelineContainer;
 }
 
+// 年份切换
 function toggleYearItems(e) {
     const yearHeader = e.currentTarget;
     const yearItems = yearHeader.nextElementSibling;
     let isCollapsed = yearHeader.classList.toggle('collapsed');
-    
+
     if (yearItems && yearItems.classList.contains('timeline-year-items')) {
         yearItems.style.maxHeight = isCollapsed ? '0' : `${yearItems.scrollHeight}px`;
     }
-    
+
     yearHeader.querySelector('i').className = isCollapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-down';
 }
 
+// 月份切换
 function toggleMonthItems(e) {
     const monthHeader = e.currentTarget;
     const monthItems = monthHeader.nextElementSibling;
     let isCollapsed = monthHeader.classList.toggle('collapsed');
-    
+
     if (monthItems && monthItems.classList.contains('timeline-month-items')) {
         monthItems.style.maxHeight = isCollapsed ? '0' : `${monthItems.scrollHeight}px`;
     }
-    
+
     monthHeader.querySelector('i').className = isCollapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-down';
 }
 
+// 格式化日期
 function formatDate(date) {
     return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 }
+// #endregion
 
-updateFavorites() // 更新收藏夹
-showDrives() // 显示驱动器
-updateQuickAccess() // 新快速访问
+// #region 面板-工具栏
+// 后退按钮
+backBtn.addEventListener('click', () => {
+    console.warn('backBtn clicked');
+    if (currentHistoryIndex > 0) {
+        currentHistoryIndex--
+        updateFileList(history[currentHistoryIndex])
+    }
+})
 
-// 添加以下函数来处理地址栏的焦点
-function handlePathFocus() {
-    pathElement.select()  // 选中全部文本
+// 前进按钮
+forwardBtn.addEventListener('click', () => {
+    if (currentHistoryIndex < history.length - 1) {
+        currentHistoryIndex++
+        updateFileList(history[currentHistoryIndex])
+    }
+})
+
+// 向上按钮
+upBtn.addEventListener('click', () => {
+    const parentPath = path.dirname(currentPath)
+    if (parentPath !== currentPath) {
+        navigateTo(parentPath)
+    } else if (process.platform === 'win32' && /^[A-Z]:$/.test(currentPath)) {
+        showDrives()
+    }
+})
+
+// #endregion
+
+// #region 文件框选
+
+let isSelecting = false;
+let selectionBox = null;
+let startX, startY;
+
+fileListContainer.addEventListener('mousedown', handleMouseDown);
+fileListContainer.addEventListener('mousemove', handleMouseMove);
+fileListContainer.addEventListener('mouseup', handleMouseUp);
+
+
+// 创建选择框
+function createSelectionBox(x, y) {
+    selectionBox = document.createElement('div');
+    selectionBox.className = 'selection-box';
+    selectionBox.style.left = `${x}px`;
+    selectionBox.style.top = `${y}px`;
+    document.body.appendChild(selectionBox);
 }
 
-function handlePathBlur() {
-    pathElement.value = currentPath  // 失去焦点时恢复为完整路径
+// 更新选择框
+function updateSelectionBox(x, y) {
+    const width = Math.abs(x - startX);
+    const height = Math.abs(y - startY);
+    const left = Math.min(x, startX);
+    const top = Math.min(y, startY);
+    selectionBox.style.width = `${width}px`;
+    selectionBox.style.height = `${height}px`;
+    selectionBox.style.left = `${left}px`;
+    selectionBox.style.top = `${top}px`;
 }
 
-// 在文件部添加以下事件监听器
-pathElement.addEventListener('focus', handlePathFocus)
-pathElement.addEventListener('blur', handlePathBlur)
-
-
-
-
-
-// 拖拽-左栏
-resizer.addEventListener('mousedown', initResize);
-
-function initResize(e) { // 初始化拖拽排序
-    isResizing = true;
-    resizer.classList.add('resizing');
-    document.addEventListener('mousemove', resize);
-    document.addEventListener('mouseup', stopResize);
-    document.body.style.userSelect = 'none';
+// 移除选择框
+function removeSelectionBox() {
+    if (selectionBox) {
+        selectionBox.remove();
+        selectionBox = null;
+    }
 }
 
-function resize(e) {
-    if (!isResizing) return;
-    requestAnimationFrame(() => {
-        const newWidth = e.clientX < 0 ? 1 : e.clientX; // 修改这一行
-        console.log('e.clientX', e.clientX);
-        console.log('window.innerWidth', window.innerWidth);
+// 判断元素是否在选择框内
+function isElementInSelectionBox(element, box) {
+    const elementRect = element.getBoundingClientRect();
+    const boxRect = box.getBoundingClientRect();
+    return !(elementRect.right < boxRect.left ||
+        elementRect.left > boxRect.right ||
+        elementRect.bottom < boxRect.top ||
+        elementRect.top > boxRect.bottom);
+}
 
-        if (newWidth > 0 && newWidth < window.innerWidth) {
-            sidebar.style.width = `${newWidth}px`;
+// 选择框开始
+function handleMouseDown(e) {
+    if (e.button !== 0) return; // 只处理左键点击
+    const target = e.target;
+
+
+    // 检查是否在文件项上
+    if (target.classList.contains('file-item') || target.closest('.file-item')) {
+        console.log('文件上:', target.closest('.file-item').getAttribute('data-path'));
+        // 如果在文件项上，开始拖拽
+        const filePath = target.closest('.file-item').getAttribute('data-path'); // 获取文件路径
+        const fileData = [Buffer.from(fs.readFileSync(filePath))];
+        e.dataTransfer.setData('text/uri-list', `file://${filePath}`);
+        e.dataTransfer.effectAllowed = 'copy';  // 设置拖拽效果
+    } else {
+        // 如果在空白处，开始框选
+        console.log('空白处');
+        isSelecting = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        createSelectionBox(startX, startY);
+    }
+}
+
+// 选择框移动
+function handleMouseMove(e) {
+    if (!isSelecting) return;
+    updateSelectionBox(e.clientX, e.clientY);
+    selectItemsInBox();
+}
+
+// 选择框结束
+function handleMouseUp(e) {
+    if (!isSelecting) return;
+    isSelecting = false;
+    removeSelectionBox(); // 确保在鼠标释放时移除选择框
+}
+
+// 选择框选择文件
+function selectItemsInBox() {
+    const fileItems = fileListContainer.querySelectorAll('.file-item');
+    fileItems.forEach(item => {
+        if (isElementInSelectionBox(item, selectionBox)) {
+            item.classList.add('selected');
+        } else {
+            item.classList.remove('selected');
         }
     });
 }
 
-function stopResize() {
-    isResizing = false;
-    resizer.classList.remove('resizing');
-    document.removeEventListener('mousemove', resize);
-    document.removeEventListener('mouseup', stopResize);
-    document.body.style.userSelect = '';
-}
 
-// 修改现有的 sidebarToggle 件监听器
-sidebarToggle.addEventListener('click', () => {
-    if (sidebar.classList.contains('collapsed')) {
-        sidebar.classList.remove('collapsed');
-        sidebar.style.width = '250px';  // 或者使用上次调整的宽度
+// #endregion
+
+// #region 收藏夹
+
+// 从收藏夹中移除目录
+function removeFromFavorites(dirPath) {
+    const index = favorites.indexOf(dirPath);
+    if (index > -1) {
+        favorites.splice(index, 1);
+        localStorage.setItem('favorites', JSON.stringify(favorites));
+        updateFavorites();
     } else {
-        sidebar.classList.add('collapsed');
-        sidebar.style.width = '0';
-    }
-});
-
-// 预览面板切换
-previewToggle.addEventListener('click', () => {
-    if (previewPanel.classList.contains('collapsed')) {
-        previewPanel.classList.remove('collapsed');
-        previewPanel.style.width = '250px';  // 或者使用上次调整的宽度
-    } else {
-        previewPanel.classList.add('collapsed');
-        previewPanel.style.width = '0';
-    }
-});
-
-// 在 updateFileList 函件的末加以下代码
-fileListContainer.ondblclick = (e) => {
-    if (e.target === fileListContainer || e.target === fileListElement) {
-        const parentPath = path.dirname(currentPath)
-        if (parentPath !== currentPath) {
-            navigateTo(parentPath)
-        }
+        console.error('目录路径不在收藏夹中:', dirPath);
     }
 }
 
-// 添加函数来显示文件夹预览
-function showFolderPreview(folderPath, previewElement) {
-    fs.readdir(folderPath, (err, files) => {
-        if (err) {
-            console.error('无法取目:', err)
-            return
-        }
-
-        const previewItems = files.slice(0, 5)
-        previewElement.innerHTML = previewItems.map(item => {
-            const itemPath = path.join(folderPath, item).replace(/\\/g, '\\\\')
-            return `<span class="preview-item" data-path="${itemPath}">${item}</span>`
-        }).join('')
-
-        // 为预览项添加点击事件
-        previewElement.querySelectorAll('.preview-item').forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.stopPropagation() // 阻止事件冒泡
-                e.preventDefault() // 阻止默认行为
-                const itemPath = e.target.getAttribute('data-path').replace(/\\\\/g, '\\')
-                fs.stat(itemPath, (err, stats) => {
-                    if (err) {
-                        console.error('无法获取文件信息:', err)
-                        return
-                    }
-                    if (stats.isDirectory()) {
-                        navigateTo(itemPath)
-                    } else {
-                        shell.openPath(itemPath)
-                    }
-                })
-            })
-        })
-    })
+// 显示收藏夹右键菜单
+function showFavoriteContextMenu(favPath, x, y) {
+    ipcRenderer.send('show-favorite-context-menu', { path: favPath, x, y });
 }
 
+// 更新收藏夹
+function updateFavorites() {
+    favoritesElement.innerHTML = `
+    <div class="sidebar-section-header" onclick="toggleSidebarSection('favorites')">
+      <i class="fas fa-chevron-down sidebar-section-icon"></i>
+      <span>收藏</span>
+    </div>
+    <div class="sidebar-section-content">
+      <ul id="favorites-list">
+        ${favorites.map(fav => `
+          <li class="favorite-item" data-path="${fav}">
+            <span class="file-icon">${favoriteIcon}</span>
+            <span>${path.basename(fav)}</span>
+          </li>
+        `).join('')}
+      </ul>
+    </div>
+  `;
 
-// 右键菜单-左栏
-sidebar.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
-    const target = e.target.closest('.favorite-item'); // 检查是否在收藏夹项目上
-    if (target) {
-        const favPath = target.getAttribute('data-path'); // 获取收藏夹路径
-        console.log('favPath', favPath);
-        showFavoriteContextMenu(favPath, e.clientX, e.clientY); // 显示取消收藏菜单
-    } else {
-        showContextMenu(null, currentPath); // 显示默认菜单
-    }
-});
+    const favoritesList = document.getElementById('favorites-list');
 
+    // 为收藏项添加右键菜单和鼠标移入事件
+    const favoriteItems = favoritesList.querySelectorAll('.favorite-item');
+    favoriteItems.forEach(item => {
+        item.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const favPath = item.getAttribute('data-path');
+            console.log('favPath2222', favPath);
+            showFavoriteContextMenu(favPath, e.clientX, e.clientY);
+        });
 
+        item.addEventListener('mouseover', () => {
+            const favPath = item.getAttribute('data-path');
+            updateStatusBar(favPath);
+        });
 
+        item.addEventListener('mouseout', () => {
+            updateStatusBar('');
+        });
 
-// 在件顶部添加以下变
-let currentSortMethod = 'name';
-let currentSortOrder = 'asc';
-
-// 文件分组
-function groupFilesByType(files) {
-    const groups = {};
-
-    files.forEach(file => {
-        const ext = file.isDirectory ? '文件夹' : (path.extname(file.name).toLowerCase().replace(/^\./, '') || '无扩展名'); // 修改这一行
-        if (!groups[ext]) {
-            groups[ext] = [];
-        }
-        groups[ext].push(file);
-    });
-
-    return groups;
-}
-// 添加以下新函数
-function getFileDetails(dirPath, file) {
-    return new Promise((resolve) => {
-        const filePath = path.join(dirPath, file.name);
-        fs.stat(filePath, (err, stats) => {
-            if (err) {
-                console.warn(`无法获取文件 ${filePath} 的详细信息: ${err.message}`);
-                resolve({
-                    name: file.name,
-                    isDirectory: file.isDirectory(),
-                    stats: null,
-                    error: err.code
-                });
-            } else {
-                // 使用 birthtime 如果可用，否则使用 mtime
-                const creationTime = stats.birthtime && stats.birthtime.getTime() > 0 
-                    ? stats.birthtime 
-                    : stats.mtime;
-                
-                resolve({
-                    name: file.name,
-                    isDirectory: stats.isDirectory(),
-                    stats: {
-                        ...stats,
-                        birthtime: creationTime
-                    }
-                });
-            }
+        item.addEventListener('click', () => {
+            const favPath = item.getAttribute('data-path');
+            navigateTo(favPath);
         });
     });
+
+    // 初始化拖拽排序
+    if (favoritesList) {
+        Sortable.create(favoritesList, {
+            animation: 150,
+            onEnd: function (evt) {
+                const newOrder = Array.from(favoritesList.children).map(item => item.getAttribute('data-path'));
+                favorites = newOrder;
+                localStorage.setItem('favorites', JSON.stringify(favorites));
+            }
+        });
+    } else {
+        console.error('favorites-list element not found');
+    }
 }
 
-// 排序文件
-function sortFiles(files) {
-    return files.sort((a, b) => {
-        // 首处理错误的文件
-        if (a.error && !b.error) return 1;
-        if (!a.error && b.error) return -1;
-        if (a.error && b.error) return 0;
+// 添加到收藏夹
+function addToFavorites(dirPath) {
+    if (!favorites.includes(dirPath)) {
+        favorites.push(dirPath);
+        localStorage.setItem('favorites', JSON.stringify(favorites));
+        updateFavorites();
+    }
+}
 
-        // 然按照文件夹和文分类
-        if (a.isDirectory && !b.isDirectory) return -1;
-        if (!a.isDirectory && b.isDirectory) return 1;
+// #endregion
 
-        // 最后根据前排序方法进行排序
-        switch (currentSortMethod) {
-            case 'name':
-                return currentSortOrder === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
-            case 'date':
-                if (!a.stats || !b.stats) return 0;
-                return currentSortOrder === 'asc' ? a.stats.birthtime - b.stats.birthtime : b.stats.birthtime - a.stats.birthtime;
-            case 'modified':
-                if (!a.stats || !b.stats) return 0;
-                return currentSortOrder === 'asc' ? a.stats.mtime - b.stats.mtime : b.stats.mtime - a.stats.mtime;
-            case 'type':
-                return currentSortOrder === 'asc' ? path.extname(a.name).localeCompare(path.extname(b.name)) : path.extname(b.name).localeCompare(path.extname(a.name));
-            default:
-                return 0;
+// #region 文件-文件列表
+
+
+
+// 获取文件图标
+function getFileIcon(file) {
+    return new Promise((resolve) => {
+        const isDir = typeof file.isDirectory === 'function' ? file.isDirectory() : file.isDirectory;
+        // 如果是文件夹，则返回文件夹图标
+        if (isDir) {
+            resolve(folderIcon);
+            return;
+        }
+        // 只针对exe后缀的文件获取图标
+        const ext = path.extname(file.name).toLowerCase();
+        if (['.exe', '.lnk'].includes(ext)) {
+            const filePath = path.join(currentPath, file.name);
+            ipcRenderer.invoke('get-file-icon', filePath).then(base64 => {
+                // 检查 base64 是否有效
+                if (base64) {
+                    resolve(`<img src="${base64}" class="file-icon">`);
+                } else {
+                    resolve(getUnknownIcon(ext));
+                }
+            }).catch(error => {
+                console.warn(`无法获取文件图标: ${filePath}`, error);
+                resolve(getUnknownIcon(ext));
+            });
+        } else if (['.ttf', '.otf'].includes(ext)) {
+            const fontName = path.basename(filePath, path.extname(filePath)); // 获取字体名称
+            const isChinese = /[\u4e00-\u9fa5]/.test(fontName); // 检查是否包含中文
+            const encodedPath = encodeURIComponent(filePath).replace(/%5C/g, '/'); // 对路径进行编码并替换反斜杠为正斜杠
+            const fontFace = new FontFace(fontName, `url(file://${encodedPath})`);
+
+            fontFace.load().then(() => {
+                document.fonts.add(fontFace);
+                // 创建图标和文件名
+                const fontItem = document.createElement('div');
+                const fileIcon = document.createElement('div');
+                fileIcon.className = 'file-icon';
+                fileIcon.textContent = isChinese ? fontName : 'Abg'; // 根据字体内容设置
+                fileIcon.style.fontFamily = fontName;
+                const fileName = document.createElement('div');
+                fileName.className = 'file-name';
+                fileName.textContent = file.name;
+
+                // 将图标和文件名添加到文件项
+                fontItem.appendChild(fileIcon);
+                fontItem.appendChild(fileName);
+                resolve(fontItem);
+
+            }).catch(err => {
+                resolve(getUnknownIcon(ext));
+            });
+
+        } else if (['.jpg', '.jpeg', '.png', '.gif'].includes(ext)) {
+            const filePath = path.join(currentPath, file.name);
+            resolve(`<img src="${filePath}" class="file-icon">`);
+        } else if (['.mp4', '.avi', '.mov'].includes(ext)) {
+            const filePath = path.join(currentPath, file.name);
+            resolve(`
+                <video class="file-icon" src="${filePath}" controls>
+                    您的浏览器不支 video 标签。
+                </video>
+            `);
+        } else if (ext === '.svg') {
+            const filePath = path.join(currentPath, file.name);
+            fs.readFile(filePath, 'utf8', (err, data) => {
+                if (err) {
+                    console.warn(`无法读取SVG文件: ${filePath}`, err);
+                    resolve(getUnknownIcon(ext));
+                } else {
+                    resolve(`<div class="file-icon">${data}</div>`);
+                }
+            });
+        } else if (['.mp3', '.wav'].includes(ext)) {
+            const filePath = path.join(currentPath, file.name);
+            resolve(`
+                <audio class="file-icon" src="${filePath}" controls>
+                    您的浏览器不支持 audio 标签。
+                </audio>
+            `);
+        } else if (['.zip', '.rar', '.7z', '.tar', '.gz', '.bz2', '.xz', '.7zip', '.tgz', '.tar.gz', '.tar.bz2'].includes(ext)) {
+            resolve(getUnknownIcon(ext, ".zips"));
+        } else {
+            const unknownSvg = getUnknownIcon(ext); // 使用新函数
+            resolve(unknownSvg);
         }
     });
 }
 
-// 修改 createFileItem 函件
+// 更新文件列表
+function updateFileList(dirPath, isQuickAccess = false) {
+
+    fileListElement.innerHTML = '';
+    updatePreview(null);
+
+    fs.readdir(dirPath, { withFileTypes: true }, (err, files) => {
+        if (err) {
+            console.error('无法读取目录:', err, dirPath);
+            fileListElement.innerHTML = `<div class="error-message">无法读取目录: ${err.message}</div>`;
+            return;
+        }
+
+        // 更新路径
+        if (!isQuickAccess) {
+            currentPath = dirPath;
+            pathElement.value = dirPath;
+        }
+
+        // 取文件详细信息并排序
+        Promise.all(files.map(file => getFileDetails(dirPath, file)))
+            .then(fileDetails => {
+                sortFiles(fileDetails);
+                fileListElement.innerHTML = '';
+
+                if (currentViewMode === 'timeline') {
+                    const timelineItems = createTimelineItems(fileDetails);
+                    fileListElement.appendChild(timelineItems);
+                } else if (currentViewMode === 'group') {
+                    const groupedFiles = groupFilesByType(fileDetails);
+                    Object.entries(groupedFiles).forEach(([groupName, groupFiles]) => {
+                        const groupElement = document.createElement('div');
+                        groupElement.className = 'file-list-group';
+
+                        const groupHeader = document.createElement('div');
+                        groupHeader.className = 'file-list-group-header';
+                        groupHeader.innerHTML = `
+                            <span>${groupName}</span>
+                            <span class="group-count">${groupFiles.length} 项</span>
+                            <div class="group-sort-buttons">
+                                <button class="group-sort-button" data-sort="name" title="按名称排序">
+                                    <i class="fas fa-sort-alpha-down"></i>
+                                </button>
+                                <button class="group-sort-button" data-sort="date" title="按日期排序">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </button>
+                            </div>
+                        `;
+                        groupElement.appendChild(groupHeader);
+
+                        const groupContent = document.createElement('div');
+                        groupContent.className = 'file-list-group-content';
+                        groupFiles.forEach(file => {
+                            const fileItem = createFileItem(file, dirPath);
+                            groupContent.appendChild(fileItem);
+                        });
+                        groupElement.appendChild(groupContent);
+
+                        // 添加排序按钮的事件监听器
+                        const sortButtons = groupHeader.querySelectorAll('.group-sort-button');
+                        sortButtons.forEach(button => {
+                            button.addEventListener('click', (e) => {
+                                const sortType = e.currentTarget.getAttribute('data-sort');
+                                const isAscending = !e.currentTarget.classList.contains('sorted-asc');
+
+                                sortGroupFiles(groupContent, sortType, isAscending);
+
+                                // 更新排序按钮的状态
+                                sortButtons.forEach(btn => btn.classList.remove('sorted-asc', 'sorted-desc'));
+                                e.currentTarget.classList.add(isAscending ? 'sorted-asc' : 'sorted-desc');
+                            });
+                        });
+
+                        fileListElement.appendChild(groupElement);
+                    });
+                } else {
+                    fileDetails.forEach(file => {
+                        const fileItem = createFileItem(file, dirPath);
+                        fileListElement.appendChild(fileItem);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('获取文件详情时出错:', error);
+                fileListElement.innerHTML = `<div class="error-message">获取文件详情时出错: ${error.message}</div>`;
+            });
+    });
+
+}
+
+// 获取未知图标
+function getUnknownIcon(ext, defaultIcon = '.unknown') {
+    return customIcons[ext] || customIcons[defaultIcon].replace('XXX', ext.replace(".", ""));
+}
+
+// 创建文件项
 function createFileItem(file, dirPath) {
     const fileItem = document.createElement('div');
     fileItem.className = 'file-item';
@@ -1134,12 +922,12 @@ function createFileItem(file, dirPath) {
         fileItem.classList.add('error');
     }
 
- 
-    fileItem.setAttribute('data-path', path.join(dirPath, file.name)); 
+
+    fileItem.setAttribute('data-path', path.join(dirPath, file.name));
 
     const icon = document.createElement('span');
     icon.className = 'file-icon';
-   
+
 
     const name = document.createElement('span');
     name.className = 'file-name';
@@ -1203,7 +991,7 @@ function createFileItem(file, dirPath) {
 
         // 双击打开文件
         fileItem.addEventListener('dblclick', (e) => {
-            console.log('dblclick');    
+            console.log('dblclick');
             e.stopPropagation();
             const filePath = path.join(dirPath, file.name);
             if (typeof file.isDirectory === 'function' ? file.isDirectory() : file.isDirectory) {
@@ -1258,17 +1046,329 @@ function createFileItem(file, dirPath) {
     return fileItem;
 }
 
-// 添加这些辅助函数
-function formatFileSize(size) {
-    if (size < 1024) return size + ' B';
-    if (size < 1024 * 1024) return (size / 1024).toFixed(2) + ' KB';
-    if (size < 1024 * 1024 * 1024) return (size / (1024 * 1024)).toFixed(2) + ' MB';
-    return (size / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+// 获取文件详细信息
+function getFileDetails(dirPath, file) {
+    return new Promise((resolve) => {
+        const filePath = path.join(dirPath, file.name);
+        fs.stat(filePath, (err, stats) => {
+            if (err) {
+                console.warn(`无法获取文件 ${filePath} 的详细信息: ${err.message}`);
+                resolve({
+                    name: file.name,
+                    isDirectory: file.isDirectory(),
+                    stats: null,
+                    error: err.code
+                });
+            } else {
+                // 使用 birthtime 如果可用，否则使用 mtime
+                const creationTime = stats.birthtime && stats.birthtime.getTime() > 0
+                    ? stats.birthtime
+                    : stats.mtime;
+
+                resolve({
+                    name: file.name,
+                    isDirectory: stats.isDirectory(),
+                    stats: {
+                        ...stats,
+                        birthtime: creationTime
+                    }
+                });
+            }
+        });
+    });
 }
 
-function formatDate(date) {
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+
+// 文件分组
+function groupFilesByType(files) {
+    const groups = {};
+
+    files.forEach(file => {
+        const ext = file.isDirectory ? '文件夹' : (path.extname(file.name).toLowerCase().replace(/^\./, '') || '无扩展名'); // 修改这一行
+        if (!groups[ext]) {
+            groups[ext] = [];
+        }
+        groups[ext].push(file);
+    });
+
+    return groups;
 }
+
+// 排序文件
+function sortFiles(files) {
+    return files.sort((a, b) => {
+        // 首处理错误的文件
+        if (a.error && !b.error) return 1;
+        if (!a.error && b.error) return -1;
+        if (a.error && b.error) return 0;
+
+        // 然按照文件夹和文分类
+        if (a.isDirectory && !b.isDirectory) return -1;
+        if (!a.isDirectory && b.isDirectory) return 1;
+
+        // 最后根据前排序方法进行排序
+        switch (currentSortMethod) {
+            case 'name':
+                return currentSortOrder === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
+            case 'date':
+                if (!a.stats || !b.stats) return 0;
+                return currentSortOrder === 'asc' ? a.stats.birthtime - b.stats.birthtime : b.stats.birthtime - a.stats.birthtime;
+            case 'modified':
+                if (!a.stats || !b.stats) return 0;
+                return currentSortOrder === 'asc' ? a.stats.mtime - b.stats.mtime : b.stats.mtime - a.stats.mtime;
+            case 'type':
+                return currentSortOrder === 'asc' ? path.extname(a.name).localeCompare(path.extname(b.name)) : path.extname(b.name).localeCompare(path.extname(a.name));
+            default:
+                return 0;
+        }
+    });
+}
+
+
+// 获取文件图标结果
+ipcRenderer.on('file-icon-result', (event, { base64, error }) => {
+    if (error) {
+        console.warn('获取文件图标时出错:', error);
+    }
+});
+
+
+// 双击打开文件
+fileListContainer.ondblclick = (e) => {
+    if (e.target === fileListContainer || e.target === fileListElement) {
+        const parentPath = path.dirname(currentPath)
+        if (parentPath !== currentPath) {
+            navigateTo(parentPath)
+        }
+    }
+}
+
+// 文件列表右键菜单点击事件
+fileListContainer.addEventListener('contextmenu', (e) => {
+    if (e.target === fileListContainer || e.target === fileListElement) {
+        e.preventDefault();
+        showContextMenu(null, currentPath);
+    }
+});
+
+// 文件列表点击事件
+fileListContainer.addEventListener('click', (e) => {
+    if (e.target === fileListContainer || e.target === fileListElement) {
+        if (selectedItem) {
+            selectedItem.classList.remove('selected');
+            selectedItem = null;
+        }
+        removeSelectionBox(); // 移除选择框
+    }
+})
+// #endregion
+
+// #region 文件-视图
+
+// 添加时间轴视图按钮的事件监听器
+timelineViewBtn.addEventListener('click', () => {
+    setViewMode('timeline');
+});
+
+
+// 修改视图模式
+function setViewMode(mode) {
+    currentViewMode = mode;
+    localStorage.setItem('viewMode', mode);
+
+    // 更新 file-list 的 class
+    const fileList = document.getElementById('file-list');
+    fileList.className = mode === 'list' ? 'file-list-list' :
+        mode === 'group' ? 'file-list-group' :
+            mode === 'timeline' ? 'file-list-timeline' : 'file-list-icons';
+
+    // 添加类样式到 file-list-container
+    const fileListContainer = document.getElementById('file-list-container');
+    fileListContainer.className = mode === 'list' ? 'list-view' :
+        mode === 'group' ? 'group-view' :
+            mode === 'timeline' ? 'timeline-view' : 'icon-view';
+
+    // 更新视图按钮的激活状态
+    const viewButtons = document.querySelectorAll('#view-options button');
+    viewButtons.forEach(button => {
+        if (button.id === `${mode}-view-btn`) {
+            button.classList.add('active');
+        } else {
+            button.classList.remove('active');
+        }
+    });
+
+    updateFileList(currentPath);
+}
+
+// 列表视图
+listViewBtn.addEventListener('click', () => {
+    updateFileList(currentPath); // 直接更新文件列表
+    setViewMode('list');
+});
+
+// 图标视图
+iconViewBtn.addEventListener('click', () => {
+    updateFileList(currentPath); // 直接更新文件列表
+    setViewMode('icon');
+});
+
+// 分组视图
+groupViewBtn.addEventListener('click', () => {
+    setViewMode('group');
+    updateFileList(currentPath);
+});
+
+// 时间轴视图
+timelineViewBtn.addEventListener('click', () => {
+    setViewMode('timeline');
+    updateFileList(currentPath);
+});
+
+// #endregion
+
+// #region 快速访问
+
+// 更新快速访问
+function updateQuickAccess() {
+    const quickAccessPath = path.join(os.homedir(), 'AppData', 'Roaming', 'Microsoft', 'Windows', 'Recent'); // 快速访问路径
+    // 快速访问路径
+    fs.readdir(quickAccessPath, (err, files) => {
+        if (err) {
+            console.error('无法读快速访问目录:', err);
+            return;
+        }
+        // 过滤并处理快捷方式
+        Promise.all(files.filter(file => path.extname(file).toLowerCase() === '.lnk')
+            .map(file => new Promise((resolve) => {
+                const filePath = path.join(quickAccessPath, file);
+                windowsShortcuts.query(filePath, (error, shortcut) => {
+                    if (error) {
+                        //   console.error('无法读取快捷方式:', error);
+                        resolve(null);
+                    } else {
+                        let targetPath = shortcut.target;
+                        if (Buffer.isBuffer(targetPath)) {
+                            targetPath = iconv.decode(targetPath, 'gbk');
+                        }
+                        fs.stat(targetPath, (err, stats) => {
+                            if (err || !stats.isDirectory()) {
+                                resolve(null);
+                            } else {
+                                resolve({ path: targetPath, name: path.basename(targetPath) });
+                            }
+                        });
+                    }
+                });
+            })))
+            .then(quickAccessItems => {
+                quickAccessItems = quickAccessItems.filter(item => item !== null);
+
+                quickAccessElement.innerHTML = `
+    <div class="sidebar-section-header" onclick="toggleSidebarSection('quick-access')">
+    <i class="fas fa-chevron-down sidebar-section-icon"></i>
+    <span>快速访问</span>
+    </div>
+    <div class="sidebar-section-content">
+    ${quickAccessItems.slice(0, 10).map(item => `
+        <div class="quick-access-item" data-path="${encodeURIComponent(item.path)}">
+        <span class="file-icon">${folderIcon}</span>
+        <span>${item.name}</span>
+        </div>
+    `).join('')}
+    </div>
+`;
+
+                // 为快速访问项添加点击事件监听器
+                const quickAccessElements = quickAccessElement.querySelectorAll('.quick-access-item');
+                quickAccessElements.forEach(item => {
+                    item.addEventListener('click', () => {
+                        let filePath = decodeURIComponent(item.getAttribute('data-path'));
+                        navigateTo(filePath);
+                    });
+                });
+            });
+
+    });
+}
+// #endregion
+
+// #region 设置
+
+const settingsIcon = document.getElementById('settings');
+const settingsMenu = document.getElementById('settings-menu');
+
+// 当点击设置图标时，切换菜单的隐藏状态
+settingsIcon.addEventListener('click', (e) => {
+    settingsMenu.classList.toggle('hidden');
+});
+
+// 主题切换功能
+const themeToggleButton = document.getElementById('theme-toggle');
+
+function updateThemeButtonText() {
+    const isDarkTheme = document.body.classList.contains('dark-theme');
+    themeToggleButton.textContent = isDarkTheme ? '亮色主题' : '暗色主题';
+}
+
+themeToggleButton.addEventListener('click', () => {
+    console.log('切换主题按钮被点击');
+    document.body.classList.toggle('dark-theme');
+    const isDarkTheme = document.body.classList.contains('dark-theme');
+    localStorage.setItem('theme', isDarkTheme ? 'dark' : 'light');
+    console.log('当前主题：', isDarkTheme ? 'dark' : 'light');
+    updateThemeButtonText();
+});
+
+// 在页面加载时应用保存的主题
+document.addEventListener('DOMContentLoaded', () => {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-theme');
+    } else {
+        document.body.classList.remove('dark-theme');
+    }
+    updateThemeButtonText();
+});
+
+
+// 打开设置窗口
+document.getElementById('open-settings').addEventListener('click', () => {
+    ipcRenderer.send('open-settings');
+});
+
+
+// #endregion
+
+// #region 工具栏-排序
+// 排序
+function sortGroupFiles(groupContent, sortType, isAscending) {
+    const fileItems = Array.from(groupContent.children);
+    fileItems.sort((a, b) => {
+        let valueA, valueB;
+        if (sortType === 'name') {
+            valueA = a.querySelector('.file-name').textContent;
+            valueB = b.querySelector('.file-name').textContent;
+        } else if (sortType === 'date') {
+            valueA = new Date(a.getAttribute('data-modified'));
+            valueB = new Date(b.getAttribute('data-modified'));
+        }
+
+        if (valueA < valueB) return isAscending ? -1 : 1;
+        if (valueA > valueB) return isAscending ? 1 : -1;
+        return 0;
+    });
+
+    fileItems.forEach(item => groupContent.appendChild(item));
+}
+
+document.getElementById('sort-name').addEventListener('click', () => handleSortClick('name'));
+document.getElementById('sort-date').addEventListener('click', () => handleSortClick('date'));
+document.getElementById('sort-modified').addEventListener('click', () => handleSortClick('modified'));
+document.getElementById('sort-type').addEventListener('click', () => handleSortClick('type'));
+
+let currentSortMethod = 'name';// 排序方法
+let currentSortOrder = 'asc';// 排序顺序
 
 // 加排序按钮点击件处理函数
 function handleSortClick(sortMethod) {
@@ -1281,121 +1381,36 @@ function handleSortClick(sortMethod) {
     updateFileList(currentPath);//更新文件列表
 }
 
-document.getElementById('sort-name').addEventListener('click', () => handleSortClick('name'));
-document.getElementById('sort-date').addEventListener('click', () => handleSortClick('date'));
-document.getElementById('sort-modified').addEventListener('click', () => handleSortClick('modified'));
-document.getElementById('sort-type').addEventListener('click', () => handleSortClick('type'));
 
+// #endregion
 
-// 在文件底部添加
-document.addEventListener('DOMContentLoaded', () => {
-    let initialPath;
-    if (process.platform === 'win32') {
-        initialPath = process.env.USERPROFILE || 'C:\\';
-    } else {
-        initialPath = process.env.HOME || '/';
-    }
-
-    currentViewMode = localStorage.getItem('viewMode') || 'list';
-    // console.log('Initial view mode:', currentViewMode);
-    setViewMode(currentViewMode); // 初始化视图模式
-
-    // 确保路径存在
-    fs.access(initialPath, fs.constants.R_OK, (err) => {
-        if (err) {
-            console.error('无法访问初始路径:', err);
-            initialPath = process.platform === 'win32' ? 'C:\\' : '/';
-        }
-        updateFileList(initialPath);
-    });
-});
-
-// 添加 removeFromFavorites 函数
-function removeFromFavorites(dirPath) {
-    const index = favorites.indexOf(dirPath);
-    if (index > -1) {
-        favorites.splice(index, 1);
-        localStorage.setItem('favorites', JSON.stringify(favorites));
-        updateFavorites();
-    } else {
-        console.error('目录路径不在收藏夹中:', dirPath);
-    }
-}
-
-// 添加新函数来显示收藏夹项的右键菜单
-function showFavoriteContextMenu(favPath, x, y) {
-  ipcRenderer.send('show-favorite-context-menu', { path: favPath, x, y });
-}
-
-
-
-// 在件底部添加以下代码来置事件监听器
-document.addEventListener('DOMContentLoaded', () => {
-    // 设置侧边栏切换事件
-    const sidebarSections = document.querySelectorAll('.sidebar-section');
-    sidebarSections.forEach(section => {
-        const header = section.querySelector('.sidebar-section-header');
-        if (header) {
-            header.addEventListener('click', () => {
-                toggleSidebarSection(section.id);
-            });
-        }
-    });
-
-    // 设置序按钮事件
-    document.getElementById('sort-name').addEventListener('click', () => handleSortClick('name'));
-    document.getElementById('sort-date').addEventListener('click', () => handleSortClick('date'));
-    document.getElementById('sort-modified').addEventListener('click', () => handleSortClick('modified'));
-    document.getElementById('sort-type').addEventListener('click', () => handleSortClick('type'));
-
-    // 初始化文件列表
-    const initialPath = process.platform === 'win32' ? 'C:\\' : '/';
-    updateFileList(initialPath);
-
-    // 更新侧边栏内容
-    updateFavorites();//更新收藏夹
-    showDrives();//显示驱动器
-    updateQuickAccess();//更新快速访问
-});
-
-// 在文件底部添加以下代码
-ipcRenderer.on('file-icon-result', (event, { base64, error }) => {
-    if (error) {
-        console.warn('获取文件图标时出错:', error);
-    }
-});
-
-// 在文件底部添加以下事件监听器
-ipcRenderer.on('favorite-menu-item-clicked', (event, action, path) => {
-    switch (action) {
-        case 'remove-from-favorites':
-            removeFromFavorites(path);
-            break;
-    }
-});
-
-
+// #region 预览面板
 
 // 预览面板拖拽
 let isPreviewResizing = false;
 
 previewResizer.addEventListener('mousedown', initPreviewResize);
 
+// 初始化预览面板拖拽
 function initPreviewResize(e) {
     isPreviewResizing = true; //开始调整
     lastPreviewX = e.clientX;
     document.addEventListener('mousemove', resizePreview);
     document.addEventListener('mouseup', stopPreviewResize);
 }
+
+// 调整预览面板大小
 function resizePreview(e) {
     if (!isPreviewResizing) return;
     lastPreviewX = e.clientX;
-    const newWidth = window.innerWidth  - e.clientX;
+    const newWidth = window.innerWidth - e.clientX;
     // console.log('e.clientX:', e.clientX, 'newWidth:', newWidth)
     if (newWidth >= 0 && newWidth < window.innerWidth - 400) {
         previewPanel.style.width = `${newWidth}px`;
     }
 }
+
+// 停止预览面板拖拽
 function stopPreviewResize() {
     isPreviewResizing = false;
     document.removeEventListener('mousemove', resizePreview);
@@ -1445,10 +1460,10 @@ function updatePreview(file) {
         }).catch(err => {
             previewContent.innerHTML = `<p>无法加载字体: ${err.message}</p>`;
         });
-    
+
     } else if (['.jpg', '.jpeg', '.png', '.gif', '.svg'].includes(fileExt)) {
         previewContent.innerHTML = `<img src="file://${filePath}" alt="${file.name}" style="max-width: 100%; max-height: 300px;">`;
-    
+
     } else if (['.txt', '.md', '.js', '.html', '.css', '.tap', '.nc', '.ini', '.ts'].includes(fileExt)) {
         fs.readFile(filePath, 'utf8', (err, data) => {
             if (err) {
@@ -1456,42 +1471,59 @@ function updatePreview(file) {
                 return;
             }
             // ${ data.slice(0, 1000) }${ data.length > 1000 ? '...' : '' }
-            const highlightedCode = hljs.highlightAuto(data).value; 
+            const highlightedCode = hljs.highlightAuto(data).value;
             previewContent.innerHTML = ` <pre><code class="${fileExt.replace('.', '')}">${highlightedCode}</code></pre>`;
-           
+
         });
     } else {
         previewContent.innerHTML = `<p>无法预览此类型的文件</p>`;
     }
 }
 
-// 列表视图
-listViewBtn.addEventListener('click', () => {
-    updateFileList(currentPath); // 直接更新文件列表
-    setViewMode('list');
-});
+// #endregion
 
-// 图标视图
-iconViewBtn.addEventListener('click', () => {
-    updateFileList(currentPath); // 直接更新文件列表
-    setViewMode('icon');
-});
+// #region 状态栏
+const statusBar = document.getElementById('status-bar');
 
-// 分组视图
-groupViewBtn.addEventListener('click', () => {
-    setViewMode('group');
-    updateFileList(currentPath);
-});
+// 更新状态栏
+function updateStatusBar(filePath) {
+    if (!filePath) {
+        statusBarElement.textContent = '';
+        return;
+    }
 
-// 时间轴视图
-timelineViewBtn.addEventListener('click', () => {
-    setViewMode('timeline');
-    updateFileList(currentPath);
-});
+    fs.stat(filePath, (err, stats) => {
+        if (err) {
+            statusBarElement.textContent = `错误: ${err.message}`;
+            return;
+        }
+
+        let statusText = '';
+
+        if (statusBarDisplayOptions.showPath) {
+            statusText += `路径: ${filePath} | `;
+        }
+
+        statusText += `名称: ${path.basename(filePath)}`;
+
+        if (statusBarDisplayOptions.showType && !stats.isDirectory()) {
+            statusText += ` | 类型: ${path.extname(filePath) || '文件'}`;
+        }
+
+        if (statusBarDisplayOptions.showSize) {
+            statusText += ` | 大小: ${formatFileSize(stats.size)}`;
+        }
+
+        if (statusBarDisplayOptions.showDate) {
+            statusText += ` | 修改日期: ${formatDate(stats.mtime)}`;
+        }
+
+        statusBarElement.textContent = statusText;
+    });
+}
 
 
-
-// 在文件顶部添加新的常量
+// 状态栏显示选项
 let statusBarDisplayOptions = JSON.parse(localStorage.getItem('statusBarDisplayOptions')) || {
     showPath: true,
     showType: true,
@@ -1513,21 +1545,21 @@ function updateStatusBar(filePath) {
         }
 
         let statusText = '';
-        
+
         if (statusBarDisplayOptions.showPath) {
             statusText += `路径: ${filePath} | `;
         }
-        
+
         statusText += `名称: ${path.basename(filePath)}`;
-        
+
         if (statusBarDisplayOptions.showType && !stats.isDirectory()) {
             statusText += ` | 类型: ${path.extname(filePath) || '文件'}`;
         }
-        
+
         if (statusBarDisplayOptions.showSize) {
             statusText += ` | 大小: ${formatFileSize(stats.size)}`;
         }
-        
+
         if (statusBarDisplayOptions.showDate) {
             statusText += ` | 修改日期: ${formatDate(stats.mtime)}`;
         }
@@ -1540,27 +1572,28 @@ function updateStatusBar(filePath) {
 statusBarElement.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     const options = [
-        { 
-            label: '显示路径', 
+        {
+            label: '显示路径',
             checked: statusBarDisplayOptions.showPath
         },
-        { 
-            label: '显示类型', 
+        {
+            label: '显示类型',
             checked: statusBarDisplayOptions.showType
         },
-        { 
-            label: '显示大小', 
+        {
+            label: '显示大小',
             checked: statusBarDisplayOptions.showSize
         },
-        { 
-            label: '显示日期', 
+        {
+            label: '显示日期',
             checked: statusBarDisplayOptions.showDate
         }
     ];
-    
+
     ipcRenderer.send('show-status-bar-menu', options);
 });
 
+// 状态栏右键菜单点击事件
 ipcRenderer.on('status-bar-menu-item-clicked', (event, label) => {
     switch (label) {
         case '显示路径':
@@ -1580,9 +1613,7 @@ ipcRenderer.on('status-bar-menu-item-clicked', (event, label) => {
     updateStatusBar(currentPath);
 });
 
-
-const statusBar = document.getElementById('status-bar');
-
+// 状态栏拖拽事件
 statusBar.addEventListener('mousedown', (e) => {
     const startY = e.clientY;
     const startHeight = parseInt(document.defaultView.getComputedStyle(statusBar).height, 10);
@@ -1602,204 +1633,9 @@ statusBar.addEventListener('mousedown', (e) => {
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
 });
+// #endregion
 
-
-
-// ===============================
-// 文件选择框
-// ===============================
-
-let isSelecting = false;
-let selectionBox = null;
-let startX, startY;
-
-// 创建选择框
-function createSelectionBox(x, y) {
-    selectionBox = document.createElement('div');
-    selectionBox.className = 'selection-box';
-    selectionBox.style.left = `${x}px`;
-    selectionBox.style.top = `${y}px`;
-    document.body.appendChild(selectionBox);
-}
-
-// 更新选择框
-function updateSelectionBox(x, y) {
-    const width = Math.abs(x - startX);
-    const height = Math.abs(y - startY);
-    const left = Math.min(x, startX);
-    const top = Math.min(y, startY);
-    selectionBox.style.width = `${width}px`;
-    selectionBox.style.height = `${height}px`;
-    selectionBox.style.left = `${left}px`;
-    selectionBox.style.top = `${top}px`;
-}
-
-// 移除选择框
-function removeSelectionBox() {
-    if (selectionBox) {
-        selectionBox.remove();
-        selectionBox = null;
-    }
-}
-
-// 判断元素是否在选择框内
-function isElementInSelectionBox(element, box) {
-    const elementRect = element.getBoundingClientRect();
-    const boxRect = box.getBoundingClientRect();
-    return !(elementRect.right < boxRect.left || 
-             elementRect.left > boxRect.right || 
-             elementRect.bottom < boxRect.top || 
-             elementRect.top > boxRect.bottom);
-}
-
-
-
-fileListContainer.addEventListener('mousedown', handleMouseDown);
-fileListContainer.addEventListener('mousemove', handleMouseMove);
-fileListContainer.addEventListener('mouseup', handleMouseUp);
-
-// 在 updateFileList 函件末尾添加以下代码
-fileListContainer.addEventListener('contextmenu', (e) => {
-    if (e.target === fileListContainer || e.target === fileListElement) {
-        e.preventDefault();
-        showContextMenu(null, currentPath);
-    }
-});
-
-// 添加一个点击事件监听器到 fileListContainer，用于取消选择
-fileListContainer.addEventListener('click', (e) => {
-    if (e.target === fileListContainer || e.target === fileListElement) {
-        if (selectedItem) {
-            selectedItem.classList.remove('selected');
-            selectedItem = null;
-        }
-        removeSelectionBox(); // 移除选择框
-    }
-})
-
-
-// 选择框开始
-function handleMouseDown(e) {
-    if (e.button !== 0) return; // 只处理左键点击
-    const target = e.target;
-
-   
-    // 检查是否在文件项上
-    if (target.classList.contains('file-item') || target.closest('.file-item')) {
-        console.log('文件上:', target.closest('.file-item').getAttribute('data-path'));
-        // 如果在文件项上，开始拖拽
-        const filePath = target.closest('.file-item').getAttribute('data-path'); // 获取文件路径
-        const fileData = [Buffer.from(fs.readFileSync(filePath))]; 
-        e.dataTransfer.setData('text/uri-list', `file://${filePath}`);
-        e.dataTransfer.effectAllowed = 'copy';  // 设置拖拽效果
-    } else {
-        // 如果在空白处，开始框选
-        console.log('空白处');
-        isSelecting = true;
-        startX = e.clientX;
-        startY = e.clientY;
-        createSelectionBox(startX, startY);
-    }
-}
-
-// 选择框移动
-function handleMouseMove(e) {
-    if (!isSelecting) return;
-    updateSelectionBox(e.clientX, e.clientY);
-    selectItemsInBox();
-}
-
-// 选择框结束
-function handleMouseUp(e) {
-    if (!isSelecting) return;
-    isSelecting = false;
-    removeSelectionBox(); // 确保在鼠标释放时移除选择框
-}
-
-// 选择框选择文件
-function selectItemsInBox() {
-    const fileItems = fileListContainer.querySelectorAll('.file-item');
-    fileItems.forEach(item => {
-        if (isElementInSelectionBox(item, selectionBox)) {
-            item.classList.add('selected');
-        } else {
-            item.classList.remove('selected');
-        }
-    });
-}
-
-
-
-
-
-// 排序
-function sortGroupFiles(groupContent, sortType, isAscending) {
-    const fileItems = Array.from(groupContent.children);
-    fileItems.sort((a, b) => {
-        let valueA, valueB;
-        if (sortType === 'name') {
-            valueA = a.querySelector('.file-name').textContent;
-            valueB = b.querySelector('.file-name').textContent;
-        } else if (sortType === 'date') {
-            valueA = new Date(a.getAttribute('data-modified'));
-            valueB = new Date(b.getAttribute('data-modified'));
-        }
-        
-        if (valueA < valueB) return isAscending ? -1 : 1;
-        if (valueA > valueB) return isAscending ? 1 : -1;
-        return 0;
-    });
-    
-    fileItems.forEach(item => groupContent.appendChild(item));
-}
-
-
-
-
-
-// ===============================
-// 设置
-// ===============================
-
-const settingsIcon = document.getElementById('settings');
-const settingsMenu = document.getElementById('settings-menu');
-
-// 当点击设置图标时，切换菜单的隐藏状态
-settingsIcon.addEventListener('click', (e) => {
-    settingsMenu.classList.toggle('hidden');
-});
-
-// 主题切换功能
-const themeToggleButton = document.getElementById('theme-toggle');
-
-function updateThemeButtonText() {
-    const isDarkTheme = document.body.classList.contains('dark-theme');
-    themeToggleButton.textContent = isDarkTheme ? '亮色主题' : '暗色主题';
-}
-
-themeToggleButton.addEventListener('click', () => {
-    console.log('切换主题按钮被点击');
-    document.body.classList.toggle('dark-theme');
-    const isDarkTheme = document.body.classList.contains('dark-theme');
-    localStorage.setItem('theme', isDarkTheme ? 'dark' : 'light');
-    console.log('当前主题：', isDarkTheme ? 'dark' : 'light');
-    updateThemeButtonText();
-});
-
-// 在页面加载时应用保存的主题
-document.addEventListener('DOMContentLoaded', () => {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    if (savedTheme === 'dark') {
-        document.body.classList.add('dark-theme');
-    } else {
-        document.body.classList.remove('dark-theme');
-    }
-    updateThemeButtonText();
-});
-
-
-
-
+// #region 文件-空格预览
 // 全屏窗口
 let fullscreen_preview = document.getElementById('fullscreen-preview');
 let review_content_fullscreen = document.getElementById('preview-content-fullscreen');
@@ -1822,7 +1658,7 @@ document.addEventListener('keydown', (e) => {
             }
         }
     } else if (e.code === 'Escape') {
-        isPreviewOpen = false; 
+        isPreviewOpen = false;
         hideFullscreenPreview();
 
     } else if (e.code === 'ArrowRight') { // 右切换到下一张
@@ -1870,7 +1706,7 @@ function getPreviousSelectedItem() {
     return document.querySelectorAll('.file-item')[prevIndex];
 }
 
-// 处理鼠标滚轮事件以放大缩小图片
+// 图片缩放
 document.addEventListener('wheel', (e) => {
     const img = review_content_fullscreen.querySelector('img');
     if (img) {
@@ -1881,7 +1717,7 @@ document.addEventListener('wheel', (e) => {
 });
 
 
-// 修改 showFullscreenPreview 函数
+// 显示全屏预览
 function showFullscreenPreview(filePath) {
     const fileExt = path.extname(filePath).toLowerCase();
     if (['.jpg', '.jpeg', '.png', '.gif', '.svg'].includes(fileExt)) {
@@ -1950,7 +1786,7 @@ function showFullscreenPreview(filePath) {
     } else if (fileExt === '.psd') {
         // 处理PSD文件
         console.log(`尝试打开PSD文件: ${filePath}`); // 添加调试信息
-        
+
         // 将 PSD 转换为 PNG 并保存到临时目录，然后读取并转换为 Base64
         PSD.open(filePath).then(function (psdData) {
             const tempFilePath = path.join(os.tmpdir(), 'output_temp_image.png');
@@ -2026,7 +1862,131 @@ function hideFullscreenPreview() {
 // 关闭预览按钮
 document.getElementById('close-preview').addEventListener('click', hideFullscreenPreview);
 
-// 打开设置窗口
-document.getElementById('open-settings').addEventListener('click', () => {
-    ipcRenderer.send('open-settings');
-});
+
+// #endregion
+
+// #region 地址栏
+
+// 地址栏焦点事件
+function handlePathFocus() {
+    pathElement.select()  // 选中全部文本
+}
+
+// 地址栏失去焦点事件
+function handlePathBlur() {
+    pathElement.value = currentPath  // 失去焦点时恢复为完整路径
+}
+
+// 地址栏事件监听器
+pathElement.addEventListener('focus', handlePathFocus)
+pathElement.addEventListener('blur', handlePathBlur)
+
+// 导航到新路径
+function navigateTo(newPath) {
+    if (!newPath) {
+        console.error('无效的路径');
+        return;
+    }
+
+    newPath = newPath.replace(/\\\\/g, '\\');
+    if (process.platform === 'win32' && newPath.length === 2 && newPath[1] === ':') {
+        newPath += '\\';  // 确保驱动器路径以反斜杠结尾
+    }
+
+    fs.access(newPath, fs.constants.R_OK, (err) => {
+        if (err) {
+            console.error('无法访问目录:', err);
+            return;
+        }
+        fs.stat(newPath, (err, stats) => {
+            if (err) {
+                console.error('无法获取文件/目录信息:', err);
+                return;
+            }
+            if (stats.isDirectory()) {
+                if (!newPath.endsWith(path.sep)) {
+                    newPath += path.sep;
+                }
+                history = history.slice(0, currentHistoryIndex + 1);
+                history.push(currentPath);
+                currentHistoryIndex++;
+                currentPath = newPath;
+                updateFileList(newPath);
+                pathElement.value = newPath;
+            } else {
+                shell.openPath(newPath);
+            }
+        });
+    });
+}
+
+// 添加地址栏输入跳转功能
+pathElement.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        navigateTo(pathElement.value)
+    }
+})
+
+// #endregion
+
+// #region 左栏-驱动器
+// 显示驱动器
+function showDrives() {
+    const drives = [];
+    if (process.platform === 'win32') {
+        for (let i = 65; i <= 90; i++) {
+            const driveLetter = String.fromCharCode(i);
+            if (fs.existsSync(`${driveLetter}:`)) {
+                const drivePath = `${driveLetter}:\\`;
+                let volumeName = '';
+                try {
+                    const volOutputBuffer = execSync(`vol ${driveLetter}:`);
+                    const volOutput = iconv.decode(volOutputBuffer, 'gbk');
+                    //   console.warn('卷标内容', '|' + volOutput + '|');
+
+                    // 更新正则表达式匹配模式
+                    const volumeNameMatch = volOutput.match(/驱动器\s+\w+\s+中的卷是\s+(.+)/);
+
+                    if (volumeNameMatch && volumeNameMatch[1]) {
+                        volumeName = volumeNameMatch[1].trim();
+                    }
+                    //   console.warn('volumeName', volumeName);   
+                } catch (error) {
+                    console.error(`无法获取驱动器 ${driveLetter}: 的卷标名称`, error);
+                }
+                drives.push({ letter: driveLetter, path: drivePath, name: volumeName });
+            }
+        }
+    } else {
+        drives.push({ letter: '/', path: '/', name: 'Root' });
+    }
+
+
+    drivesElement.innerHTML = `
+    <div class="sidebar-section-header" onclick="toggleSidebarSection('drives')">
+      <i class="fas fa-chevron-down sidebar-section-icon"></i>
+      <span>此电脑</span>
+    </div>
+    <div class="sidebar-section-content">
+      ${drives.map(drive => `
+        <div class="drive-item" data-path="${drive.path}">
+          <span class="file-icon">${driveIcon}</span>
+          <span>${drive.name || 'Local Disk'} (${drive.letter}:)</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+    // 为每个驱动器项添加点击事件监听器
+    document.querySelectorAll('.drive-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const drivePath = item.getAttribute('data-path');
+            navigateTo(drivePath);
+        });
+    });
+}
+
+updateFavorites() // 更新收藏夹
+showDrives() // 显示驱动器
+updateQuickAccess() // 新快速访问
+// #endregion
