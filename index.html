@@ -25,9 +25,18 @@
 
             <!-- 侧边栏内容 -->
             <div class="sidebar-content">
-                <div id="drives" class="sidebar-section"></div>
-                <div id="favorites" class="sidebar-section"></div>
-                <div id="quick-access" class="sidebar-section"></div>
+                <div class="sidebar-tabs">
+                    <button class="tab-button active" data-tab="folders">文件夹</button>
+                    <button class="tab-button" data-tab="recent">最近</button>
+                </div>
+                <div class="tab-content" id="folders-tab">
+                    <div id="drives" class="sidebar-section"></div>
+                    <div id="favorites" class="sidebar-section"></div>
+                    <div id="quick-access" class="sidebar-section"></div>
+                </div>
+                <div class="tab-content" id="recent-tab" style="display: none;">
+                    最近文件时间轴显示
+                </div>
             </div>
 
         </div>

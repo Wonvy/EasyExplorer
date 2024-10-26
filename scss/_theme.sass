@@ -45,6 +45,30 @@ $header-hover-bg-dark: rgba(172, 172, 172, 0.2)
     background-color: $sidebar-bg
     border-right: 1px solid $dark-border
     border-right-color: $border
+    .sidebar-tabs
+      display: flex
+      border-bottom: 1px solid $border
+      .tab-button
+        flex: 1
+        text-align: center
+        padding: 10px
+        background: none
+        border: none
+        cursor: pointer
+        transition: background-color 0.3s
+        &:hover
+          background-color: $hover-bg-light
+        &.active
+          background-color: $selected-bg
+          border-bottom: 2px solid $border
+
+    .tab-content
+      display: none
+      padding: 20px
+      &.active
+        display: block
+
+
 
     #settings-menu
       border: 1px solid $border

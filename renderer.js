@@ -148,7 +148,45 @@ document.addEventListener('DOMContentLoaded', () => {
     updateFavorites(); // 更新收藏夹
     showDrives(); // 显示驱动器
     updateQuickAccess(); // 更新快速访问
+
+    // 添加标签页切换功能
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tabName = button.getAttribute('data-tab');
+            
+            // 移除所有活动类
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => content.style.display = 'none');
+            
+            // 添加活动类到当前标签
+            button.classList.add('active');
+            document.getElementById(`${tabName}-tab`).style.display = 'block';
+
+            // 如果是"最近"标签,更新内容
+            if (tabName === 'recent') {
+                updateRecentTab();
+            }
+        });
+    });
 });
+
+// 添加更新"最近"标签内容的函数
+function updateRecentTab() {
+    const recentTab = document.getElementById('recent-tab');
+    // 这里添加获取和显示最近访问文件的逻辑
+    // 可以使用之前的 updateQuickAccess 函数的逻辑作为起点
+}
+
+// 修改 updateQuickAccess 函数,使其同时更新"最近"标签
+function updateQuickAccess() {
+    // ... 现有的代码 ...
+
+    // 在更新快速访问后,也更新"最近"标签
+    updateRecentTab();
+}
 
 // 在应用程序关闭前保存当前路径
 window.addEventListener('beforeunload', () => {
@@ -1100,7 +1138,7 @@ function sortFiles(files) {
         if (a.isDirectory && !b.isDirectory) return -1;
         if (!a.isDirectory && b.isDirectory) return 1;
 
-        // 最后根据前排序方法进行排序
+        // ���后根据前排���方法进行排序
         switch (currentSortMethod) {
             case 'name':
                 return currentSortOrder === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
@@ -1902,7 +1940,7 @@ function navigateTo(newPath) {
 
     fs.access(newPath, fs.constants.R_OK, (err) => {
         if (err) {
-            console.error('无法访问目录:', err);
+            console.error('��法访问目录:', err);
             return;
         }
         fs.stat(newPath, (err, stats) => {

@@ -439,6 +439,33 @@ body #sidebar {
   border-right: 1px solid #3a3a3a;
   border-right-color: #ddd;
 }
+body #sidebar .sidebar-tabs {
+  display: flex;
+  border-bottom: 1px solid #ddd;
+}
+body #sidebar .sidebar-tabs .tab-button {
+  flex: 1;
+  text-align: center;
+  padding: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+body #sidebar .sidebar-tabs .tab-button:hover {
+  background-color: rgba(240, 240, 240, 0.1);
+}
+body #sidebar .sidebar-tabs .tab-button.active {
+  background-color: #d0e8ff;
+  border-bottom: 2px solid #ddd;
+}
+body #sidebar .tab-content {
+  display: none;
+  padding: 20px;
+}
+body #sidebar .tab-content.active {
+  display: block;
+}
 body #sidebar #settings-menu {
   border: 1px solid #ddd;
 }
@@ -555,6 +582,33 @@ body .drive-item:hover {
   border-right: 1px solid #3a3a3a;
   border-right-color: #3a3a3a;
 }
+.dark-theme #sidebar .sidebar-tabs {
+  display: flex;
+  border-bottom: 1px solid #3a3a3a;
+}
+.dark-theme #sidebar .sidebar-tabs .tab-button {
+  flex: 1;
+  text-align: center;
+  padding: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+.dark-theme #sidebar .sidebar-tabs .tab-button:hover {
+  background-color: rgba(240, 240, 240, 0.1);
+}
+.dark-theme #sidebar .sidebar-tabs .tab-button.active {
+  background-color: #404040;
+  border-bottom: 2px solid #3a3a3a;
+}
+.dark-theme #sidebar .tab-content {
+  display: none;
+  padding: 20px;
+}
+.dark-theme #sidebar .tab-content.active {
+  display: block;
+}
 .dark-theme #sidebar #settings-menu {
   border: 1px solid #3a3a3a;
 }
@@ -660,7 +714,7 @@ body .drive-item:hover {
 
 .fas {
   font-family: "Font Awesome 5 Free";
-  font-weight: 900;
+  font-weight: 901;
   width: 16px;
   height: 16px;
   display: inline-block;
@@ -751,7 +805,6 @@ html {
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 20px;
   direction: rtl;
   pointer-events: auto;
 }
