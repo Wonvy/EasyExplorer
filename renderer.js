@@ -92,7 +92,9 @@ let statusBarDisplayOptions = JSON.parse(localStorage.getItem('statusBarDisplayO
 pathElement.id = 'path'
 pathElement.type = 'text'
 
-
+// 加载上次打开的路径
+let lastOpenedPath = localStorage.getItem('lastOpenedPath');
+let initialPath = lastOpenedPath || (process.platform === 'win32' ? process.env.USERPROFILE || 'C:\\' : process.env.HOME || '/');
 
 main.insertBefore(pathElement, document.querySelector('#path-container'))
 
@@ -109,13 +111,6 @@ fs.readFile(path.join(__dirname, 'icons.json'), 'utf8', (err, data) => {
 
 // 初始化
 document.addEventListener('DOMContentLoaded', () => {
-    let initialPath;
-    if (process.platform === 'win32') {
-        initialPath = process.env.USERPROFILE || 'C:\\';
-    } else {
-        initialPath = process.env.HOME || '/';
-    }
-
     currentViewMode = localStorage.getItem('viewMode') || 'list';
     // console.log('Initial view mode:', currentViewMode);
     setViewMode(currentViewMode); // 初始化视图模式
@@ -153,6 +148,11 @@ document.addEventListener('DOMContentLoaded', () => {
     updateFavorites(); // 更新收藏夹
     showDrives(); // 显示驱动器
     updateQuickAccess(); // 更新快速访问
+});
+
+// 在应用程序关闭前保存当前路径
+window.addEventListener('beforeunload', () => {
+    localStorage.setItem('lastOpenedPath', currentPath);
 });
 
 // #endregion
@@ -307,7 +307,7 @@ sidebar.addEventListener('contextmenu', (e) => {
     }
 });
 
-// 收藏夹右键菜单
+// 收藏夹���键菜单
 ipcRenderer.on('favorite-menu-item-clicked', (event, action, path) => {
     switch (action) {
         case 'remove-from-favorites':
