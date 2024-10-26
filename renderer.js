@@ -39,19 +39,30 @@ const previewContent = document.getElementById('preview-content')
 const sidebarToggle = document.getElementById('sidebar-toggle');
 const sidebar = document.getElementById('sidebar');
 const main = document.getElementById('main');
+const settingsIcon = document.getElementById('settings');
+const settingsMenu = document.getElementById('settings-menu');
+const themeToggleButton = document.getElementById('theme-toggle');
+const fullscreen_preview = document.getElementById('fullscreen-preview');
+const review_content_fullscreen = document.getElementById('preview-content-fullscreen');
+const statusBar = document.getElementById('status-bar');
+
 
 // #endregion
 
 // #region 变量
 
 let currentPath = ''
-pathElement.id = 'path'
-pathElement.type = 'text'
-let isResizing = false;
+let currentSortMethod = 'name';// 排序方法
+let currentSortOrder = 'asc';// 排序顺序
+let isPreviewResizing = false; // 预览面板拖拽
+
+
 let lastX = 0;
 let history = []
 let currentHistoryIndex = -1
-let favorites = JSON.parse(localStorage.getItem('favorites')) || []
+
+let isResizing = false;
+let isPreviewOpen = false; // 是否全屏
 let selectedItem = null; // 选中项
 
 let customIcons = {};
@@ -59,11 +70,31 @@ const favoriteIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48
 const driveIcon = `<img src="./assets/icons/driveIcon.png" />`
 const folderIcon = `<?xml version='1.0' encoding='utf-8'?><svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 70 61.3' style='enable-background:new 0 0 70 61.3;'>    <title>图标示例</title>    <path fill='#FFC446' d='M63.4,8.7H40.2c-0.1,0-0.3,0-0.4-0.1c-0.1,0-0.3-0.1-0.4-0.2l-6.7-6.8c-0.5-0.5-1.1-0.9-1.7-1.2        C30.2,0.2,29.5,0,28.8,0H6.6C2.9,0,0,2.9,0,6.6v48.1c0,3.6,2.9,6.5,6.6,6.6h56.9c3.6,0,6.6-2.9,6.6-6.6V15.3        C70,11.7,67.1,8.8,63.4,8.7z'/>    <text x='35' y='37' fill='#EFA348' font-family='Arial-BoldMT' font-size='31.504' text-anchor='middle' dominant-baseline='middle'></text></svg>`
 
+let isSelecting = false;
+let selectionBox = null;
+let startX, startY;
+
+
+let favorites = JSON.parse(localStorage.getItem('favorites')) || []
+let currentViewMode = localStorage.getItem('viewMode') || 'list'; // 修改视图模相关的变量和函数
+let statusBarDisplayOptions = JSON.parse(localStorage.getItem('statusBarDisplayOptions')) || {
+    showPath: true,
+    showType: true,
+    showSize: true,
+    showDate: true
+};
+
 
 // #endregion
 
 // #region 启动预处理
-document.querySelector('#main').insertBefore(pathElement, document.querySelector('#path-container'))
+
+pathElement.id = 'path'
+pathElement.type = 'text'
+
+
+
+main.insertBefore(pathElement, document.querySelector('#path-container'))
 
 // 加载自定义图标
 fs.readFile(path.join(__dirname, 'icons.json'), 'utf8', (err, data) => {
@@ -74,8 +105,6 @@ fs.readFile(path.join(__dirname, 'icons.json'), 'utf8', (err, data) => {
     customIcons = JSON.parse(data);
 });
 
-// 视图模式
-let currentViewMode = localStorage.getItem('viewMode') || 'list'; // 修改视图模相关的变量和函数
 
 
 // 初始化
@@ -499,14 +528,9 @@ upBtn.addEventListener('click', () => {
 
 // #region 文件框选
 
-let isSelecting = false;
-let selectionBox = null;
-let startX, startY;
-
 fileListContainer.addEventListener('mousedown', handleMouseDown);
 fileListContainer.addEventListener('mousemove', handleMouseMove);
 fileListContainer.addEventListener('mouseup', handleMouseUp);
-
 
 // 创建选择框
 function createSelectionBox(x, y) {
@@ -1259,22 +1283,21 @@ function updateQuickAccess() {
 
 // #region 设置
 
-const settingsIcon = document.getElementById('settings');
-const settingsMenu = document.getElementById('settings-menu');
+
 
 // 当点击设置图标时，切换菜单的隐藏状态
 settingsIcon.addEventListener('click', (e) => {
     settingsMenu.classList.toggle('hidden');
 });
 
-// 主题切换功能
-const themeToggleButton = document.getElementById('theme-toggle');
 
+// 更新主题按钮文本
 function updateThemeButtonText() {
     const isDarkTheme = document.body.classList.contains('dark-theme');
     themeToggleButton.textContent = isDarkTheme ? '亮色主题' : '暗色主题';
 }
 
+// 切换主题按钮点击事件
 themeToggleButton.addEventListener('click', () => {
     console.log('切换主题按钮被点击');
     document.body.classList.toggle('dark-theme');
@@ -1295,12 +1318,10 @@ document.addEventListener('DOMContentLoaded', () => {
     updateThemeButtonText();
 });
 
-
 // 打开设置窗口
 document.getElementById('open-settings').addEventListener('click', () => {
     ipcRenderer.send('open-settings');
 });
-
 
 // #endregion
 
@@ -1331,9 +1352,6 @@ document.getElementById('sort-date').addEventListener('click', () => handleSortC
 document.getElementById('sort-modified').addEventListener('click', () => handleSortClick('modified'));
 document.getElementById('sort-type').addEventListener('click', () => handleSortClick('type'));
 
-let currentSortMethod = 'name';// 排序方法
-let currentSortOrder = 'asc';// 排序顺序
-
 // 加排序按钮点击件处理函数
 function handleSortClick(sortMethod) {
     if (currentSortMethod === sortMethod) {
@@ -1350,8 +1368,6 @@ function handleSortClick(sortMethod) {
 
 // #region 预览面板
 
-// 预览面板拖拽
-let isPreviewResizing = false;
 
 previewResizer.addEventListener('mousedown', initPreviewResize);
 
@@ -1387,7 +1403,6 @@ function updatePreview(file) {
         previewContent.innerHTML = '<p>没有选中文件</p>';
         return;
     }
-
     const filePath = path.join(currentPath, file.name);
     const fileExt = path.extname(file.name).toLowerCase();
 
@@ -1447,7 +1462,6 @@ function updatePreview(file) {
 // #endregion
 
 // #region 状态栏
-const statusBar = document.getElementById('status-bar');
 
 // 更新状态栏
 function updateStatusBar(filePath) {
@@ -1485,15 +1499,6 @@ function updateStatusBar(filePath) {
         statusBarElement.textContent = statusText;
     });
 }
-
-
-// 状态栏显示选项
-let statusBarDisplayOptions = JSON.parse(localStorage.getItem('statusBarDisplayOptions')) || {
-    showPath: true,
-    showType: true,
-    showSize: true,
-    showDate: true
-};
 
 // 添加新的函数来更新状态栏
 function updateStatusBar(filePath) {
@@ -1597,13 +1602,10 @@ statusBar.addEventListener('mousedown', (e) => {
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
 });
+
 // #endregion
 
 // #region 文件-空格预览
-// 全屏窗口
-let fullscreen_preview = document.getElementById('fullscreen-preview');
-let review_content_fullscreen = document.getElementById('preview-content-fullscreen');
-let isPreviewOpen = false; // 添加一个变量来跟踪预览状态
 
 // 添加函数来显示文件夹预览
 function showFolderPreview(folderPath, previewElement) {
