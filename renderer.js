@@ -217,14 +217,15 @@ function updateRecentTab() {
                         if (Buffer.isBuffer(targetPath)) {
                             targetPath = iconv.decode(targetPath, 'gbk');
                         }
-                        fs.stat(targetPath, (err, stats) => {
+                        const parentDir = path.dirname(targetPath);
+                        fs.stat(parentDir, (err, stats) => {
                             if (err) {
                                 resolve(null);
                             } else {
                                 resolve({ 
-                                    path: targetPath, 
-                                    name: path.basename(targetPath),
-                                    isDirectory: stats.isDirectory(),
+                                    path: parentDir, 
+                                    name: path.basename(parentDir),
+                                    isDirectory: true,
                                     mtime: stats.mtime
                                 });
                             }
@@ -260,7 +261,7 @@ function updateRecentTab() {
                         const dateHeader = document.createElement('div');
                         dateHeader.className = 'timeline-date-header';
                         dateHeader.innerHTML = `
-                            <span class="date-text">${formatDate(item.mtime)}</span>
+                            <span class="date-text">${item.mtime.toISOString().split('T')[0]}</span>
                             <i class="fas fa-chevron-down"></i>
                         `;
                         dateHeader.addEventListener('click', toggleDateItems);
@@ -276,17 +277,13 @@ function updateRecentTab() {
                     timelineItem.innerHTML = `
                         <div class="timeline-item-content">
                             <span class="file-time">${formatTime(item.mtime)}</span>
-                            <span class="file-icon">${item.isDirectory ? folderIcon : getUnknownIcon(path.extname(item.name))}</span>
+                            <span class="file-icon">${folderIcon}</span>
                             <span class="file-name">${item.name}</span>
                         </div>
                     `;
 
                     timelineItem.addEventListener('click', () => {
-                        if (item.isDirectory) {
-                            navigateTo(item.path);
-                        } else {
-                            shell.openPath(item.path);
-                        }
+                        navigateTo(item.path);
                     });
 
                     timelineContainer.lastElementChild.appendChild(timelineItem);
@@ -535,7 +532,7 @@ ipcRenderer.on('menu-item-clicked', (event, action, path) => {
             break;
             if (filePaths.length > 0) {
                 filePaths.forEach(filePath => {
-                    pasteFile(currentPath, filePath); // 将���件粘贴到当前路径
+                    pasteFile(currentPath, filePath); // 将件粘贴到当前路径
                 });
                 updateFileList(currentPath); // 更新文件列表以显示新粘贴的文件
             }
@@ -1973,7 +1970,7 @@ function showFullscreenPreview(filePath) {
         });
     } else if (fileExt === '.psd') {
         // 处理PSD文件
-        console.log(`尝试打开PSD文件: ${filePath}`); // 添加调试信息
+        console.log(`尝试打开PSD文件: ${filePath}`); // 添加调试信��
 
         // 将 PSD 转换为 PNG 并保存到临时目录，然后读取并转换为 Base64
         PSD.open(filePath).then(function (psdData) {
