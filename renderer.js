@@ -52,7 +52,7 @@ const statusBar = document.getElementById('status-bar');
 // #region 变量
 
 let currentPath = ''
-let currentSortMethod = 'name';// 排序方法
+let currentSortMethod = 'name';// 序方法
 let currentSortOrder = 'asc';// 排序顺序
 let isPreviewResizing = false; // 预览面板拖拽
 
@@ -84,6 +84,8 @@ let statusBarDisplayOptions = JSON.parse(localStorage.getItem('statusBarDisplayO
     showDate: true
 };
 
+// 在文件顶部添加新的变量
+let activeTab = 'folders'; // 默认显示文件夹选项卡
 
 // #endregion
 
@@ -171,26 +173,164 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // 加载保存的选项卡状态
+    activeTab = localStorage.getItem('activeTab') || 'folders';
+    const activeTabButton = document.querySelector(`.tab-button[data-tab="${activeTab}"]`);
+    if (activeTabButton) {
+        activeTabButton.click();
+    }
+
+    // 为选项卡按钮添加点击事件
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tabName = button.getAttribute('data-tab');
+            activeTab = tabName;
+            localStorage.setItem('activeTab', activeTab);
+            
+            // ... 现有的选项卡切换逻辑 ...
+        });
+    });
 });
 
-// 添加更新"最近"标签内容的函数
+// 修改 updateRecentTab 函数
 function updateRecentTab() {
     const recentTab = document.getElementById('recent-tab');
-    // 这里添加获取和显示最近访问文件的逻辑
-    // 可以使用之前的 updateQuickAccess 函数的逻辑作为起点
+    const quickAccessPath = path.join(os.homedir(), 'AppData', 'Roaming', 'Microsoft', 'Windows', 'Recent');
+
+    fs.readdir(quickAccessPath, (err, files) => {
+        if (err) {
+            console.error('无法读取最近访问目录:', err);
+            recentTab.innerHTML = '<p>无法加载最近访问的项目</p>';
+            return;
+        }
+
+        // 过滤并处理快捷方式
+        Promise.all(files.filter(file => path.extname(file).toLowerCase() === '.lnk')
+            .map(file => new Promise((resolve) => {
+                const filePath = path.join(quickAccessPath, file);
+                windowsShortcuts.query(filePath, (error, shortcut) => {
+                    if (error) {
+                        resolve(null);
+                    } else {
+                        let targetPath = shortcut.target;
+                        if (Buffer.isBuffer(targetPath)) {
+                            targetPath = iconv.decode(targetPath, 'gbk');
+                        }
+                        fs.stat(targetPath, (err, stats) => {
+                            if (err) {
+                                resolve(null);
+                            } else {
+                                resolve({ 
+                                    path: targetPath, 
+                                    name: path.basename(targetPath),
+                                    isDirectory: stats.isDirectory(),
+                                    mtime: stats.mtime
+                                });
+                            }
+                        });
+                    }
+                });
+            })))
+            .then(recentItems => {
+                recentItems = recentItems.filter(item => item !== null);
+                
+                // 去除重复项，只保留最近的一条
+                const uniqueItems = {};
+                recentItems.forEach(item => {
+                    if (!uniqueItems[item.path] || item.mtime > uniqueItems[item.path].mtime) {
+                        uniqueItems[item.path] = item;
+                    }
+                });
+                recentItems = Object.values(uniqueItems);
+
+                // 按修改时间排序，最新的排在前面
+                recentItems.sort((a, b) => b.mtime - a.mtime);
+
+                const timelineContainer = document.createElement('div');
+                timelineContainer.className = 'timeline-container';
+
+                let currentDate = null;
+
+                recentItems.forEach(item => {
+                    const itemDate = item.mtime.toDateString();
+                    
+                    if (itemDate !== currentDate) {
+                        currentDate = itemDate;
+                        const dateHeader = document.createElement('div');
+                        dateHeader.className = 'timeline-date-header';
+                        dateHeader.innerHTML = `
+                            <span class="date-text">${formatDate(item.mtime)}</span>
+                            <i class="fas fa-chevron-down"></i>
+                        `;
+                        dateHeader.addEventListener('click', toggleDateItems);
+                        timelineContainer.appendChild(dateHeader);
+
+                        const dateItems = document.createElement('div');
+                        dateItems.className = 'timeline-date-items';
+                        timelineContainer.appendChild(dateItems);
+                    }
+
+                    const timelineItem = document.createElement('div');
+                    timelineItem.className = 'timeline-item';
+                    timelineItem.innerHTML = `
+                        <div class="timeline-item-content">
+                            <span class="file-time">${formatTime(item.mtime)}</span>
+                            <span class="file-icon">${item.isDirectory ? folderIcon : getUnknownIcon(path.extname(item.name))}</span>
+                            <span class="file-name">${item.name}</span>
+                        </div>
+                    `;
+
+                    timelineItem.addEventListener('click', () => {
+                        if (item.isDirectory) {
+                            navigateTo(item.path);
+                        } else {
+                            shell.openPath(item.path);
+                        }
+                    });
+
+                    timelineContainer.lastElementChild.appendChild(timelineItem);
+                });
+
+                recentTab.innerHTML = '';
+                recentTab.appendChild(timelineContainer);
+            });
+    });
 }
 
-// 修改 updateQuickAccess 函数,使其同时更新"最近"标签
+// 添加折叠/展开功能
+function toggleDateItems(e) {
+    const dateHeader = e.currentTarget;
+    const dateItems = dateHeader.nextElementSibling;
+    const isCollapsed = dateHeader.classList.toggle('collapsed');
+    dateItems.style.display = isCollapsed ? 'none' : 'block';
+    dateHeader.querySelector('i').className = isCollapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-down';
+}
+
+// 添加格式化日期的函数
+function formatDate(date) {
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    return date.toLocaleDateString('zh-CN', options);
+}
+
+// 添加格式化时间的函数
+function formatTime(date) {
+    const options = { hour: '2-digit', minute: '2-digit' };
+    return date.toLocaleTimeString('zh-CN', options);
+}
+
+// 修改 updateQuickAccess 函数，使其同时更新"最近"标签
 function updateQuickAccess() {
     // ... 现有的代码 ...
 
-    // 在更新快速访问后,也更新"最近"标签
+    // 在更新快速访问后，也更新"最近"标签
     updateRecentTab();
 }
 
-// 在应用程序关闭前保存当前路径
+// 在应用程序关闭前保存当前路径和选项卡状态
 window.addEventListener('beforeunload', () => {
     localStorage.setItem('lastOpenedPath', currentPath);
+    localStorage.setItem('activeTab', activeTab);
 });
 
 // #endregion
@@ -395,7 +535,7 @@ ipcRenderer.on('menu-item-clicked', (event, action, path) => {
             break;
             if (filePaths.length > 0) {
                 filePaths.forEach(filePath => {
-                    pasteFile(currentPath, filePath); // 将文件粘贴到当前路径
+                    pasteFile(currentPath, filePath); // 将���件粘贴到当前路径
                 });
                 updateFileList(currentPath); // 更新文件列表以显示新粘贴的文件
             }
@@ -840,7 +980,7 @@ function getFileIcon(file) {
         } else if (['.zip', '.rar', '.7z', '.tar', '.gz', '.bz2', '.xz', '.7zip', '.tgz', '.tar.gz', '.tar.bz2'].includes(ext)) {
             resolve(getUnknownIcon(ext, ".zips"));
         } else {
-            const unknownSvg = getUnknownIcon(ext); // 使用新函数
+            const unknownSvg = getUnknownIcon(ext); // 用新函数
             resolve(unknownSvg);
         }
     });
@@ -1138,7 +1278,7 @@ function sortFiles(files) {
         if (a.isDirectory && !b.isDirectory) return -1;
         if (!a.isDirectory && b.isDirectory) return 1;
 
-        // ���后根据前排���方法进行排序
+        // 后根据前排方法进行排序
         switch (currentSortMethod) {
             case 'name':
                 return currentSortOrder === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
@@ -1322,6 +1462,9 @@ function updateQuickAccess() {
             });
 
     });
+
+    // 在更新快速访问后，也更新"最近"标签
+    updateRecentTab();
 }
 // #endregion
 
@@ -1940,7 +2083,7 @@ function navigateTo(newPath) {
 
     fs.access(newPath, fs.constants.R_OK, (err) => {
         if (err) {
-            console.error('��法访问目录:', err);
+            console.error('访问目录:', err);
             return;
         }
         fs.stat(newPath, (err, stats) => {

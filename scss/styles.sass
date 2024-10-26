@@ -91,7 +91,7 @@ html
     overflow: hidden
     will-change: width
     .sidebar-content
-      width: 270px
+      width: 100%
       height: 100%
       overflow-y: auto
       overflow-x: hidden
@@ -498,3 +498,107 @@ html
           width: 100%
           height: 100%
 
+// 最近访问时间轴视图样式
+#recent-tab
+  .timeline-container
+    position: relative
+    padding-left: 50px
+
+    &::before
+      content: ""
+      position: absolute
+      left: 41px
+      top: 0
+      bottom: 0
+      width: 1px
+      background-color: #5b5b5b
+
+  .timeline-date-header
+    font-size: 14px
+    margin-top: 27px
+    margin-bottom: 11px
+    position: relative
+    cursor: pointer
+    display: flex
+    align-items: center
+
+    &::before
+      content: ""
+      position: absolute
+      left: -13px
+      top: 50%
+      width: 7px
+      height: 7px
+      background: #fff
+      border: 1px solid #434343
+      border-radius: 50%
+      transform: translateY(-50%)
+
+    .date-text
+      margin-right: 10px
+
+    i
+      font-size: 14px
+      transition: transform 0.3s
+
+  .timeline-date-items
+    display: block
+    transition: max-height 0.3s ease-out, opacity 0.3s ease-out
+
+  .timeline-date-header.collapsed
+    & + .timeline-date-items
+      display: none
+
+    & > i
+      transform: rotate(-90deg)
+
+  .timeline-item
+    position: relative
+    margin-top: 6px
+    margin-bottom: 6px
+
+    &::before
+      content: ""
+      position: absolute
+      left: -13px
+      top: 50%
+      width: 7px
+      height: 7px
+      border: 1px solid #555555
+      background: #333
+      border-radius: 50%
+      transform: translateY(-50%)
+
+    .timeline-item-content
+      padding: 0 10px
+      border-radius: 5px
+      display: flex
+      align-items: center
+      cursor: pointer
+      transition: background-color 0.2s
+      height: 16px
+
+      &:hover
+        background-color: #f0f0f0
+
+      .file-time
+        position: absolute
+        left: -90px
+        font-size: 0.8em
+        color: #6c757d
+        width: 70px
+        text-align: right
+
+      .file-icon
+        margin-right: 5px
+        width: 16px
+        height: 16px
+        display: flex
+        align-items: center
+        justify-content: center
+
+      .file-name
+        flex-grow: 1
+        white-space: nowrap
+        overflow: hidden
+        text-overflow: ellipsis
