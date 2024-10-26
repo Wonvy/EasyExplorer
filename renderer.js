@@ -49,6 +49,18 @@ let history = []
 let currentHistoryIndex = -1
 let favorites = JSON.parse(localStorage.getItem('favorites')) || []
 
+// 在文件顶部添加一个新的变量来跟踪选中的项目
+let selectedItem = null;
+
+// 在文件末尾添加以下代码
+const sidebarToggle = document.getElementById('sidebar-toggle');
+const sidebar = document.getElementById('sidebar');
+const main = document.getElementById('main');
+let isResizing = false;
+let lastX = 0;
+
+
+
 // 加载自定义图标
 let customIcons = {};
 fs.readFile(path.join(__dirname, 'icons.json'), 'utf8', (err, data) => {
@@ -64,8 +76,6 @@ const favoriteIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48
 const driveIcon = `<img src="./assets/icons/driveIcon.png" />`
 const folderIcon = `<?xml version='1.0' encoding='utf-8'?><svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 70 61.3' style='enable-background:new 0 0 70 61.3;'>    <title>图标示例</title>    <path fill='#FFC446' d='M63.4,8.7H40.2c-0.1,0-0.3,0-0.4-0.1c-0.1,0-0.3-0.1-0.4-0.2l-6.7-6.8c-0.5-0.5-1.1-0.9-1.7-1.2        C30.2,0.2,29.5,0,28.8,0H6.6C2.9,0,0,2.9,0,6.6v48.1c0,3.6,2.9,6.5,6.6,6.6h56.9c3.6,0,6.6-2.9,6.6-6.6V15.3        C70,11.7,67.1,8.8,63.4,8.7z'/>    <text x='35' y='37' fill='#EFA348' font-family='Arial-BoldMT' font-size='31.504' text-anchor='middle' dominant-baseline='middle'></text></svg>`
 
-
-let isGroupView = false; // 是否为分组视图
 let currentViewMode = localStorage.getItem('viewMode') || 'list'; // 修改视图模相关的变量和函数
 
 // 修改视图模式
@@ -204,10 +214,9 @@ function getUnknownIcon(ext, defaultIcon = '.unknown') {
 
 
 
-// 在文件顶部添加一个新的变量来跟踪选中的项目
-let selectedItem = null;
 
-// 修改 updateFileList 函中的事件监听器部分
+
+// 更新文件列表
 function updateFileList(dirPath, isQuickAccess = false) {
  
     fileListElement.innerHTML = ''; 
@@ -215,12 +224,12 @@ function updateFileList(dirPath, isQuickAccess = false) {
 
     fs.readdir(dirPath, { withFileTypes: true }, (err, files) => {
         if (err) {
-            console.error('无法读取目录:', err);
+            console.error('无法读取目录:', err, dirPath);
             fileListElement.innerHTML = `<div class="error-message">无法读取目录: ${err.message}</div>`;
             return;
         }
 
-
+        // 更新路径
         if (!isQuickAccess) {
             currentPath = dirPath;
             pathElement.value = dirPath;
@@ -235,7 +244,7 @@ function updateFileList(dirPath, isQuickAccess = false) {
                 if (currentViewMode === 'timeline') {
                     const timelineItems = createTimelineItems(fileDetails);
                     fileListElement.appendChild(timelineItems);
-                } else if (isGroupView) {
+                } else if (currentViewMode === 'group') {
                     const groupedFiles = groupFilesByType(fileDetails);
                     Object.entries(groupedFiles).forEach(([groupName, groupFiles]) => {
                         const groupElement = document.createElement('div');
@@ -287,7 +296,6 @@ function updateFileList(dirPath, isQuickAccess = false) {
                         const fileItem = createFileItem(file, dirPath);
                         fileListElement.appendChild(fileItem);
                     });
-
                 }
             })
             .catch(error => {
@@ -296,42 +304,8 @@ function updateFileList(dirPath, isQuickAccess = false) {
             });
     });
 
-    fileListContainer.addEventListener('mousedown', handleMouseDown);
-    fileListContainer.addEventListener('mousemove', handleMouseMove);
-    fileListContainer.addEventListener('mouseup', handleMouseUp);
 }
 
-// 获取文件详细信息
-function getFileDetails(dirPath, file) {
-    return new Promise((resolve) => {
-        const filePath = path.join(dirPath, file.name);
-        fs.stat(filePath, (err, stats) => {
-            if (err) {
-                console.warn(`无法获取文件 ${filePath} 的详细信息: ${err.message}`);
-                resolve({
-                    name: file.name,
-                    isDirectory: file.isDirectory(),
-                    stats: null,
-                    error: err.code
-                });
-            } else {
-                // 使用 birthtime 如果可用，否则使用 mtime
-                const creationTime = stats.birthtime && stats.birthtime.getTime() > 0 
-                    ? stats.birthtime 
-                    : stats.mtime;
-                
-                resolve({
-                    name: file.name,
-                    isDirectory: stats.isDirectory(),
-                    stats: {
-                        ...stats,
-                        birthtime: creationTime
-                    }
-                });
-            }
-        });
-    });
-}
 
 // 导航到新路径
 function navigateTo(newPath) {
@@ -386,6 +360,8 @@ function showContextMenu(file, dirPath) {
         hasSelection: !!file
     });
 }
+
+
 
 // 更新收藏夹
 function updateFavorites() {
@@ -457,7 +433,6 @@ function addToFavorites(dirPath) {
     updateFavorites();
   }
 }
-
 
 // 显示驱动器
 function showDrives() {
@@ -950,12 +925,6 @@ function handlePathBlur() {
 pathElement.addEventListener('focus', handlePathFocus)
 pathElement.addEventListener('blur', handlePathBlur)
 
-// 在文件末尾添加以下代码
-const sidebarToggle = document.getElementById('sidebar-toggle');
-const sidebar = document.getElementById('sidebar');
-const main = document.getElementById('main');
-let isResizing = false;
-let lastX = 0;
 
 
 
@@ -1060,16 +1029,6 @@ function showFolderPreview(folderPath, previewElement) {
     })
 }
 
-// 添加一个点击事件监听器到 fileListContainer，用于取消选择
-fileListContainer.addEventListener('click', (e) => {
-    if (e.target === fileListContainer || e.target === fileListElement) {
-        if (selectedItem) {
-            selectedItem.classList.remove('selected');
-            selectedItem = null;
-        }
-        removeSelectionBox(); // 移除选择框
-    }
-})
 
 // 右键菜单-左栏
 sidebar.addEventListener('contextmenu', (e) => {
@@ -1085,109 +1044,13 @@ sidebar.addEventListener('contextmenu', (e) => {
 });
 
 
-// 在 updateFileList 函件末尾添加以下代码
-fileListContainer.addEventListener('contextmenu', (e) => {
-    if (e.target === fileListContainer || e.target === fileListElement) {
-        e.preventDefault();
-        showContextMenu(null, currentPath);
-    }
-});
+
 
 // 在件顶部添加以下变
 let currentSortMethod = 'name';
 let currentSortOrder = 'asc';
 
-// 修改 updateFileList 函件
-function updateFileList(dirPath, isQuickAccess = false) {
-    fs.readdir(dirPath, { withFileTypes: true }, (err, files) => {
-        if (err) {
-            // console.error('无法读取目录:', err)
-            return
-        }
-
-        if (!isQuickAccess) {
-            currentPath = dirPath
-            pathElement.value = dirPath
-        }
-        // 清空 fileListElement 的 HTML 内容
-        fileListElement.innerHTML = ''; // 修改这一行
-        updatePreview(null);  // 添加这一行
-
-        // 获取文件详细信息并排序
-        Promise.all(files.map(file => getFileDetails(dirPath, file)))
-            .then(fileDetails => {
-                sortFiles(fileDetails);
-                fileListElement.innerHTML = '';
-
-                if (currentViewMode === 'timeline') {
-                    const timelineItems = createTimelineItems(fileDetails);
-                    fileListElement.appendChild(timelineItems);
-                } else if (isGroupView) {
-                    const groupedFiles = groupFilesByType(fileDetails);
-                    Object.entries(groupedFiles).forEach(([groupName, groupFiles]) => {
-                        const groupElement = document.createElement('div');
-                        groupElement.className = 'file-list-group';
-
-                        const groupHeader = document.createElement('div');
-                        groupHeader.className = 'file-list-group-header';
-                        groupHeader.innerHTML = `
-                            <span>${groupName}</span>
-                            <span class="group-count">${groupFiles.length} 项</span>
-                            <div class="group-sort-buttons">
-                                <button class="group-sort-button" data-sort="name" title="按名称排序">
-                                    <i class="fas fa-sort-alpha-down"></i>
-                                </button>
-                                <button class="group-sort-button" data-sort="date" title="按日期排序">
-                                    <i class="fas fa-calendar-alt"></i>
-                                </button>
-                            </div>
-                        `;
-                        groupElement.appendChild(groupHeader);
-
-                        const groupContent = document.createElement('div');
-                        groupContent.className = 'file-list-group-content';
-                        groupFiles.forEach(file => {
-                            const fileItem = createFileItem(file, dirPath);
-                            groupContent.appendChild(fileItem);
-                        });
-                        groupElement.appendChild(groupContent);
-
-                        // 添加排序按钮的事件监听器
-                        const sortButtons = groupHeader.querySelectorAll('.group-sort-button');
-                        sortButtons.forEach(button => {
-                            button.addEventListener('click', (e) => {
-                                const sortType = e.currentTarget.getAttribute('data-sort');
-                                const isAscending = !e.currentTarget.classList.contains('sorted-asc');
-                                
-                                sortGroupFiles(groupContent, sortType, isAscending);
-                                
-                                // 更新排序按钮的状态
-                                sortButtons.forEach(btn => btn.classList.remove('sorted-asc', 'sorted-desc'));
-                                e.currentTarget.classList.add(isAscending ? 'sorted-asc' : 'sorted-desc');
-                            });
-                        });
-
-                        fileListElement.appendChild(groupElement);
-                    });
-                } else{
-                    fileDetails.forEach(file => {
-                        const fileItem = createFileItem(file, dirPath);
-                        fileListElement.appendChild(fileItem);
-                    });
-                }
-
-            })
-            .catch(error => {
-                console.error('获取文件详情时出错:', error);
-            });
-    });
-
-    fileListContainer.addEventListener('mousedown', handleMouseDown);
-    fileListContainer.addEventListener('mousemove', handleMouseMove);
-    fileListContainer.addEventListener('mouseup', handleMouseUp);
-}
-
-
+// 文件分组
 function groupFilesByType(files) {
     const groups = {};
 
@@ -1201,7 +1064,6 @@ function groupFilesByType(files) {
 
     return groups;
 }
-
 // 添加以下新函数
 function getFileDetails(dirPath, file) {
     return new Promise((resolve) => {
@@ -1233,7 +1095,6 @@ function getFileDetails(dirPath, file) {
         });
     });
 }
-
 
 // 排序文件
 function sortFiles(files) {
@@ -1606,14 +1467,12 @@ function updatePreview(file) {
 
 // 列表视图
 listViewBtn.addEventListener('click', () => {
-    isGroupView = false;
     updateFileList(currentPath); // 直接更新文件列表
     setViewMode('list');
 });
 
 // 图标视图
 iconViewBtn.addEventListener('click', () => {
-    isGroupView = false;
     updateFileList(currentPath); // 直接更新文件列表
     setViewMode('icon');
 });
@@ -1621,14 +1480,12 @@ iconViewBtn.addEventListener('click', () => {
 // 分组视图
 groupViewBtn.addEventListener('click', () => {
     setViewMode('group');
-    isGroupView = !isGroupView;
     updateFileList(currentPath);
 });
 
 // 时间轴视图
 timelineViewBtn.addEventListener('click', () => {
     setViewMode('timeline');
-    isGroupView = false;
     updateFileList(currentPath);
 });
 
@@ -1795,6 +1652,32 @@ function isElementInSelectionBox(element, box) {
              elementRect.top > boxRect.bottom);
 }
 
+
+
+fileListContainer.addEventListener('mousedown', handleMouseDown);
+fileListContainer.addEventListener('mousemove', handleMouseMove);
+fileListContainer.addEventListener('mouseup', handleMouseUp);
+
+// 在 updateFileList 函件末尾添加以下代码
+fileListContainer.addEventListener('contextmenu', (e) => {
+    if (e.target === fileListContainer || e.target === fileListElement) {
+        e.preventDefault();
+        showContextMenu(null, currentPath);
+    }
+});
+
+// 添加一个点击事件监听器到 fileListContainer，用于取消选择
+fileListContainer.addEventListener('click', (e) => {
+    if (e.target === fileListContainer || e.target === fileListElement) {
+        if (selectedItem) {
+            selectedItem.classList.remove('selected');
+            selectedItem = null;
+        }
+        removeSelectionBox(); // 移除选择框
+    }
+})
+
+
 // 选择框开始
 function handleMouseDown(e) {
     if (e.button !== 0) return; // 只处理左键点击
@@ -1881,8 +1764,6 @@ function sortGroupFiles(groupContent, sortType, isAscending) {
 const settingsIcon = document.getElementById('settings');
 const settingsMenu = document.getElementById('settings-menu');
 
-console.log(settingsIcon,settingsMenu);
-
 // 当点击设置图标时，切换菜单的隐藏状态
 settingsIcon.addEventListener('click', (e) => {
     settingsMenu.classList.toggle('hidden');
@@ -1908,7 +1789,6 @@ themeToggleButton.addEventListener('click', () => {
 // 在页面加载时应用保存的主题
 document.addEventListener('DOMContentLoaded', () => {
     const savedTheme = localStorage.getItem('theme') || 'light';
-    console.log('加载保存的主题：', savedTheme);
     if (savedTheme === 'dark') {
         document.body.classList.add('dark-theme');
     } else {
