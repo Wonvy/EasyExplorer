@@ -430,6 +430,10 @@ body {
   background-color: #ffffff;
   color: #000000;
 }
+body body,
+body html {
+  background-color: #ffffff;
+}
 body #sidebar {
   background-color: #f0f0f0;
   border-right: 1px solid #3a3a3a;
@@ -471,6 +475,10 @@ body #toolbar button {
 }
 body #toolbar button:hover {
   background-color: #e5e5e5;
+}
+body #toolbar #view-options button.active {
+  background-color: #d0e8ff;
+  color: #000000;
 }
 body #path {
   background-color: #ffffff;
@@ -538,6 +546,10 @@ body .drive-item:hover {
   background-color: #121212;
   color: #e0e0e0;
 }
+.dark-theme body,
+.dark-theme html {
+  background-color: #121212;
+}
 .dark-theme #sidebar {
   background-color: #1e1e1e;
   border-right: 1px solid #3a3a3a;
@@ -579,6 +591,10 @@ body .drive-item:hover {
 }
 .dark-theme #toolbar button:hover {
   background-color: #3a3a3a;
+}
+.dark-theme #toolbar #view-options button.active {
+  background-color: #404040;
+  color: #e0e0e0;
 }
 .dark-theme #path {
   background-color: #2e2e2e;
@@ -716,7 +732,6 @@ html {
   padding: 0;
   height: 100%;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f0f0f0;
 }
 
 #app {
@@ -821,18 +836,12 @@ html {
   margin-left: auto;
   display: flex;
 }
-#app #main #toolbar #view-options button.active {
-  background-color: #007bff;
-  color: #fff;
-}
 #app #main #path {
   width: 100%;
-  padding: 5px;
+  padding: 6px;
   margin-bottom: 10px;
-  border: 1px solid #ddd;
   border-radius: 3px;
 }
-
 .sidebar-section {
   margin-bottom: 20px;
 }

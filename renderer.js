@@ -2145,3 +2145,8 @@ function hideFullscreenPreview() {
 
 // 关闭预览按钮
 document.getElementById('close-preview').addEventListener('click', hideFullscreenPreview);
+
+// 打开设置窗口
+document.getElementById('open-settings').addEventListener('click', () => {
+    ipcRenderer.send('open-settings');
+});

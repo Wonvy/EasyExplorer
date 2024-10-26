@@ -37,6 +37,10 @@ $header-hover-bg-dark: rgba(172, 172, 172, 0.2)
   background-color: $bg
   color: $text
 
+  body,
+  html
+    background-color: $bg
+
   #sidebar 
     background-color: $sidebar-bg
     border-right: 1px solid $dark-border
@@ -76,6 +80,11 @@ $header-hover-bg-dark: rgba(172, 172, 172, 0.2)
       color: $toolbar-icon
       &:hover
         background-color: $hover-bg
+    #view-options
+      button
+        &.active
+            background-color: $selected-bg
+            color: $text
 
   #path
     background-color: $main-bg
