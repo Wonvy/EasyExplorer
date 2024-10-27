@@ -396,8 +396,143 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('custom-calendar').addEventListener('click', toggleCalendarView);
 
-
+    // 添加年报按钮点击事件监听
+    const annualReportBtn = document.getElementById('custom-annual-report');
+    if (annualReportBtn) {
+        annualReportBtn.addEventListener('click', () => {
+            console.log('年报按钮被点击');
+            showAnnualReport();
+        });
+    } else {
+        console.error('未找到年报按钮元素');
+    }
 });
+
+
+let currentReportYear = new Date().getFullYear();
+
+// 在文件末尾添加年报相关函数
+function showAnnualReport() {
+    console.log('显示年报视图');
+    const projectPaths = JSON.parse(localStorage.getItem('projectPaths') || '{}');
+    let yearPath = projectPaths[currentReportYear.toString()];
+
+    // 如果当前年份没有文件夹，则跳转到有文件夹的年份
+    if (!yearPath) {
+        console.warn('未找到当前年份的项目路径:', currentReportYear);
+        // 寻找最近的有文件夹的年份
+        let closestYear = currentReportYear;
+        while (!yearPath) {
+            closestYear--;
+            yearPath = projectPaths[closestYear.toString()];
+        }
+        console.log('跳转到最近的有文件夹的年份:', closestYear);
+        currentReportYear = closestYear;
+    }
+
+    console.log('加载年度路径:', yearPath);
+
+    // 创建年报视图
+    const annualReportHTML = `
+        <div class="annual-report-view">
+            <div class="annual-report-controls">
+                <button id="prev-year">&lt;</button>
+                <h2>${currentReportYear}年度项目报告</h2>
+                <button id="next-year">&gt;</button>
+            </div>
+            <div class="annual-timeline">
+                ${generateMonthsTimeline()}
+            </div>
+        </div>
+    `;
+
+    fileListElement.innerHTML = annualReportHTML;
+
+    // 添加控制按钮事件监听
+    document.getElementById('prev-year').addEventListener('click', () => {
+        console.log('切换到上一年');
+        changeReportYear(-1);
+    });
+    document.getElementById('next-year').addEventListener('click', () => {
+        console.log('切换到下一年');
+        changeReportYear(1);
+    });
+
+    // 加载年度数据
+    loadAnnualData(yearPath);
+}
+
+function generateMonthsTimeline() {
+    const months = ["一月", "二月", "三月", "四月", "五月", "六月",
+        "七月", "八月", "九月", "十月", "十一月", "十二月"];
+
+    return `
+        <div class="months-container">
+            ${months.map((month, index) => `
+                <div class="month-column" data-month="${index + 1}">
+                    <div class="month-header">${month}</div>
+                    <div class="month-content" id="month-${index + 1}">
+                        <div class="month-projects"></div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+function loadAnnualData(yearPath) {
+    console.log('开始加载年度数据:', yearPath);
+
+    for (let month = 1; month <= 12; month++) {
+        const monthPath = path.join(yearPath, `${month}月`);
+        console.log('检查月份路径:', monthPath);
+
+        try {
+            if (fs.existsSync(monthPath)) {
+                console.log(`读取 ${month} 月数据`);
+                const files = fs.readdirSync(monthPath);
+                const monthProjects = document.querySelector(`#month-${month} .month-projects`);
+
+                if (!monthProjects) {
+                    console.error(`未找到月份容器: month-${month}`);
+                    continue;
+                }
+
+                monthProjects.innerHTML = files.map(file => {
+                    const filePath = path.join(monthPath, file);
+                    const stats = fs.statSync(filePath);
+
+                    return `
+                        <div class="project-item" data-path="${filePath}">
+                            <span class="project-icon">${folderIcon}</span>
+                            <span class="project-name">${file}</span>
+                            <span class="project-date">${stats.mtime.toLocaleDateString()}</span>
+                        </div>
+                    `;
+                }).join('');
+
+                // 添加项目点击事件
+                monthProjects.querySelectorAll('.project-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const projectPath = item.getAttribute('data-path');
+                        console.log('打开项目:', projectPath);
+                        navigateTo(projectPath);
+                    });
+                });
+            } else {
+                console.log(`${month} 月份文件夹不存在`);
+            }
+        } catch (err) {
+            console.error(`读取 ${month} 月数据时出错:`, err);
+        }
+    }
+}
+
+function changeReportYear(delta) {
+    currentReportYear += delta;
+    console.log('切换到年份:', currentReportYear);
+    showAnnualReport();
+}
 
 // 修改 updateRecentTab 函数
 function updateRecentTab() {
@@ -772,7 +907,7 @@ ipcRenderer.on('menu-item-clicked', (event, action, path) => {
                 filePaths.forEach(filePath => {
                     pasteFile(currentPath, filePath); // 将件粘贴到当前路径
                 });
-                updateFileList(currentPath); // 更新文件列表以显示新粘贴的文件
+                updateFileList(currentPath); // 更新件列表以显示新粘贴的文件
             }
 
     }
@@ -1135,7 +1270,7 @@ function addToFavorites(dirPath) {
 
 // #endregion
 
-// #region 文���-文件列表
+// #region 文-文件列表
 
 
 
@@ -1214,7 +1349,7 @@ function getFileIcon(file) {
             const filePath = path.join(currentPath, file.name);
             resolve(`
                 <audio class="file-icon" src="${filePath}" controls>
-                    ��的浏览器不支持 audio 标签。
+                    的浏览器不支持 audio 标签。
                 </audio>
             `);
         } else if (['.zip', '.rar', '.7z', '.tar', '.gz', '.bz2', '.xz', '.7zip', '.tgz', '.tar.gz', '.tar.bz2'].includes(ext)) {
@@ -1248,7 +1383,7 @@ function updateFileList(dirPath, isQuickAccess = false) {
         // 取文件详细信息并排序
         Promise.all(files.map(file => getFileDetails(dirPath, file).catch(err => {
             console.error(`获取文件 ${file.name} 的详情时出错: ${err}`);
-            return null; // 如果获取详情失败，返回null以跳过该文件
+            return null; // 如果获取详情失败，返回null以跳���该文件
         })))
             .then(fileDetails => {
                 // 过滤掉获取详情失败的文件
@@ -2266,7 +2401,7 @@ function convertToPdf(inputPath, outputPath) {
                     })
                     .catch(removeErr => {
                         console.error('清理临时目录时出错:', removeErr);
-                        resolve(); // ���续执行，即使清理失败
+                        resolve(); // 续执行，即使清理失败
                     });
             }, 1000); // 延迟 1 秒
         });
@@ -2289,7 +2424,7 @@ document.getElementById('close-preview').addEventListener('click', hideFullscree
 
 // 地址栏焦点事件
 function handlePathFocus() {
-    pathElement.select()  // 选中全部文本
+    pathElement.select()  // 选中全文本
 }
 
 // 地址栏失去焦点事件
