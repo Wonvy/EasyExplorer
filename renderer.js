@@ -52,7 +52,7 @@ const statusBar = document.getElementById('status-bar');
 // #region 变量
 
 let currentPath = ''
-let currentSortMethod = 'name';// 序方法
+let currentSortMethod = 'name';// 方法
 let currentSortOrder = 'asc';// 排序顺序
 let isPreviewResizing = false; // 预览面板拖拽
 
@@ -285,6 +285,24 @@ function updateRecentTab() {
 
                     const fileName = timelineItem.querySelector('.file-name');
                     const parentDir = timelineItem.querySelector('.file-parent-dir');
+
+                    // 添加鼠标悬停事件
+                    timelineItem.addEventListener('mouseover', () => {
+                        updateStatusBar(item.path);
+                        updatePreview({
+                            name: item.name,
+                            isDirectory: item.isDirectory,
+                            stats: {
+                                birthtime: item.atime,
+                                mtime: item.atime
+                            }
+                        });
+                    });
+
+                    timelineItem.addEventListener('mouseout', () => {
+                        updateStatusBar('');
+                        updatePreview(null);
+                    });
 
                     fileName.addEventListener('dblclick', (e) => {
                         e.stopPropagation();
@@ -740,7 +758,7 @@ function updateSelectionBox(x, y) {
     selectionBox.style.top = `${top}px`;
 }
 
-// 移除选择框
+// 移除择框
 function removeSelectionBox() {
     if (selectionBox) {
         selectionBox.remove();
@@ -868,7 +886,7 @@ function updateFavorites() {
         });
 
         item.addEventListener('mouseout', () => {
-            updateStatusBar('');
+            updateStatusBar(currentPath);
         });
 
         item.addEventListener('click', () => {
@@ -911,7 +929,7 @@ function addToFavorites(dirPath) {
 function getFileIcon(file) {
     return new Promise((resolve) => {
         const isDir = typeof file.isDirectory === 'function' ? file.isDirectory() : file.isDirectory;
-        // 如果是文件夹，则返回文件夹图标
+        // 果是文件夹，则返回文件夹图标
         if (isDir) {
             resolve(folderIcon);
             return;
@@ -934,7 +952,7 @@ function getFileIcon(file) {
         } else if (['.ttf', '.otf'].includes(ext)) {
             const fontName = path.basename(filePath, path.extname(filePath)); // 获取字体名称
             const isChinese = /[\u4e00-\u9fa5]/.test(fontName); // 检查是否包含中文
-            const encodedPath = encodeURIComponent(filePath).replace(/%5C/g, '/'); // 对路径进行编码并替换反斜杠为正斜杠
+            const encodedPath = encodeURIComponent(filePath).replace(/%5C/g, '/'); // 对路径进���编码并替换反斜杠为正斜杠
             const fontFace = new FontFace(fontName, `url(file://${encodedPath})`);
 
             fontFace.load().then(() => {
@@ -1615,42 +1633,27 @@ function updatePreview(file) {
                 ${files.length > 10 ? '<p>...</p>' : ''}
             `;
         });
-    } else if (['.ttf', '.otf'].includes(fileExt)) {
-        const fontName = path.basename(filePath, path.extname(filePath)); // 获取字体名称
-        const encodedPath = encodeURIComponent(filePath).replace(/%5C/g, '/'); // 对路径进行编码并替换反斜杠为正斜杠
-        const fontFace = new FontFace(fontName, `url(file://${encodedPath})`);
-
-        fontFace.load().then(() => {
-            document.fonts.add(fontFace);
-            previewContent.innerHTML = `
-            <div style="font-family: '${fontName}'; text-align: center;">
-                <h1 style="font-size: 48px;">${fontName}</h1>
-                <h2 style="font-size: 36px;">Font Preview</h2>
-                <p style="font-size: 24px;">中文测试: 你好，世界！</p>
-                <p style="font-size: 24px;">English Test: Hello, World!</p>
-                <p style="font-size: 24px;">数字测试: 1234567890</p>
-            </div>
-        `;
-        }).catch(err => {
-            previewContent.innerHTML = `<p>无法加载字体: ${err.message}</p>`;
-        });
-
     } else if (['.jpg', '.jpeg', '.png', '.gif', '.svg'].includes(fileExt)) {
         previewContent.innerHTML = `<img src="file://${filePath}" alt="${file.name}" style="max-width: 100%; max-height: 300px;">`;
-
     } else if (['.txt', '.md', '.js', '.html', '.css', '.tap', '.nc', '.ini', '.ts'].includes(fileExt)) {
         fs.readFile(filePath, 'utf8', (err, data) => {
             if (err) {
                 previewContent.innerHTML = `<p>无法读取文件内容: ${err.message}</p>`;
                 return;
             }
-            // ${ data.slice(0, 1000) }${ data.length > 1000 ? '...' : '' }
-            const highlightedCode = hljs.highlightAuto(data).value;
-            previewContent.innerHTML = ` <pre><code class="${fileExt.replace('.', '')}">${highlightedCode}</code></pre>`;
-
+            const highlightedCode = hljs.highlightAuto(data.slice(0, 1000)).value;
+            previewContent.innerHTML = `<pre><code class="${fileExt.replace('.', '')}">${highlightedCode}</code></pre>`;
+            if (data.length > 1000) {
+                previewContent.innerHTML += '<p>...</p>';
+            }
         });
     } else {
-        previewContent.innerHTML = `<p>无法预览此类型的文件</p>`;
+        previewContent.innerHTML = `
+            <h3>${file.name}</h3>
+            <p>类型: ${fileExt || '未知'}</p>
+            <p>创建时间: ${formatDate(file.stats.birthtime)}</p>
+            <p>修改时间: ${formatDate(file.stats.mtime)}</p>
+        `;
     }
 }
 
@@ -1819,12 +1822,12 @@ function showFolderPreview(folderPath, previewElement) {
         // 为预览项添加点击事件
         previewElement.querySelectorAll('.preview-item').forEach(item => {
             item.addEventListener('click', (e) => {
-                e.stopPropagation() // 阻止事件���
+                e.stopPropagation() // 阻止事件冒泡
                 e.preventDefault() // 阻止默认行为
                 const itemPath = e.target.getAttribute('data-path').replace(/\\\\/g, '\\')
                 fs.stat(itemPath, (err, stats) => {
                     if (err) {
-                        console.error('无法获取文件信息:', err)
+                        console.error('无法获取文件息:', err)
                         return
                     }
                     if (stats.isDirectory()) {
@@ -1981,7 +1984,7 @@ function showFullscreenPreview(filePath) {
         });
     } else if (fileExt === '.psd') {
         // 处理PSD文件
-        console.log(`尝试打开PSD��件: ${filePath}`); // 添加调试信
+        console.log(`尝试打开PSD文件: ${filePath}`); // 添加调试信
 
         // 将 PSD 转换为 PNG 并保存到临时目录，然后读取并转换为 Base64
         PSD.open(filePath).then(function (psdData) {
@@ -2130,6 +2133,34 @@ pathElement.addEventListener('keydown', (e) => {
 // 显示驱动器
 function showDrives() {
     const drives = [];
+    const desktopPath = path.join(os.homedir(), 'Desktop');
+    let downloadsPath;
+
+    // 获取实际的下载文件夹路径
+    if (process.platform === 'win32') {
+        try {
+            // 使用注册表获取下载文件夹路径
+            const result = execSync('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders" /v "{374DE290-123F-4565-9164-39C4925E467B}"', { encoding: 'buffer' });
+            const match = iconv.decode(result, 'cp936').match(/REG_SZ\s+(.+)/);
+            if (match) {
+                downloadsPath = match[1].trim();
+            } else {
+                throw new Error('无法从注册表获取下载文件夹路径');
+            }
+        } catch (error) {
+            console.error('无法获取下载文件夹路径:', error);
+            downloadsPath = path.join(os.homedir(), 'Downloads'); // 回退到默认路径
+        }
+    } else {
+        downloadsPath = path.join(os.homedir(), 'Downloads'); // 非Windows系统使用默认路径
+    }
+
+    // 添加桌面文件夹
+    drives.push({ letter: 'Desktop', path: desktopPath, name: '桌面', icon: '<i class="fas fa-desktop"></i>' });
+
+    // 添加下载文件夹
+    drives.push({ letter: 'Downloads', path: downloadsPath, name: '下载', icon: '<i class="fas fa-download"></i>' });
+
     if (process.platform === 'win32') {
         for (let i = 65; i <= 90; i++) {
             const driveLetter = String.fromCharCode(i);
@@ -2139,25 +2170,20 @@ function showDrives() {
                 try {
                     const volOutputBuffer = execSync(`vol ${driveLetter}:`);
                     const volOutput = iconv.decode(volOutputBuffer, 'gbk');
-                    //   console.warn('卷标内容', '|' + volOutput + '|');
-
-                    // 更新正则表达式匹配模式
                     const volumeNameMatch = volOutput.match(/驱动器\s+\w+\s+中的卷是\s+(.+)/);
 
                     if (volumeNameMatch && volumeNameMatch[1]) {
                         volumeName = volumeNameMatch[1].trim();
                     }
-                    //   console.warn('volumeName', volumeName);   
                 } catch (error) {
                     console.error(`无法获取驱动器 ${driveLetter}: 的卷标名称`, error);
                 }
-                drives.push({ letter: driveLetter, path: drivePath, name: volumeName });
+                drives.push({ letter: driveLetter, path: drivePath, name: volumeName, icon: driveIcon });
             }
         }
     } else {
-        drives.push({ letter: '/', path: '/', name: 'Root' });
+        drives.push({ letter: '/', path: '/', name: 'Root', icon: driveIcon });
     }
-
 
     drivesElement.innerHTML = `
     <div class="sidebar-section-header" onclick="toggleSidebarSection('drives')">
@@ -2167,8 +2193,8 @@ function showDrives() {
     <div class="sidebar-section-content">
       ${drives.map(drive => `
         <div class="drive-item" data-path="${drive.path}">
-          <span class="file-icon">${driveIcon}</span>
-          <span>${drive.name || 'Local Disk'} (${drive.letter}:)</span>
+          <span class="file-icon">${drive.icon}</span>
+          <span>${drive.name || 'Local Disk'} ${!['Desktop', 'Downloads'].includes(drive.letter) ? `(${drive.letter}:)` : ''}</span>
         </div>
       `).join('')}
     </div>
