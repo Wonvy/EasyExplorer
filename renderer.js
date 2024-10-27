@@ -108,6 +108,7 @@ function toggleCalendarView() {
   }
 }
 
+// 显示日历视图
 function showCalendarView() {
   const now = new Date();
   currentCalendarYear = currentCalendarYear || now.getFullYear();
@@ -158,27 +159,46 @@ function showCalendarView() {
   }
 
   // 获取当前月份的文件夹路径
-  const monthFolderPath = path.join(yearPath, `${(currentCalendarMonth + 1).toString().padStart(2, '0')}月`);
+  const monthFolderPath = path.join(yearPath, `${currentCalendarMonth + 1}月`);
 
+  console.log('当前月份文件夹路径:', monthFolderPath);
   // 获取当月所有项目文件夹
   let monthFolders = [];
   try {
     if (fs.existsSync(monthFolderPath)) {
-      monthFolders = fs.readdirSync(monthFolderPath)
-        .filter(name => {
-          // 匹配文件夹名称前的日期格式（4位数字）
-          const match = name.match(/^(\d{4})/);
-          return match && !isNaN(parseInt(match[1]));
-        })
-        .map(name => {
-          const dateStr = name.substring(0, 4);
-          const day = parseInt(dateStr.substring(2));
-          return {
-            name: name,
-            day: day,
-            path: path.join(monthFolderPath, name)
-          };
-        });
+      const files = fs.readdirSync(monthFolderPath);
+      
+      monthFolders = files.map(name => {
+        const fullPath = path.join(monthFolderPath, name);
+        const stats = fs.statSync(fullPath);
+        
+        // 尝试从文件夹名称获取日期
+        const dateMatch = name.match(/^(\d{4})/);
+        let day;
+        
+        if (dateMatch && !isNaN(parseInt(dateMatch[1]))) {
+          // 如果文件夹名称符合格式，使用名称中的日期
+          day = parseInt(dateMatch[1].substring(2));
+        } else {
+          // 如果不符合格式，使用创建时间
+          const createDate = new Date(stats.birthtime);
+          // 只有当创建时间在当前月份时才使用
+          if (createDate.getMonth() === currentCalendarMonth && 
+              createDate.getFullYear() === currentCalendarYear) {
+            day = createDate.getDate();
+          }
+        }
+
+        return {
+          name: name,
+          day: day,
+          path: fullPath,
+          createTime: stats.birthtime
+        };
+      }).filter(folder => folder.day !== undefined); // 过滤掉没有有效日期的文件夹
+      
+      // 按创建时间排序，确保同一天的文件夹按时间顺序显示
+      monthFolders.sort((a, b) => a.createTime - b.createTime);
     }
   } catch (err) {
     console.error('读取月份文件夹错误:', err);
@@ -202,7 +222,7 @@ function showCalendarView() {
           ${dayFolders.map(folder => `
             <div class="folder-item" data-path="${folder.path}" title="${folder.name}">
               <span class="folder-icon">${folderIcon}</span>
-              <span class="folder-name">${folder.name.substring(5)}</span>
+              <span class="folder-name">${folder.name.match(/^(\d{4})/) ? folder.name.substring(5) : folder.name}</span>
             </div>
           `).join('')}
         </div>
@@ -1147,7 +1167,7 @@ function addToFavorites(dirPath) {
 
 // #endregion
 
-// #region 文件-文件列表
+// #region 文���-文件列表
 
 
 
@@ -1226,7 +1246,7 @@ function getFileIcon(file) {
             const filePath = path.join(currentPath, file.name);
             resolve(`
                 <audio class="file-icon" src="${filePath}" controls>
-                    您的浏览器不支持 audio 标签。
+                    ��的浏览器不支持 audio 标签。
                 </audio>
             `);
         } else if (['.zip', '.rar', '.7z', '.tar', '.gz', '.bz2', '.xz', '.7zip', '.tgz', '.tar.gz', '.tar.bz2'].includes(ext)) {
@@ -2278,7 +2298,7 @@ function convertToPdf(inputPath, outputPath) {
                     })
                     .catch(removeErr => {
                         console.error('清理临时目录时出错:', removeErr);
-                        resolve(); // 继续执行，即使清理失败
+                        resolve(); // ���续执行，即使清理失败
                     });
             }, 1000); // 延迟 1 秒
         });
@@ -2309,7 +2329,7 @@ function handlePathBlur() {
     pathElement.value = currentPath  // 失去焦点时恢复完整路径
 }
 
-// 地��栏事件监听器
+// 地栏事件监听器
 pathElement.addEventListener('focus', handlePathFocus)
 pathElement.addEventListener('blur', handlePathBlur)
 

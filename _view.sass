@@ -1,8 +1,12 @@
 .calendar-day
+  min-height: 100px // 设置最小高度
+  height: auto // 自动调整高度
+  
   .day-content
     margin-top: 5px
-    max-height: 80px
-    overflow-y: auto
+    // 移除最大高度限制和滚动条
+    max-height: none
+    overflow: visible
     
     .folder-item
       display: flex
@@ -13,9 +17,11 @@
       cursor: pointer
       font-size: 12px
       background-color: rgba(255, 255, 255, 0.05)
+      transition: all 0.2s
       
       &:hover
         background-color: rgba(255, 255, 255, 0.1)
+        text-decoration: underline // 添加下划线效果
       
       .folder-icon
         width: 16px
@@ -26,7 +32,9 @@
         overflow: hidden
         text-overflow: ellipsis
         white-space: nowrap
-
+        &:hover
+          text-decoration: underline // 文件夹名称hover时添加下划线
+          
   &.has-content
     background-color: rgba(0, 123, 255, 0.1)
     
