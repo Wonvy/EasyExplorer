@@ -1,0 +1,39 @@
+.calendar-day
+  .day-content
+    margin-top: 5px
+    max-height: 80px
+    overflow-y: auto
+    
+    .folder-item
+      display: flex
+      align-items: center
+      padding: 2px 4px
+      margin: 2px 0
+      border-radius: 3px
+      cursor: pointer
+      font-size: 12px
+      background-color: rgba(255, 255, 255, 0.05)
+      
+      &:hover
+        background-color: rgba(255, 255, 255, 0.1)
+      
+      .folder-icon
+        width: 16px
+        height: 16px
+        margin-right: 4px
+        
+      .folder-name
+        overflow: hidden
+        text-overflow: ellipsis
+        white-space: nowrap
+
+  &.has-content
+    background-color: rgba(0, 123, 255, 0.1)
+    
+    &:hover
+      background-color: rgba(0, 123, 255, 0.2)
+
+.calendar-error
+  padding: 20px
+  text-align: center
+  color: #ff6b6b

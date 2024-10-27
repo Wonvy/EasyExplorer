@@ -112,8 +112,18 @@ function showCalendarView() {
   currentCalendarYear = currentCalendarYear || now.getFullYear();
   currentCalendarMonth = currentCalendarMonth !== undefined ? currentCalendarMonth : now.getMonth();
 
-  const daysInMonth = new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate();
-  const firstDayOfMonth = new Date(currentCalendarYear, currentCalendarMonth, 1).getDay();
+  // 从项目设置中获取当前年份的项目路径
+  const projectPaths = JSON.parse(localStorage.getItem('projectPaths') || '{}');
+  const yearPath = projectPaths[currentCalendarYear.toString()];
+
+  if (!yearPath) {
+    fileListElement.innerHTML = `
+      <div class="calendar-error">
+        未设置 ${currentCalendarYear} 年的项目文件夹。
+        请在设置中配置项目文件夹路径。
+      </div>`;
+    return;
+  }
 
   const monthNames = ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"];
   const weekDays = ["一", "二", "三", "四", "五", "六", "日"];
@@ -129,58 +139,90 @@ function showCalendarView() {
       <div class="calendar-grid">
   `;
 
+  // 添加星期头部
   weekDays.forEach(day => {
     calendarHTML += `<div class="calendar-header">${day}</div>`;
   });
 
+  const daysInMonth = new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate();
+  const firstDayOfMonth = new Date(currentCalendarYear, currentCalendarMonth, 1).getDay();
+  
   // 调整第一天的位置
   let startDay = firstDayOfMonth - 1;
-  if (startDay === -1) startDay = 6; // 如果是星期日，则设置为6
+  if (startDay === -1) startDay = 6;
 
+  // 添加空白天数
   for (let i = 0; i < startDay; i++) {
     calendarHTML += '<div class="calendar-day empty"></div>';
   }
 
+  // 获取当前月份的文件夹路径
+  const monthFolderPath = path.join(yearPath, `${(currentCalendarMonth + 1).toString().padStart(2, '0')}月`);
+
+  // 获取当月所有项目文件夹
+  let monthFolders = [];
+  try {
+    if (fs.existsSync(monthFolderPath)) {
+      monthFolders = fs.readdirSync(monthFolderPath)
+        .filter(name => {
+          // 匹配文件夹名称前的日期格式（4位数字）
+          const match = name.match(/^(\d{4})/);
+          return match && !isNaN(parseInt(match[1]));
+        })
+        .map(name => {
+          const dateStr = name.substring(0, 4);
+          const day = parseInt(dateStr.substring(2));
+          return {
+            name: name,
+            day: day,
+            path: path.join(monthFolderPath, name)
+          };
+        });
+    }
+  } catch (err) {
+    console.error('读取月份文件夹错误:', err);
+    monthFolders = [];
+  }
+
+  // 生成日历天数
   const today = new Date();
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(currentCalendarYear, currentCalendarMonth, day);
-    const folderName = `${currentCalendarYear}-${(currentCalendarMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-    const folderPath = path.join(currentPath, folderName);
     const isToday = date.toDateString() === today.toDateString();
+    
+    // 查找当天的项目文件夹
+    const dayFolders = monthFolders.filter(folder => folder.day === day);
+    const hasFolders = dayFolders.length > 0;
 
     calendarHTML += `
-      <div class="calendar-day${isToday ? ' today' : ''}" data-folder="${folderPath}">
+      <div class="calendar-day${isToday ? ' today' : ''}${hasFolders ? ' has-content' : ''}" data-date="${day}">
         <span class="day-number">${day}</span>
-        <div class="day-content"></div>
+        <div class="day-content">
+          ${dayFolders.map(folder => `
+            <div class="folder-item" data-path="${folder.path}" title="${folder.name}">
+              <span class="folder-icon">${folderIcon}</span>
+              <span class="folder-name">${folder.name.substring(5)}</span>
+            </div>
+          `).join('')}
+        </div>
       </div>
     `;
   }
 
   calendarHTML += '</div></div>';
-
   fileListElement.innerHTML = calendarHTML;
 
-  // 为日历控制区域添加滚轮事件监听器
-  const calendarControls = document.querySelector('.calendar-controls');
-  if (calendarControls) {
-    calendarControls.addEventListener('wheel', handleCalendarScroll);
-  }
-
-  // 添加月份切换按钮的事件监听器
+  // 添加事件监听器
   document.getElementById('prev-month').addEventListener('click', () => changeMonth(-1));
   document.getElementById('next-month').addEventListener('click', () => changeMonth(1));
   document.getElementById('today-button').addEventListener('click', goToToday);
 
-  // 检查每个日期文件夹是否存在,并显示其内容
-  document.querySelectorAll('.calendar-day[data-folder]').forEach(dayElement => {
-    const folderPath = dayElement.getAttribute('data-folder');
-    fs.readdir(folderPath, (err, files) => {
-      if (!err && files.length > 0) {
-        const dayContent = dayElement.querySelector('.day-content');
-        dayContent.innerHTML = `<span class="folder-icon"><i class="fas fa-folder"></i></span>`;
-        dayElement.classList.add('has-content');
-        dayElement.addEventListener('click', () => navigateTo(folderPath));
-      }
+  // 为文件夹添加点击事件
+  document.querySelectorAll('.folder-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const folderPath = item.getAttribute('data-path');
+      navigateTo(folderPath);
     });
   });
 }
@@ -193,10 +235,8 @@ function goToToday() {
 }
 
 function changeMonth(delta) {
-  const oldYear = currentCalendarYear;
-  const oldMonth = currentCalendarMonth;
-
   currentCalendarMonth += delta;
+  
   if (currentCalendarMonth > 11) {
     currentCalendarMonth = 0;
     currentCalendarYear++;
@@ -205,12 +245,7 @@ function changeMonth(delta) {
     currentCalendarYear--;
   }
 
-  // 检查是否真的改变了月份
-  if (oldYear !== currentCalendarYear || oldMonth !== currentCalendarMonth) {
-    showCalendarView();
-    return true;
-  }
-  return false;
+  showCalendarView();
 }
 
 function handleCalendarScroll(e) {
@@ -678,7 +713,7 @@ sidebar.addEventListener('contextmenu', (e) => {
     }
 });
 
-// 收��夹右键菜单
+// 收夹右键菜单
 ipcRenderer.on('favorite-menu-item-clicked', (event, action, path) => {
     switch (action) {
         case 'remove-from-favorites':
@@ -2250,7 +2285,7 @@ pathElement.addEventListener('blur', handlePathBlur)
 // 导航到新路径
 function navigateTo(newPath) {
     if (!newPath) {
-        console.error('无效的路径');
+        console.error('无效��路径');
         return;
     }
 
