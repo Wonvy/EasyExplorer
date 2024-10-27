@@ -88,6 +88,7 @@ let statusBarDisplayOptions = JSON.parse(localStorage.getItem('statusBarDisplayO
 let isCalendarView = false;
 let currentCalendarYear;
 let currentCalendarMonth;
+let isFromCalendar = false; // 添加标记变量
 
 // 在文件中添加以下新函数
 function toggleCalendarView() {
@@ -130,7 +131,7 @@ function showCalendarView() {
 
   let calendarHTML = `
     <div class="calendar-view">
-      <div class="calendar-controls">
+      <div class="calendar-controls" id="calendar-controls">
         <button id="prev-month">&lt;</button>
         <h2>${currentCalendarYear}年 ${monthNames[currentCalendarMonth]}</h2>
         <button id="next-month">&gt;</button>
@@ -222,9 +223,19 @@ function showCalendarView() {
     item.addEventListener('click', (e) => {
       e.stopPropagation();
       const folderPath = item.getAttribute('data-path');
+      isFromCalendar = true; // 设置标记
       navigateTo(folderPath);
     });
   });
+
+  // 修改事件监听器的添加方式
+  const calendarControls = document.getElementById('calendar-controls');
+  if (calendarControls) {
+    calendarControls.addEventListener('wheel', handleCalendarScroll);
+  }
+
+  // 移除整个 fileListElement 的滚轮事件监听
+  fileListElement.removeEventListener('wheel', handleCalendarScroll);
 }
 
 function goToToday() {
@@ -248,13 +259,21 @@ function changeMonth(delta) {
   showCalendarView();
 }
 
+// 修改 handleCalendarScroll 函数
 function handleCalendarScroll(e) {
   e.preventDefault(); // 防止页面滚动
   const delta = e.deltaY < 0 ? -1 : 1;
-  if (changeMonth(delta)) {
-    // 如果成功切换了月份，可以在这里添加一些视觉反馈
-    console.log(`切换到 ${currentCalendarYear}年 ${currentCalendarMonth + 1}月`);
+  
+  // 添加视觉反馈
+  const calendarGrid = document.querySelector('.calendar-grid');
+  if (calendarGrid) {
+    calendarGrid.classList.add('switching');
+    setTimeout(() => {
+      calendarGrid.classList.remove('switching');
+    }, 300);
   }
+  
+  changeMonth(delta);
 }
 
 // 修改 updateFileList 函数,在开头添加以下代码
@@ -923,13 +942,18 @@ forwardBtn.addEventListener('click', () => {
 
 // 向上按钮
 upBtn.addEventListener('click', () => {
-    const parentPath = path.dirname(currentPath)
-    if (parentPath !== currentPath) {
-        navigateTo(parentPath)
+    const parentPath = path.dirname(currentPath);
+    
+    if (isFromCalendar) {
+        // 如果是从日历视图跳转来的，返回日历视图
+        isFromCalendar = false; // 重置标记
+        showCalendarView();
+    } else if (parentPath !== currentPath) {
+        navigateTo(parentPath);
     } else if (process.platform === 'win32' && /^[A-Z]:$/.test(currentPath)) {
-        showDrives()
+        showDrives();
     }
-})
+});
 
 // #endregion
 
@@ -1506,7 +1530,7 @@ function sortFiles(files) {
         if (a.isDirectory && !b.isDirectory) return -1;
         if (!a.isDirectory && b.isDirectory) return 1;
 
-        // 后根据前排方法进行排序
+        // 后根据前排法进行排序
         switch (currentSortMethod) {
             case 'name':
                 return currentSortOrder === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
@@ -1536,9 +1560,16 @@ ipcRenderer.on('file-icon-result', (event, { base64, error }) => {
 // 双击打开文件
 fileListContainer.ondblclick = (e) => {
     if (e.target === fileListContainer || e.target === fileListElement) {
-        const parentPath = path.dirname(currentPath)
-        if (parentPath !== currentPath) {
-            navigateTo(parentPath)
+        if (isFromCalendar) {
+            // 如果是从日历视图跳转来的，返回日历视图
+            isFromCalendar = false; // 重置标记
+            showCalendarView();
+        } else {
+            // 正常的向上导航逻辑
+            const parentPath = path.dirname(currentPath);
+            if (parentPath !== currentPath) {
+                navigateTo(parentPath);
+            }
         }
     }
 }
@@ -2278,14 +2309,14 @@ function handlePathBlur() {
     pathElement.value = currentPath  // 失去焦点时恢复完整路径
 }
 
-// 地址栏事件监听器
+// 地��栏事件监听器
 pathElement.addEventListener('focus', handlePathFocus)
 pathElement.addEventListener('blur', handlePathBlur)
 
 // 导航到新路径
 function navigateTo(newPath) {
     if (!newPath) {
-        console.error('无效��路径');
+        console.error('无效的路径');
         return;
     }
 
@@ -2308,12 +2339,28 @@ function navigateTo(newPath) {
                 if (!newPath.endsWith(path.sep)) {
                     newPath += path.sep;
                 }
-                history = history.slice(0, currentHistoryIndex + 1);
-                history.push(currentPath);
-                currentHistoryIndex++;
-                currentPath = newPath;
-                updateFileList(newPath);
-                pathElement.value = newPath;
+                
+                // 检查目录是否为空
+                fs.readdir(newPath, (err, files) => {
+                    if (err) {
+                        console.error('读取目录失败:', err);
+                        return;
+                    }
+
+                    if (files.length === 0 && isFromCalendar) {
+                        // 如果是空目录且是从日历跳转来的，返回到日历视图
+                        isFromCalendar = false; // 重置标记
+                        showCalendarView();
+                    } else {
+                        // 正常导航逻辑
+                        history = history.slice(0, currentHistoryIndex + 1);
+                        history.push(currentPath);
+                        currentHistoryIndex++;
+                        currentPath = newPath;
+                        updateFileList(newPath);
+                        pathElement.value = newPath;
+                    }
+                });
             } else {
                 shell.openPath(newPath);
             }

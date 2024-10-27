@@ -37,3 +37,71 @@
   padding: 20px
   text-align: center
   color: #ff6b6b
+
+.calendar-view
+  position: relative
+  -webkit-user-select: none // 添加 webkit 前缀
+  user-select: none
+  
+  .calendar-controls
+    position: sticky
+    top: 0
+    z-index: 2
+    background: inherit
+    padding: 10px
+    display: flex
+    align-items: center
+    justify-content: center
+    gap: 10px
+    cursor: ns-resize // 添加上下箭头光标提示滚动功能
+    
+    &:hover
+      background-color: rgba(0, 0, 0, 0.05) // 鼠标悬停时的背景色
+    
+    h2
+      margin: 0
+      min-width: 150px
+      text-align: center
+    
+    button
+      padding: 5px 10px
+      border: none
+      border-radius: 4px
+      background: rgba(0, 123, 255, 0.1)
+      cursor: pointer
+      
+      &:hover
+        background: rgba(0, 123, 255, 0.2)
+      
+      &#today-button
+        background: rgba(0, 123, 255, 0.8)
+        color: white
+        
+        &:hover
+          background: rgba(0, 123, 255, 1)
+  
+  .calendar-grid
+    transition: opacity 0.3s, transform 0.3s
+    
+    &.switching
+      opacity: 0.5
+      transform: scale(0.98)
+
+// 暗色主题支持
+body.dark-theme
+  .calendar-controls
+    &:hover
+      background-color: rgba(255, 255, 255, 0.05)
+    
+    button
+      background: rgba(0, 123, 255, 0.2)
+      color: rgba(255, 255, 255, 0.9)
+      
+      &:hover
+        background: rgba(0, 123, 255, 0.3)
+      
+      &#today-button
+        background: rgba(0, 123, 255, 0.8)
+        
+        &:hover
+          background: rgba(0, 123, 255, 1)
