@@ -1577,4 +1577,113 @@ html {
   margin-right: 10px;
 }
 
+.annual-report-view {
+  padding: 20px;
+  height: calc(100vh - 100px);
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+.annual-report-view .annual-report-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+.annual-report-view .annual-report-timeline {
+  position: relative;
+  padding-left: 50px;
+}
+.annual-report-view .annual-report-timeline::before {
+  content: "";
+  position: absolute;
+  left: 20px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #ddd;
+  z-index: 0;
+}
+.annual-report-view .timeline-node {
+  position: relative;
+  margin-bottom: 30px;
+}
+.annual-report-view .timeline-node.current .node-marker {
+  background: #007bff;
+  border-color: #0056b3;
+}
+.annual-report-view .timeline-node.current .month-header {
+  color: #007bff;
+}
+.annual-report-view .timeline-node .node-marker {
+  position: absolute;
+  left: -35px;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border: 2px solid #ddd;
+  border-radius: 50%;
+  z-index: 1;
+}
+.annual-report-view .timeline-node .node-content {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.annual-report-view .timeline-node .node-content .month-header {
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+}
+.annual-report-view .timeline-node .node-content .month-header .month-label {
+  font-size: 18px;
+  font-weight: bold;
+  margin-right: 10px;
+}
+.annual-report-view .timeline-node .node-content .month-header .project-count {
+  font-size: 14px;
+  color: #666;
+}
+.annual-report-view .timeline-node .node-content .month-projects {
+  padding: 15px;
+}
+.annual-report-view .timeline-node .node-content .month-projects .project-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  margin-bottom: 8px;
+}
+.annual-report-view .timeline-node .node-content .month-projects .project-item:hover {
+  background: #f5f5f5;
+  transform: translateX(5px);
+}
+.annual-report-view .timeline-node .node-content .month-projects .project-item .project-icon {
+  margin-right: 10px;
+  width: 24px;
+  height: 24px;
+}
+.annual-report-view .timeline-node .node-content .month-projects .project-item .project-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dark-theme .annual-report-timeline::before {
+  background: #444;
+}
+.dark-theme .timeline-node .node-marker {
+  background: #2e2e2e;
+  border-color: #444;
+}
+.dark-theme .timeline-node .node-content {
+  background: #2e2e2e;
+}
+.dark-theme .timeline-node .node-content .month-header {
+  border-bottom-color: #444;
+}
+.dark-theme .timeline-node .node-content .month-projects .project-item:hover {
+  background: #3a3a3a;
+}
+
 /*# sourceMappingURL=styles.css.map */

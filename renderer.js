@@ -92,20 +92,10 @@ let isFromCalendar = false; // 添加标记变量
 
 // 在文件中添加以下新函数
 function toggleCalendarView() {
-  isCalendarView = !isCalendarView;
-  if (isCalendarView) {
     const now = new Date();
     currentCalendarYear = now.getFullYear();
     currentCalendarMonth = now.getMonth();
     showCalendarView();
-  } else {
-    // 移除日历控制区域的滚轮事件监听器
-    const calendarControls = document.querySelector('.calendar-controls');
-    if (calendarControls) {
-      calendarControls.removeEventListener('wheel', handleCalendarScroll);
-    }
-    updateFileList(currentPath);
-  }
 }
 
 // 显示日历视图
@@ -296,28 +286,7 @@ function handleCalendarScroll(e) {
   changeMonth(delta);
 }
 
-// 修改 updateFileList 函数,在开头添加以下代码
-function updateFileList(dirPath, isQuickAccess = false) {
-  if (isCalendarView) {
-    showCalendarView();
-    return;
-  }
-  
-  // ... 原有的 updateFileList 代码 ...
-}
 
-// 在 document.addEventListener('DOMContentLoaded', () => { ... }) 中添加以下代码
-document.addEventListener('DOMContentLoaded', () => {
-  // ... 现有的代码 ...
-
-  document.getElementById('custom-calendar').addEventListener('click', toggleCalendarView);
-  document.getElementById('custom-projects').addEventListener('click', () => {
-    // 这里可以添加项目相关的功能
-    console.log('项目按钮被点击');
-  });
-
-  // ... 现有的代码 ...
-});
 
 // 在文件顶部添加新的变量
 let activeTab = 'folders'; // 默认显示文件夹选项卡
@@ -423,12 +392,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // 项目管理标签页中的事件监听器
     document.getElementById('custom-projects').addEventListener('click', () => {
         console.log('项目按钮被点击');
-        // 这里可以添加项目相关的功能
     });
 
     document.getElementById('custom-calendar').addEventListener('click', toggleCalendarView);
 
-    // ... 现有的代码 ...
+
 });
 
 // 修改 updateRecentTab 函数
