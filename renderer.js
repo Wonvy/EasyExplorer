@@ -52,7 +52,7 @@ const statusBar = document.getElementById('status-bar');
 // #region 变量
 
 let currentPath = ''
-let currentSortMethod = 'name';// 方法
+let currentSortMethod = 'name';// 
 let currentSortOrder = 'asc';// 排序顺序
 let isPreviewResizing = false; // 预览面板拖拽
 
@@ -83,6 +83,138 @@ let statusBarDisplayOptions = JSON.parse(localStorage.getItem('statusBarDisplayO
     showSize: true,
     showDate: true
 };
+
+// 在文件顶部的变量声明区域添加以下变量
+let isCalendarView = false;
+let currentCalendarYear;
+let currentCalendarMonth;
+
+// 在文件中添加以下新函数
+function toggleCalendarView() {
+  isCalendarView = !isCalendarView;
+  if (isCalendarView) {
+    const now = new Date();
+    currentCalendarYear = now.getFullYear();
+    currentCalendarMonth = now.getMonth();
+    showCalendarView();
+  } else {
+    updateFileList(currentPath);
+  }
+}
+
+function showCalendarView() {
+  const now = new Date();
+  currentCalendarYear = currentCalendarYear || now.getFullYear();
+  currentCalendarMonth = currentCalendarMonth !== undefined ? currentCalendarMonth : now.getMonth();
+
+  const daysInMonth = new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate();
+  const firstDayOfMonth = new Date(currentCalendarYear, currentCalendarMonth, 1).getDay();
+
+  const monthNames = ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"];
+  const weekDays = ["一", "二", "三", "四", "五", "六", "日"];
+
+  let calendarHTML = `
+    <div class="calendar-view">
+      <div class="calendar-controls">
+        <button id="prev-month">&lt;</button>
+        <h2>${currentCalendarYear}年 ${monthNames[currentCalendarMonth]}</h2>
+        <button id="next-month">&gt;</button>
+        <button id="today-button">今天</button>
+      </div>
+      <div class="calendar-grid">
+  `;
+
+  weekDays.forEach(day => {
+    calendarHTML += `<div class="calendar-header">${day}</div>`;
+  });
+
+  // 调整第一天的位置
+  let startDay = firstDayOfMonth - 1;
+  if (startDay === -1) startDay = 6; // 如果是星期日，则设置为6
+
+  for (let i = 0; i < startDay; i++) {
+    calendarHTML += '<div class="calendar-day empty"></div>';
+  }
+
+  const today = new Date();
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(currentCalendarYear, currentCalendarMonth, day);
+    const folderName = `${currentCalendarYear}-${(currentCalendarMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+    const folderPath = path.join(currentPath, folderName);
+    const isToday = date.toDateString() === today.toDateString();
+
+    calendarHTML += `
+      <div class="calendar-day${isToday ? ' today' : ''}" data-folder="${folderPath}">
+        <span class="day-number">${day}</span>
+        <div class="day-content"></div>
+      </div>
+    `;
+  }
+
+  calendarHTML += '</div></div>';
+
+  fileListElement.innerHTML = calendarHTML;
+
+  // 添加月份切换按钮的事件监听器
+  document.getElementById('prev-month').addEventListener('click', () => changeMonth(-1));
+  document.getElementById('next-month').addEventListener('click', () => changeMonth(1));
+  document.getElementById('today-button').addEventListener('click', goToToday);
+
+  // 检查每个日期文件夹是否存在,并显示其内容
+  document.querySelectorAll('.calendar-day[data-folder]').forEach(dayElement => {
+    const folderPath = dayElement.getAttribute('data-folder');
+    fs.readdir(folderPath, (err, files) => {
+      if (!err && files.length > 0) {
+        const dayContent = dayElement.querySelector('.day-content');
+        dayContent.innerHTML = `<span class="folder-icon"><i class="fas fa-folder"></i></span>`;
+        dayElement.classList.add('has-content');
+        dayElement.addEventListener('click', () => navigateTo(folderPath));
+      }
+    });
+  });
+}
+
+function goToToday() {
+  const today = new Date();
+  currentCalendarYear = today.getFullYear();
+  currentCalendarMonth = today.getMonth();
+  showCalendarView();
+}
+
+function changeMonth(delta) {
+  currentCalendarMonth += delta;
+  if (currentCalendarMonth > 11) {
+    currentCalendarMonth = 0;
+    currentCalendarYear++;
+  } else if (currentCalendarMonth < 0) {
+    currentCalendarMonth = 11;
+    currentCalendarYear--;
+  }
+  showCalendarView();
+}
+
+// 修改 updateFileList 函数,在开头添加以下代码
+function updateFileList(dirPath, isQuickAccess = false) {
+  if (isCalendarView) {
+    showCalendarView();
+    return;
+  }
+  
+  // ... 原有的 updateFileList 代码 ...
+}
+
+// 在 document.addEventListener('DOMContentLoaded', () => { ... }) 中添加以下代码
+document.addEventListener('DOMContentLoaded', () => {
+  // ... 现有的代码 ...
+
+  document.getElementById('custom-calendar').addEventListener('click', toggleCalendarView);
+  document.getElementById('custom-projects').addEventListener('click', () => {
+    // 这里可以添加项目相关的功能
+    console.log('项目按钮被点击');
+  });
+
+  // ... 现有的代码 ...
+});
 
 // 在文件顶部添加新的变量
 let activeTab = 'folders'; // 默认显示文件夹选项卡
@@ -191,6 +323,13 @@ document.addEventListener('DOMContentLoaded', () => {
             // ... 现有的选项卡切换逻辑 ...
         });
     });
+
+    // 在 document.addEventListener('DOMContentLoaded', () => { ... }) 中添加以下代码
+    document.getElementById('custom-calendar').addEventListener('click', toggleCalendarView);
+    document.getElementById('custom-projects').addEventListener('click', () => {
+      // 这里可以添加项目相关的功能
+      console.log('项目按钮被点击');
+    });
 });
 
 // 修改 updateRecentTab 函数
@@ -226,7 +365,7 @@ function updateRecentTab() {
                                     name: path.basename(targetPath),
                                     parentDir: path.dirname(targetPath),
                                     isDirectory: stats.isDirectory(),
-                                    atime: stats.atime // 使用访问时间而不是修改时间
+                                    atime: stats.atime // 使用访问时间而不是修改间
                                 });
                             }
                         });
@@ -789,7 +928,7 @@ function handleMouseDown(e) {
     if (target.classList.contains('file-item') || target.closest('.file-item')) {
         console.log('文件上:', target.closest('.file-item').getAttribute('data-path'));
         // 如果在文件项上，开始拖拽
-        const filePath = target.closest('.file-item').getAttribute('data-path'); // 获取文件路径
+        const filePath = target.closest('.file-item').getAttribute('data-path'); // 获取文路径
         const fileData = [Buffer.from(fs.readFileSync(filePath))];
         e.dataTransfer.setData('text/uri-list', `file://${filePath}`);
         e.dataTransfer.effectAllowed = 'copy';  // 设置拖拽效果
@@ -955,7 +1094,7 @@ function getFileIcon(file) {
         } else if (['.ttf', '.otf'].includes(ext)) {
             const fontName = path.basename(filePath, path.extname(filePath)); // 获取字体名称
             const isChinese = /[\u4e00-\u9fa5]/.test(fontName); // 检查是否包含中文
-            const encodedPath = encodeURIComponent(filePath).replace(/%5C/g, '/'); // 对路径进���编码并替换反斜杠为正斜杠
+            const encodedPath = encodeURIComponent(filePath).replace(/%5C/g, '/'); // 对路径进编码并替换反斜杠为正斜杠
             const fontFace = new FontFace(fontName, `url(file://${encodedPath})`);
 
             fontFace.load().then(() => {
@@ -1087,7 +1226,7 @@ function updateFileList(dirPath, isQuickAccess = false) {
 
                                 sortGroupFiles(groupContent, sortType, isAscending);
 
-                                // 更新排序按钮的状态
+                                // 更新排钮的状态
                                 sortButtons.forEach(btn => btn.classList.remove('sorted-asc', 'sorted-desc'));
                                 e.currentTarget.classList.add(isAscending ? 'sorted-asc' : 'sorted-desc');
                             });
@@ -1882,7 +2021,7 @@ document.addEventListener('keydown', (e) => {
 
 // 更新选中的项目
 function updateSelectedItem(newSelectedItem) {
-    // 取消之前选中的项目
+    // 取消之前选��的项目
     document.querySelectorAll('.file-item.selected').forEach(item => {
         item.classList.remove('selected');
     });
@@ -2076,7 +2215,7 @@ function handlePathFocus() {
 
 // 地址栏失去焦点事件
 function handlePathBlur() {
-    pathElement.value = currentPath  // 失去焦点时恢复为完整路径
+    pathElement.value = currentPath  // 失去焦点时恢复完整路径
 }
 
 // 地址栏事件监听器

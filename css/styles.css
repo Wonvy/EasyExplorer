@@ -565,6 +565,48 @@ body .quick-access-item:hover,
 body .drive-item:hover {
   background-color: #e5e5e5;
 }
+body .calendar-view {
+  background-color: #ffffff;
+  color: #333333;
+}
+body .calendar-controls button {
+  color: #333333;
+}
+body .calendar-controls button:hover {
+  background-color: #e5e5e5;
+}
+body .calendar-controls button#today-button {
+  background-color: #007bff;
+  color: #ffffff;
+}
+body .calendar-controls button#today-button:hover {
+  background-color: #0056b3;
+}
+body .calendar-header {
+  background-color: #f0f0f0;
+  color: #333333;
+}
+body .calendar-day {
+  background-color: #ffffff;
+  border-color: #ddd;
+  color: #333333;
+}
+body .calendar-day.empty {
+  background-color: #f5f5f5;
+}
+body .calendar-day.today {
+  background-color: #ffe6e6;
+  border-color: #ff4d4d;
+}
+body .calendar-day.today .day-number {
+  color: #ff4d4d;
+}
+body .calendar-day.has-content:hover {
+  background-color: #e5f3ff;
+}
+body .calendar-day .day-content .folder-icon {
+  color: #262626;
+}
 
 .dark-theme {
   background-color: #121212;
@@ -704,6 +746,48 @@ body .drive-item:hover {
 .dark-theme .quick-access-item:hover,
 .dark-theme .drive-item:hover {
   background-color: #3a3a3a;
+}
+.dark-theme .calendar-view {
+  background-color: #2e2e2e;
+  color: #e0e0e0;
+}
+.dark-theme .calendar-controls button {
+  color: #e0e0e0;
+}
+.dark-theme .calendar-controls button:hover {
+  background-color: #3a3a3a;
+}
+.dark-theme .calendar-controls button#today-button {
+  background-color: #4a90e2;
+  color: #121212;
+}
+.dark-theme .calendar-controls button#today-button:hover {
+  background-color: #3a78c2;
+}
+.dark-theme .calendar-header {
+  background-color: #1e1e1e;
+  color: #e0e0e0;
+}
+.dark-theme .calendar-day {
+  background-color: #3a3a3a;
+  border-color: #3a3a3a;
+  color: #e0e0e0;
+}
+.dark-theme .calendar-day.empty {
+  background-color: #262626;
+}
+.dark-theme .calendar-day.today {
+  background-color: #4a3434;
+  border-color: #ff6b6b;
+}
+.dark-theme .calendar-day.today .day-number {
+  color: #ff6b6b;
+}
+.dark-theme .calendar-day.has-content:hover {
+  background-color: #4a4a4a;
+}
+.dark-theme .calendar-day .day-content .folder-icon {
+  color: #b0b0b0;
 }
 
 .fas {
@@ -1331,6 +1415,105 @@ html {
 #recent-tab .timeline-item .timeline-item-content .file-parent-dir:hover {
   color: #FFC446;
   text-decoration: underline;
+}
+
+.custom-item {
+  display: flex;
+  align-items: center;
+  padding: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.custom-item:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+.custom-item .file-icon {
+  margin-right: 10px;
+}
+
+.calendar-view {
+  padding: 20px;
+  height: calc(100vh - 100px);
+  display: flex;
+  flex-direction: column;
+}
+.calendar-view h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.calendar-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.calendar-controls button {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 5px 10px;
+  transition: background-color 0.3s ease;
+  border-radius: 4px;
+}
+.calendar-controls button#today-button {
+  background-color: #007bff;
+  color: white;
+}
+.calendar-controls button#today-button:hover {
+  background-color: #0056b3;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.calendar-header {
+  text-align: center;
+  font-weight: bold;
+  padding: 10px;
+  text-transform: uppercase;
+}
+
+.calendar-day {
+  border: 1px solid;
+  padding: 5px;
+  min-height: 100px;
+  position: relative;
+  transition: background-color 0.3s ease;
+}
+.calendar-day.empty {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+.calendar-day.has-content {
+  cursor: pointer;
+}
+.calendar-day .day-number {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  font-weight: bold;
+}
+.calendar-day .day-content {
+  margin-top: 25px;
+  text-align: center;
+}
+.calendar-day .day-content .folder-icon {
+  font-size: 24px;
+  color: #FFC446;
+}
+.calendar-day.today {
+  background-color: #ffe6e6;
+  border: 2px solid #ff4d4d;
+}
+.calendar-day.today .day-number {
+  color: #ff4d4d;
+  font-weight: bold;
 }
 
 /*# sourceMappingURL=styles.css.map */

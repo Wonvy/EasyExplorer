@@ -33,7 +33,7 @@ $header-bg-dark: rgba(249, 249, 249, 0.05)
 $header-hover-bg-dark: rgba(172, 172, 172, 0.2)
 
 // 定义主题 mixin
-@mixin theme($bg, $text, $sidebar-bg, $main-bg, $status-bar-bg, $hover-bg, $selected-bg, $border, $icon, $toolbar-bg, $toolbar-icon, $resizer-bg, $resizer-icon)
+@mixin theme($bg, $text, $sidebar-bg, $main-bg, $status-bar-bg, $hover-bg, $selected-bg, $border, $icon, $toolbar-bg, $toolbar-icon, $resizer-bg, $resizer-icon, $calendar-bg, $calendar-header, $calendar-day, $calendar-day-hover, $calendar-day-empty, $calendar-text, $calendar-today, $calendar-today-button, $calendar-today-button-hover, $calendar-today-bg, $calendar-today-border, $calendar-today-text)
   background-color: $bg
   color: $text
 
@@ -171,16 +171,80 @@ $header-hover-bg-dark: rgba(172, 172, 172, 0.2)
     &:hover
       background-color: $hover-bg
 
+  // 添加日历相关的样式
+  .calendar-view
+    background-color: $calendar-bg
+    color: $calendar-text
 
+  .calendar-controls
+    button
+      color: $calendar-text
+      &:hover
+        background-color: $hover-bg
+      &#today-button
+        background-color: $calendar-today-button
+        color: $bg
+        &:hover
+          background-color: $calendar-today-button-hover
 
+  .calendar-header
+    background-color: $calendar-header
+    color: $calendar-text
 
+  .calendar-day
+    background-color: $calendar-day
+    border-color: $border
+    color: $calendar-text
 
+    &.empty
+      background-color: $calendar-day-empty
 
+    &.today
+      background-color: $calendar-today-bg
+      border-color: $calendar-today-border
+      .day-number
+        color: $calendar-today-text
+
+    &.has-content:hover
+      background-color: $calendar-day-hover
+
+    .day-content
+      .folder-icon
+        color: $icon
+
+  // ... 其他现有的样式定义 ...
 
 // 定义亮色主题 mixin
 @mixin light-theme
-  @include theme($light-bg, $light-text, $light-sidebar-bg, $light-main-bg, $light-status-bar-bg, $light-hover-bg, $light-selected-bg, $light-border, $light-icon, $light-toolbar-bg, $light-toolbar-icon, $light-resizer-bg, $light-resizer-icon)
+  @include theme($light-bg, $light-text, $light-sidebar-bg, $light-main-bg, $light-status-bar-bg, $light-hover-bg, $light-selected-bg, $light-border, $light-icon, $light-toolbar-bg, $light-toolbar-icon, $light-resizer-bg, $light-resizer-icon, $light-calendar-bg, $light-calendar-header, $light-calendar-day, $light-calendar-day-hover, $light-calendar-day-empty, $light-calendar-text, $light-calendar-today, $light-calendar-today-button, $light-calendar-today-button-hover, $light-calendar-today-bg, $light-calendar-today-border, $light-calendar-today-text)
 
 // 定义暗色主题 mixin
 @mixin dark-theme
-  @include theme($dark-bg, $dark-text, $dark-sidebar-bg, $dark-main-bg, $dark-status-bar-bg, $dark-hover-bg, $dark-selected-bg, $dark-border, $dark-icon, $dark-toolbar-bg, $dark-toolbar-icon, $dark-resizer-bg, $dark-resizer-icon)
+  @include theme($dark-bg, $dark-text, $dark-sidebar-bg, $dark-main-bg, $dark-status-bar-bg, $dark-hover-bg, $dark-selected-bg, $dark-border, $dark-icon, $dark-toolbar-bg, $dark-toolbar-icon, $dark-resizer-bg, $dark-resizer-icon, $dark-calendar-bg, $dark-calendar-header, $dark-calendar-day, $dark-calendar-day-hover, $dark-calendar-day-empty, $dark-calendar-text, $dark-calendar-today, $dark-calendar-today-button, $dark-calendar-today-button-hover, $dark-calendar-today-bg, $dark-calendar-today-border, $dark-calendar-today-text)
+
+// 在文件顶部添加新的颜色变量
+$light-calendar-bg: #ffffff
+$light-calendar-header: #f0f0f0
+$light-calendar-day: #ffffff
+$light-calendar-day-hover: #e5f3ff
+$light-calendar-day-empty: #f5f5f5
+$light-calendar-text: #333333
+$light-calendar-today: #ffe6e6
+$light-calendar-today-button: #007bff
+$light-calendar-today-button-hover: #0056b3
+$light-calendar-today-bg: #ffe6e6
+$light-calendar-today-border: #ff4d4d
+$light-calendar-today-text: #ff4d4d
+
+$dark-calendar-bg: #2e2e2e
+$dark-calendar-header: #1e1e1e
+$dark-calendar-day: #3a3a3a
+$dark-calendar-day-hover: #4a4a4a
+$dark-calendar-day-empty: #262626
+$dark-calendar-text: #e0e0e0
+$dark-calendar-today: #4a3434
+$dark-calendar-today-button: #4a90e2
+$dark-calendar-today-button-hover: #3a78c2
+$dark-calendar-today-bg: #4a3434
+$dark-calendar-today-border: #ff6b6b
+$dark-calendar-today-text: #ff6b6b
