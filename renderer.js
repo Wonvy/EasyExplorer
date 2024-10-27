@@ -98,6 +98,11 @@ function toggleCalendarView() {
     currentCalendarMonth = now.getMonth();
     showCalendarView();
   } else {
+    // 移除日历控制区域的滚轮事件监听器
+    const calendarControls = document.querySelector('.calendar-controls');
+    if (calendarControls) {
+      calendarControls.removeEventListener('wheel', handleCalendarScroll);
+    }
     updateFileList(currentPath);
   }
 }
@@ -155,6 +160,12 @@ function showCalendarView() {
 
   fileListElement.innerHTML = calendarHTML;
 
+  // 为日历控制区域添加滚轮事件监听器
+  const calendarControls = document.querySelector('.calendar-controls');
+  if (calendarControls) {
+    calendarControls.addEventListener('wheel', handleCalendarScroll);
+  }
+
   // 添加月份切换按钮的事件监听器
   document.getElementById('prev-month').addEventListener('click', () => changeMonth(-1));
   document.getElementById('next-month').addEventListener('click', () => changeMonth(1));
@@ -182,6 +193,9 @@ function goToToday() {
 }
 
 function changeMonth(delta) {
+  const oldYear = currentCalendarYear;
+  const oldMonth = currentCalendarMonth;
+
   currentCalendarMonth += delta;
   if (currentCalendarMonth > 11) {
     currentCalendarMonth = 0;
@@ -190,7 +204,22 @@ function changeMonth(delta) {
     currentCalendarMonth = 11;
     currentCalendarYear--;
   }
-  showCalendarView();
+
+  // 检查是否真的改变了月份
+  if (oldYear !== currentCalendarYear || oldMonth !== currentCalendarMonth) {
+    showCalendarView();
+    return true;
+  }
+  return false;
+}
+
+function handleCalendarScroll(e) {
+  e.preventDefault(); // 防止页面滚动
+  const delta = e.deltaY < 0 ? -1 : 1;
+  if (changeMonth(delta)) {
+    // 如果成功切换了月份，可以在这里添加一些视觉反馈
+    console.log(`切换到 ${currentCalendarYear}年 ${currentCalendarMonth + 1}月`);
+  }
 }
 
 // 修改 updateFileList 函数,在开头添加以下代码
@@ -636,7 +665,7 @@ previewToggle.addEventListener('click', () => {
 
 // #region 右键菜单
 
-// 右键菜单-左栏
+// 右键菜单-左
 sidebar.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     const target = e.target.closest('.favorite-item'); // 检查是否在收藏夹项目上
@@ -649,7 +678,7 @@ sidebar.addEventListener('contextmenu', (e) => {
     }
 });
 
-// 收藏夹右键菜单
+// 收��夹右键菜单
 ipcRenderer.on('favorite-menu-item-clicked', (event, action, path) => {
     switch (action) {
         case 'remove-from-favorites':
@@ -1898,7 +1927,7 @@ statusBarElement.addEventListener('contextmenu', (e) => {
     ipcRenderer.send('show-status-bar-menu', options);
 });
 
-// 状态栏右键菜单��击事件
+// 状态栏右键菜单击事件
 ipcRenderer.on('status-bar-menu-item-clicked', (event, label) => {
     switch (label) {
         case '显示路径':

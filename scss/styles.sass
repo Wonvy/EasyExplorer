@@ -656,6 +656,22 @@ html
       &:hover
         background-color: #0056b3
 
+  position: relative
+  
+  &::after
+    content: "滚动切换月份"
+    position: absolute
+    bottom: -20px
+    left: 50%
+    transform: translateX(-50%)
+    font-size: 12px
+    color: #888
+    opacity: 0
+    transition: opacity 0.3s ease
+
+  &:hover::after
+    opacity: 1
+
 .calendar-grid
   display: grid
   grid-template-columns: repeat(7, 1fr)
@@ -746,3 +762,4 @@ html
 
     .file-icon
       margin-right: 10px
+
