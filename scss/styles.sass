@@ -823,7 +823,7 @@ html
 
         .project-item
           display: flex
-          align-items: center
+          align-items: flex-start
           padding: 8px
           margin: 4px 0
           border-radius: 4px
@@ -837,17 +837,36 @@ html
             margin-right: 8px
             width: 20px
             height: 20px
+            flex-shrink: 0
 
-          .project-name
+          .project-info
             flex: 1
             overflow: hidden
-            text-overflow: ellipsis
-            white-space: nowrap
 
-          .project-date
-            font-size: 0.8em
-            color: #666
-            margin-left: 8px
+            .project-name
+              font-weight: bold
+              margin-bottom: 4px
+              overflow: hidden
+              text-overflow: ellipsis
+              white-space: nowrap
+
+            .project-dates
+              font-size: 0.8em
+              color: #666
+              display: flex
+              flex-direction: column
+              gap: 2px
+
+              span
+                white-space: nowrap
+
+            .last-modified-date
+              font-size: 0.8em
+              color: #007bff
+              margin-top: 4px
+              padding: 2px 4px
+              background-color: rgba(0, 123, 255, 0.1)
+              border-radius: 3px
 
 .annual-report-error
   padding: 20px
@@ -874,3 +893,15 @@ body.dark-theme
 
         .project-date
           color: #999
+
+      .month-content
+        .project-item
+          &:hover
+            background-color: rgba(255, 255, 255, 0.05)
+
+          .project-dates
+            color: #999
+
+          .last-modified-date
+            color: #4a90e2
+            background-color: rgba(74, 144, 226, 0.1)

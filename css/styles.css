@@ -1633,7 +1633,7 @@ html {
 }
 .annual-report-view .annual-timeline .month-column .month-content .project-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   padding: 8px;
   margin: 4px 0;
   border-radius: 4px;
@@ -1647,17 +1647,36 @@ html {
   margin-right: 8px;
   width: 20px;
   height: 20px;
+  flex-shrink: 0;
 }
-.annual-report-view .annual-timeline .month-column .month-content .project-item .project-name {
+.annual-report-view .annual-timeline .month-column .month-content .project-item .project-info {
   flex: 1;
+  overflow: hidden;
+}
+.annual-report-view .annual-timeline .month-column .month-content .project-item .project-info .project-name {
+  font-weight: bold;
+  margin-bottom: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.annual-report-view .annual-timeline .month-column .month-content .project-item .project-date {
+.annual-report-view .annual-timeline .month-column .month-content .project-item .project-info .project-dates {
   font-size: 0.8em;
   color: #666;
-  margin-left: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.annual-report-view .annual-timeline .month-column .month-content .project-item .project-info .project-dates span {
+  white-space: nowrap;
+}
+.annual-report-view .annual-timeline .month-column .month-content .project-item .project-info .last-modified-date {
+  font-size: 0.8em;
+  color: #007bff;
+  margin-top: 4px;
+  padding: 2px 4px;
+  background-color: rgba(0, 123, 255, 0.1);
+  border-radius: 3px;
 }
 
 .annual-report-error {
@@ -1681,6 +1700,16 @@ body.dark-theme .annual-report-view .month-column .project-item:hover {
 }
 body.dark-theme .annual-report-view .month-column .project-item .project-date {
   color: #999;
+}
+body.dark-theme .annual-report-view .month-column .month-content .project-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+body.dark-theme .annual-report-view .month-column .month-content .project-item .project-dates {
+  color: #999;
+}
+body.dark-theme .annual-report-view .month-column .month-content .project-item .last-modified-date {
+  color: #4a90e2;
+  background-color: rgba(74, 144, 226, 0.1);
 }
 
 /*# sourceMappingURL=styles.css.map */

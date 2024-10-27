@@ -417,7 +417,7 @@ function showAnnualReport() {
     const projectPaths = JSON.parse(localStorage.getItem('projectPaths') || '{}');
     let yearPath = projectPaths[currentReportYear.toString()];
 
-    // 如果当前年份没有文件夹，则跳转到有文件夹的年份
+    // 如果当前年份没有文件夹，则跳转到有文件夹的份
     if (!yearPath) {
         console.warn('未找到当前年份的项目路径:', currentReportYear);
         // 寻找最近的有文件夹的年份
@@ -501,22 +501,68 @@ function loadAnnualData(yearPath) {
                 monthProjects.innerHTML = files.map(file => {
                     const filePath = path.join(monthPath, file);
                     const stats = fs.statSync(filePath);
+                    
+                    // 获取文件夹内最新修改时间
+                    let lastModified = stats.mtime;
+                    try {
+                        const subFiles = fs.readdirSync(filePath);
+                        subFiles
+                            .filter(subFile => subFile.toLowerCase() !== 'thumbs.db') // 排除 Thumbs.db
+                            .forEach(subFile => {
+                                const subFilePath = path.join(filePath, subFile);
+                                try {
+                                    const subStats = fs.statSync(subFilePath);
+                                    if (subStats.mtime > lastModified) {
+                                        lastModified = subStats.mtime;
+                                    }
+                                } catch (err) {
+                                    console.warn(`无法读取文件状态: ${subFilePath}`, err);
+                                }
+                            });
+                    } catch (err) {
+                        console.warn(`读取子文件夹失败: ${filePath}`, err);
+                    }
 
                     return `
                         <div class="project-item" data-path="${filePath}">
                             <span class="project-icon">${folderIcon}</span>
-                            <span class="project-name">${file}</span>
-                            <span class="project-date">${stats.mtime.toLocaleDateString()}</span>
+                            <div class="project-info">
+                                <span class="project-name">${file}</span>
+                                <div class="project-dates">
+                                    <span class="create-date">创建: ${stats.birthtime.toLocaleDateString()}</span>
+                                    <span class="modify-date">修改: ${stats.mtime.toLocaleDateString()}</span>
+                                </div>
+                                <div class="last-modified-date" style="display: none;">
+                                    最后更新: ${lastModified.toLocaleDateString()} ${lastModified.toLocaleTimeString()}
+                                </div>
+                            </div>
                         </div>
                     `;
                 }).join('');
 
-                // 添加项目点击事件
+                // 添加项目点击和悬停事件
                 monthProjects.querySelectorAll('.project-item').forEach(item => {
+                    // 点击事件
                     item.addEventListener('click', () => {
                         const projectPath = item.getAttribute('data-path');
                         console.log('打开项目:', projectPath);
                         navigateTo(projectPath);
+                    });
+
+                    // 鼠标移入事件
+                    item.addEventListener('mouseenter', () => {
+                        const lastModified = item.querySelector('.last-modified-date');
+                        if (lastModified) {
+                            lastModified.style.display = 'block';
+                        }
+                    });
+
+                    // 鼠标移出事件
+                    item.addEventListener('mouseleave', () => {
+                        const lastModified = item.querySelector('.last-modified-date');
+                        if (lastModified) {
+                            lastModified.style.display = 'none';
+                        }
                     });
                 });
             } else {
@@ -1383,7 +1429,7 @@ function updateFileList(dirPath, isQuickAccess = false) {
         // 取文件详细信息并排序
         Promise.all(files.map(file => getFileDetails(dirPath, file).catch(err => {
             console.error(`获取文件 ${file.name} 的详情时出错: ${err}`);
-            return null; // 如果获取详情失败，返回null以跳���该文件
+            return null; // 如果获取详情失败，返回null以跳该文件
         })))
             .then(fileDetails => {
                 // 过滤掉获取详情失败的文件
@@ -1496,7 +1542,7 @@ function createFileItem(file, dirPath) {
     fileItem.setAttribute('draggable', true); // 使元素可拖拽
     fileItem.addEventListener('dragstart', (e) => {
         e.preventDefault();
-        const filePath = path.join(dirPath, file.name); // 确保路径格式正确
+        const filePath = path.join(dirPath, file.name); // 确保路格式正确
         const fileData = [new File([fs.readFileSync(filePath)], file.name, { type: 'application/octet-stream' })];
 
         // 设置拖拽格式为 Files，Photoshop 需要文件句柄来识别
@@ -1672,7 +1718,7 @@ function sortFiles(files) {
 }
 
 
-// 获取文件图标结果
+// 获��文件图标结果
 ipcRenderer.on('file-icon-result', (event, { base64, error }) => {
     if (error) {
         console.warn('获取文件图标时出错:', error);
@@ -1712,7 +1758,7 @@ fileListContainer.addEventListener('click', (e) => {
             selectedItem.classList.remove('selected');
             selectedItem = null;
         }
-        removeSelectionBox(); // 移除选择框
+        removeSelectionBox(); // 移除择框
     }
 })
 // #endregion
