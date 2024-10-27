@@ -766,12 +766,13 @@ html
     .file-icon
       margin-right: 10px
 
-// 年报视图样式
+// 修改年报视图样式
 .annual-report-view
   padding: 20px
   height: calc(100vh - 100px)
   display: flex
   flex-direction: column
+  overflow: hidden // 防止整体出现滚动条
 
   .annual-report-controls
     display: flex
@@ -779,94 +780,100 @@ html
     align-items: center
     gap: 20px
     margin-bottom: 30px
+    padding: 10px
+    background: rgba(255, 255, 255, 0.8) // 半透明背景
+    backdrop-filter: blur(5px) // 毛玻璃效果
+    position: sticky
+    top: 0
+    z-index: 10
+
+    h2
+      font-size: 24px
+      margin: 0
+      min-width: 200px
+      text-align: center
 
     button
       background: none
-      border: none
+      border: 1px solid #FFC446
       font-size: 16px
       cursor: pointer
-      padding: 5px 10px
-      transition: background-color 0.3s ease
+      padding: 8px 15px
+      transition: all 0.3s ease
       border-radius: 4px
+      color: #FFC446
 
       &:hover
-        background-color: rgba(0, 0, 0, 0.1)
+        background-color: #FFC446
+        color: white
 
   .annual-timeline
     flex: 1
-    overflow-x: auto
-    padding: 20px 0
+    overflow-y: auto // 垂直滚动
+    overflow-x: auto // 水平滚动
+    padding: 0 20px 20px 20px
+    margin-top: -20px // 补偿 padding-top
 
     .months-container
       display: flex
-      min-width: 100%
-      gap: 10px
+      min-width: max-content // 防止内容被压缩
+      gap: 20px
+      padding-top: 60px // 为时间轴线留出空间
 
-    .month-column
-      flex: 1
-      min-width: 200px
-      border: 1px solid rgba(0, 0, 0, 0.1)
-      border-radius: 8px
-      
-      .month-header
-        padding: 10px
-        text-align: center
-        font-weight: bold
-        border-bottom: 1px solid rgba(0, 0, 0, 0.1)
-        background-color: rgba(0, 0, 0, 0.02)
-        border-radius: 8px 8px 0 0
+    .timeline-line
+      position: sticky // 改为 sticky 定位
+      top: 60px // 与 controls 保持距离
+      left: 0
+      right: 0
+      height: 2px
+      background: #FFC446
+      z-index: 1
+      margin: 0 -20px // 补偿父元素的 padding
 
-      .month-content
-        padding: 10px
-        height: calc(100% - 40px)
-        overflow-y: auto
+// 暗色主题支持
+body.dark-theme
+  .annual-report-view
+    .annual-report-controls
+      background: rgba(30, 30, 30, 0.8)
 
-        .project-item
-          display: flex
-          align-items: flex-start
-          padding: 8px
-          margin: 4px 0
-          border-radius: 4px
-          cursor: pointer
-          transition: background-color 0.2s ease
+      button
+        border-color: #FFC446
+        color: #FFC446
 
-          &:hover
-            background-color: rgba(0, 0, 0, 0.05)
+        &:hover
+          background-color: #FFC446
+          color: #1e1e1e
 
-          .project-icon
-            margin-right: 8px
-            width: 20px
-            height: 20px
-            flex-shrink: 0
+    .timeline-line
+      background: #FFC446
 
-          .project-info
-            flex: 1
-            overflow: hidden
+// 添加滚动条样式
+.annual-timeline
+  &::-webkit-scrollbar
+    width: 8px
+    height: 8px
 
-            .project-name
-              font-weight: bold
-              margin-bottom: 4px
-              overflow: hidden
-              text-overflow: ellipsis
-              white-space: nowrap
+  &::-webkit-scrollbar-track
+    background: rgba(0, 0, 0, 0.1)
+    border-radius: 4px
 
-            .project-dates
-              font-size: 0.8em
-              color: #666
-              display: flex
-              flex-direction: column
-              gap: 2px
+  &::-webkit-scrollbar-thumb
+    background: rgba(255, 196, 70, 0.5)
+    border-radius: 4px
+    
+    &:hover
+      background: rgba(255, 196, 70, 0.8)
 
-              span
-                white-space: nowrap
+  // 水平滚动条
+  &::-webkit-scrollbar-horizontal
+    height: 8px
 
-            .last-modified-date
-              font-size: 0.8em
-              color: #007bff
-              margin-top: 4px
-              padding: 2px 4px
-              background-color: rgba(0, 123, 255, 0.1)
-              border-radius: 3px
+  &::-webkit-scrollbar-thumb:horizontal
+    background: rgba(255, 196, 70, 0.5)
+    border-radius: 4px
+
+    &:hover
+      background: rgba(255, 196, 70, 0.8)
 
 .annual-report-error
   padding: 20px
@@ -905,3 +912,114 @@ body.dark-theme
           .last-modified-date
             color: #4a90e2
             background-color: rgba(74, 144, 226, 0.1)
+
+// 年报时间轴样式
+.timeline-container
+  position: relative
+  padding: 20px 0
+  margin-top: 40px
+
+  .timeline-line
+    position: absolute
+    top: 10px
+    left: 0
+    right: 0
+    height: 2px
+    background: #FFC446
+    z-index: 1
+
+  .months-container
+    display: flex
+    position: relative
+    padding-top: 40px
+
+  .month-column
+    flex: 1
+    min-width: 200px
+    position: relative
+
+    .month-marker
+      position: absolute
+      top: -40px
+      left: 50%
+      transform: translateX(-50%)
+      text-align: center
+      z-index: 2
+
+      .month-dot
+        width: 12px
+        height: 12px
+        background: #FFC446
+        border-radius: 50%
+        margin: 0 auto 8px
+        position: relative
+        z-index: 2
+
+      .month-header
+        font-weight: bold
+        color: #333
+        white-space: nowrap
+
+    .month-content
+      padding: 20px 10px
+      margin-top: 20px
+
+      .project-item
+        background: rgba(255, 196, 70, 0.1)
+        border-left: 3px solid #FFC446
+        margin-bottom: 10px
+        padding: 10px
+        border-radius: 0 4px 4px 0
+        transition: all 0.3s ease
+
+        &:hover
+          background: rgba(255, 196, 70, 0.2)
+          transform: translateX(5px)
+
+        .project-info
+          .project-name
+            color: #333
+            font-weight: bold
+            margin-bottom: 5px
+
+          .project-dates
+            font-size: 0.85em
+            color: #666
+
+          .last-modified-date
+            color: #FFC446
+            font-size: 0.85em
+            margin-top: 5px
+
+// 暗色主题支持
+body.dark-theme
+  .timeline-container
+    .timeline-line
+      background: #FFC446
+
+    .month-column
+      .month-marker
+        .month-dot
+          background: #FFC446
+
+        .month-header
+          color: #e0e0e0
+
+      .month-content
+        .project-item
+          background: rgba(255, 196, 70, 0.05)
+          border-left-color: #FFC446
+
+          &:hover
+            background: rgba(255, 196, 70, 0.1)
+
+          .project-info
+            .project-name
+              color: #e0e0e0
+
+            .project-dates
+              color: #999
+
+            .last-modified-date
+              color: #FFC446
+

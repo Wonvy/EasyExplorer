@@ -417,7 +417,7 @@ function showAnnualReport() {
     const projectPaths = JSON.parse(localStorage.getItem('projectPaths') || '{}');
     let yearPath = projectPaths[currentReportYear.toString()];
 
-    // 如果当前年份没有文件夹，则跳转到有文件夹的份
+    // 如果当前年份没有文件夹，则跳转到有文件夹的��
     if (!yearPath) {
         console.warn('未找到当前年份的项目路径:', currentReportYear);
         // 寻找最近的有文件夹的年份
@@ -463,19 +463,25 @@ function showAnnualReport() {
 }
 
 function generateMonthsTimeline() {
-    const months = ["一月", "二月", "三月", "四月", "五月", "六月",
-        "七月", "八月", "九月", "十月", "十一月", "十二月"];
+    const months = ["一月", "二月", "三月", "四月", "五月", "六月", 
+                   "七月", "八月", "九月", "十月", "十一月", "十二月"];
 
     return `
-        <div class="months-container">
-            ${months.map((month, index) => `
-                <div class="month-column" data-month="${index + 1}">
-                    <div class="month-header">${month}</div>
-                    <div class="month-content" id="month-${index + 1}">
-                        <div class="month-projects"></div>
+        <div class="timeline-container">
+            <div class="timeline-line"></div>
+            <div class="months-container">
+                ${months.map((month, index) => `
+                    <div class="month-column" data-month="${index + 1}">
+                        <div class="month-marker">
+                            <div class="month-dot"></div>
+                            <div class="month-header">${month}</div>
+                        </div>
+                        <div class="month-content" id="month-${index + 1}">
+                            <div class="month-projects"></div>
+                        </div>
                     </div>
-                </div>
-            `).join('')}
+                `).join('')}
+            </div>
         </div>
     `;
 }
@@ -1718,7 +1724,7 @@ function sortFiles(files) {
 }
 
 
-// 获��文件图标结果
+// 获��件图标结果
 ipcRenderer.on('file-icon-result', (event, { base64, error }) => {
     if (error) {
         console.warn('获取文件图标时出错:', error);
