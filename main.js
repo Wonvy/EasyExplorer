@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain, clipboard, shell } = require('electron')
+const { app, BrowserWindow, Menu, ipcMain, clipboard, shell, dialog } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const { exec } = require('child_process');
@@ -149,6 +149,7 @@ function createWindow () {
     });
 
     settingsWindow.loadFile('settings.html');
+    settingsWindow.webContents.openDevTools();
 
     settingsWindow.on('closed', () => {
       settingsWindow = null;
@@ -158,6 +159,15 @@ function createWindow () {
   // 在 ipcMain.on('show-context-menu', ...) 之前添加以下监听器
   ipcMain.on('open-settings', () => {
     createSettingsWindow();
+  });
+
+  // 在现有的 ipcMain 监听器部分添加
+  ipcMain.handle('select-folder', async () => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openDirectory']
+    });
+    console.log(result);
+    return result;
   });
 }
 
