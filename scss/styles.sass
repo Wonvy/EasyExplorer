@@ -703,3 +703,46 @@ html
     .day-number
       color: #ff4d4d
       font-weight: bold
+
+// 在文件中添加或修改以下样式
+
+.sidebar-tabs
+  display: flex
+  border-bottom: 1px solid #ddd
+
+  .tab-button
+    flex: 1
+    padding: 10px
+    text-align: center
+    background: none
+    border: none
+    cursor: pointer
+    transition: background-color 0.3s
+
+    &:hover
+      background-color: rgba(0, 0, 0, 0.05)
+
+    &.active
+      background-color: #e5e5e5
+      border-bottom: 2px solid #007bff
+
+.tab-content
+  display: none
+  padding: 10px
+
+  &.active
+    display: block
+
+#project-management-tab
+  .custom-item
+    display: flex
+    align-items: center
+    padding: 10px
+    cursor: pointer
+    transition: background-color 0.2s
+
+    &:hover
+      background-color: rgba(0, 0, 0, 0.05)
+
+    .file-icon
+      margin-right: 10px

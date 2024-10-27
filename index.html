@@ -27,28 +27,23 @@
             <div class="sidebar-content">
                 <div class="sidebar-tabs">
                     <button class="tab-button active" data-tab="folders">文件夹</button>
+                    <button class="tab-button" data-tab="project-management">项目</button>
                     <button class="tab-button" data-tab="recent">最近</button>
                 </div>
                 <div class="tab-content" id="folders-tab">
-                    <div id="custom" class="sidebar-section">
-                        <div class="sidebar-section-header" onclick="toggleSidebarSection('custom')">
-                            <i class="fas fa-chevron-down sidebar-section-icon"></i>
-                            <span>自定义</span>
-                        </div>
-                        <div class="sidebar-section-content">
-                            <div class="custom-item" id="custom-projects">
-                                <span class="file-icon"><i class="fas fa-project-diagram"></i></span>
-                                <span>项目</span>
-                            </div>
-                            <div class="custom-item" id="custom-calendar">
-                                <span class="file-icon"><i class="fas fa-calendar-alt"></i></span>
-                                <span>日历</span>
-                            </div>
-                        </div>
-                    </div>
                     <div id="drives" class="sidebar-section"></div>
                     <div id="favorites" class="sidebar-section"></div>
                     <div id="quick-access" class="sidebar-section"></div>
+                </div>
+                <div class="tab-content" id="project-management-tab" style="display: none;">
+                    <div class="custom-item" id="custom-projects">
+                        <span class="file-icon"><i class="fas fa-project-diagram"></i></span>
+                        <span>进度</span>
+                    </div>
+                    <div class="custom-item" id="custom-calendar">
+                        <span class="file-icon"><i class="fas fa-calendar-alt"></i></span>
+                        <span>日历</span>
+                    </div>
                 </div>
                 <div class="tab-content" id="recent-tab" style="display: none;">
                     最近文件时间轴显示

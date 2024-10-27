@@ -1516,4 +1516,47 @@ html {
   font-weight: bold;
 }
 
+.sidebar-tabs {
+  display: flex;
+  border-bottom: 1px solid #ddd;
+}
+.sidebar-tabs .tab-button {
+  flex: 1;
+  padding: 10px;
+  text-align: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+.sidebar-tabs .tab-button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+.sidebar-tabs .tab-button.active {
+  background-color: #e5e5e5;
+  border-bottom: 2px solid #007bff;
+}
+
+.tab-content {
+  display: none;
+  padding: 10px;
+}
+.tab-content.active {
+  display: block;
+}
+
+#project-management-tab .custom-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+#project-management-tab .custom-item:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+#project-management-tab .custom-item .file-icon {
+  margin-right: 10px;
+}
+
 /*# sourceMappingURL=styles.css.map */

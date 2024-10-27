@@ -303,6 +303,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (tabName === 'recent') {
                 updateRecentTab();
             }
+
+            // 保存当前活动的标签
+            activeTab = tabName;
+            localStorage.setItem('activeTab', activeTab);
         });
     });
 
@@ -313,23 +317,15 @@ document.addEventListener('DOMContentLoaded', () => {
         activeTabButton.click();
     }
 
-    // 为选项卡按钮添加点击事件
-    tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const tabName = button.getAttribute('data-tab');
-            activeTab = tabName;
-            localStorage.setItem('activeTab', activeTab);
-            
-            // ... 现有的选项卡切换逻辑 ...
-        });
+    // 项目管理标签页中的事件监听器
+    document.getElementById('custom-projects').addEventListener('click', () => {
+        console.log('项目按钮被点击');
+        // 这里可以添加项目相关的功能
     });
 
-    // 在 document.addEventListener('DOMContentLoaded', () => { ... }) 中添加以下代码
     document.getElementById('custom-calendar').addEventListener('click', toggleCalendarView);
-    document.getElementById('custom-projects').addEventListener('click', () => {
-      // 这里可以添加项目相关的功能
-      console.log('项目按钮被点击');
-    });
+
+    // ... 现有的代码 ...
 });
 
 // 修改 updateRecentTab 函数
@@ -1902,7 +1898,7 @@ statusBarElement.addEventListener('contextmenu', (e) => {
     ipcRenderer.send('show-status-bar-menu', options);
 });
 
-// 状态栏右键菜单点击事件
+// 状态栏右键菜单��击事件
 ipcRenderer.on('status-bar-menu-item-clicked', (event, label) => {
     switch (label) {
         case '显示路径':
@@ -2021,7 +2017,7 @@ document.addEventListener('keydown', (e) => {
 
 // 更新选中的项目
 function updateSelectedItem(newSelectedItem) {
-    // 取消之前选��的项目
+    // 取消之前选的项目
     document.querySelectorAll('.file-item.selected').forEach(item => {
         item.classList.remove('selected');
     });
