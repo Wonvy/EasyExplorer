@@ -794,6 +794,9 @@ html {
   overflow: hidden;
   will-change: width;
 }
+#app #sidebar.small-width .file-parent-dir {
+  display: none;
+}
 #app #sidebar .sidebar-content {
   width: 100%;
   height: 100%;

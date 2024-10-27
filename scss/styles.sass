@@ -90,6 +90,9 @@ html
     transition: width 0.3s ease
     overflow: hidden
     will-change: width
+    &.small-width
+      .file-parent-dir
+        display: none
     .sidebar-content
       width: 100%
       height: 100%
@@ -176,7 +179,6 @@ html
       width: 100%
       padding: 6px
       margin-bottom: 10px
-      // border: 1px solid #ddd
       border:none
       border-radius: 3px
 
@@ -607,4 +609,3 @@ html
         &:hover
           color: #FFC446
           text-decoration: underline
-

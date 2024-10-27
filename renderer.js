@@ -453,12 +453,15 @@ function initResize(e) { // 初始化拖拽排序
 function resize(e) {
     if (!isResizing) return;
     requestAnimationFrame(() => {
-        const newWidth = e.clientX < 0 ? 1 : e.clientX; // 修改这一行
-        console.log('e.clientX', e.clientX);
-        console.log('window.innerWidth', window.innerWidth);
-
+        const newWidth = e.clientX < 0 ? 1 : e.clientX; 
         if (newWidth > 0 && newWidth < window.innerWidth) {
             sidebar.style.width = `${newWidth}px`;
+            console.log('newWidth', newWidth);
+            if (newWidth < 350) {
+                sidebar.classList.add('small-width');
+            } else {
+                sidebar.classList.remove('small-width');
+            }
         }
     });
 }
