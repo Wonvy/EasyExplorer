@@ -250,6 +250,7 @@ function showCalendarView() {
   fileListElement.removeEventListener('wheel', handleCalendarScroll);
 }
 
+// 跳转到今天
 function goToToday() {
   const today = new Date();
   currentCalendarYear = today.getFullYear();
@@ -257,6 +258,7 @@ function goToToday() {
   showCalendarView();
 }
 
+// 切换月份
 function changeMonth(delta) {
   currentCalendarMonth += delta;
   
@@ -413,13 +415,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 let currentReportYear = new Date().getFullYear();
 
+
 // 在文件末尾添加年报相关函数
 function showAnnualReport() {
     console.log('显示年报视图');
     const projectPaths = JSON.parse(localStorage.getItem('projectPaths') || '{}');
     let yearPath = projectPaths[currentReportYear.toString()];
 
-    // 如果当前年份没有文件夹，则跳转到有文件夹的
+    // 如当前年份没有文件夹，则跳转到有文件夹的
     if (!yearPath) {
         console.warn('未找到当前年份的项目路径:', currentReportYear);
         // 寻找最近的有文件夹的年份
@@ -463,6 +466,56 @@ function showAnnualReport() {
 
     // 加载年度数据
     loadAnnualData(yearPath);
+
+    // 添加滚轮事件监听
+    const timeline = document.querySelector('.annual-timeline');
+    if (timeline) {
+        let isMouseDown = false;
+        let lastX = 0;
+
+        // 鼠标按下事件
+        timeline.addEventListener('mousedown', (e) => {
+            isMouseDown = true;
+            timeline.style.cursor = 'grabbing';
+            lastX = e.pageX;
+        });
+
+        // 鼠标移动事件 - 改为实时移动
+        timeline.addEventListener('mousemove', (e) => {
+            if (!isMouseDown) return;
+            e.preventDefault();
+            
+            // 计算鼠标移动的距离
+            const deltaX = e.pageX - lastX;
+            // 更新滚动位置
+            timeline.scrollLeft -= deltaX;
+            // 更新最后的鼠标位置
+            lastX = e.pageX;
+        });
+
+        // 鼠标释放事件
+        timeline.addEventListener('mouseup', () => {
+            isMouseDown = false;
+            timeline.style.cursor = 'grab';
+        });
+
+        // 鼠标离开事件
+        timeline.addEventListener('mouseleave', () => {
+            isMouseDown = false;
+            timeline.style.cursor = 'grab';
+        });
+
+        // 滚轮事件保持不变
+        timeline.addEventListener('wheel', (e) => {
+            if (!e.ctrlKey && !e.target.closest('.month-content')) {
+                e.preventDefault();
+                timeline.scrollLeft += e.deltaY;
+            }
+        }, { passive: false });
+
+        // 设置初始光标样式
+        timeline.style.cursor = 'grab';
+    }
 }
 
 function generateMonthsTimeline() {
@@ -512,7 +565,7 @@ function loadAnnualData(yearPath) {
                     const filePath = path.join(monthPath, file);
                     const stats = fs.statSync(filePath);
                     
-                    // 获取文件夹内最新修改时间
+                    // 获取文件夹的最新修改时间
                     let lastModified = stats.mtime;
                     try {
                         const subFiles = fs.readdirSync(filePath);
@@ -589,6 +642,7 @@ function changeReportYear(delta) {
     console.log('切换到年份:', currentReportYear);
     showAnnualReport();
 }
+
 
 // 修改 updateRecentTab 函数
 function updateRecentTab() {
@@ -795,23 +849,6 @@ ipcRenderer.on('copy-progress', (data) => {
 });
 
 
-
-// #endregion
-
-// #region 通用函数-日期
-
-// 格式化文件大小
-function formatFileSize(size) {
-    if (size < 1024) return size + ' B';
-    if (size < 1024 * 1024) return (size / 1024).toFixed(2) + ' KB';
-    if (size < 1024 * 1024 * 1024) return (size / (1024 * 1024)).toFixed(2) + ' MB';
-    return (size / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
-}
-
-// 格式化日期
-function formatDate(date) {
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-}
 
 // #endregion
 
@@ -1195,7 +1232,7 @@ function handleMouseDown(e) {
         const fileData = [Buffer.from(fs.readFileSync(filePath))];
         e.dataTransfer.setData('text/uri-list', `file://${filePath}`);
         e.dataTransfer.effectAllowed = 'copy';  // 设置拖拽效果
-    } else {
+    } else if (!target.closest('.annual-report-container')) {
         // 如果在空白处，开始框选
         console.log('空白处');
         isSelecting = true;
@@ -1728,7 +1765,7 @@ function sortFiles(files) {
 }
 
 
-// 获��件图标结果
+// 获图标结果
 ipcRenderer.on('file-icon-result', (event, { base64, error }) => {
     if (error) {
         console.warn('获取文件图标时出错:', error);
@@ -2061,7 +2098,7 @@ function updatePreview(file) {
     } else {
         previewContent.innerHTML = `
             <h3>${file.name}</h3>
-            <p>类型: ${fileExt || '未知'}</p>
+            <p>类��: ${fileExt || '未知'}</p>
             <p>创建时间: ${formatDate(file.stats.birthtime)}</p>
             <p>修改时间: ${formatDate(file.stats.mtime)}</p>
         `;
