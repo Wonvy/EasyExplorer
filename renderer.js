@@ -111,7 +111,7 @@ function showCalendarView() {
   if (!yearPath) {
       fileListContainer.innerHTML = `
       <div class="calendar-error">
-        未设置 ${currentCalendarYear} 年的项目文件夹。
+        未��置 ${currentCalendarYear} 年的项目文件夹。
         请在设置中配置项目文件夹路径。
       </div>`;
     return;
@@ -565,12 +565,12 @@ function loadAnnualData(yearPath) {
                     const filePath = path.join(monthPath, file);
                     const stats = fs.statSync(filePath);
                     
-                    // 获取文件夹的最新修改时间
+                    // 获取文件夹内最新修改时间
                     let lastModified = stats.mtime;
                     try {
                         const subFiles = fs.readdirSync(filePath);
                         subFiles
-                            .filter(subFile => subFile.toLowerCase() !== 'thumbs.db') // 排除 Thumbs.db
+                            .filter(subFile => subFile.toLowerCase() !== 'thumbs.db')
                             .forEach(subFile => {
                                 const subFilePath = path.join(filePath, subFile);
                                 try {
@@ -603,29 +603,50 @@ function loadAnnualData(yearPath) {
                     `;
                 }).join('');
 
-                // 添加项目点击和悬停事件
+                // 为每个项目添加鼠标事件
                 monthProjects.querySelectorAll('.project-item').forEach(item => {
-                    // 点击事件
-                    item.addEventListener('click', () => {
-                        const projectPath = item.getAttribute('data-path');
-                        console.log('打开项目:', projectPath);
-                        navigateTo(projectPath);
-                    });
+                    const filePath = item.getAttribute('data-path');
 
-                    // 鼠标移入事件
+                    // 添加鼠标进入事件
                     item.addEventListener('mouseenter', () => {
-                        const lastModified = item.querySelector('.last-modified-date');
-                        if (lastModified) {
-                            // lastModified.style.display = 'block';
-                        }
+                        // 更新地址栏
+                        pathElement.value = filePath;
+
+                        // 更新状态栏
+                        updateStatusBar(filePath);
+
+                        // 更新预览面板
+                        fs.stat(filePath, (err, stats) => {
+                            if (err) {
+                                console.error('获取文件状态失败:', err);
+                                return;
+                            }
+
+                            const previewFile = {
+                                name: path.basename(filePath),
+                                isDirectory: true,
+                                stats: stats
+                            };
+
+                            updatePreview(previewFile);
+                        });
                     });
 
-                    // 鼠标移出事件
+                    // 添加鼠标离开事件
                     item.addEventListener('mouseleave', () => {
-                        const lastModified = item.querySelector('.last-modified-date');
-                        if (lastModified) {
-                            lastModified.style.display = 'none';
-                        }
+                        // 恢复地址栏
+                        pathElement.value = currentPath;
+
+                        // 恢复状态栏
+                        updateStatusBar(currentPath);
+
+                        // 清空预览
+                        updatePreview(null);
+                    });
+
+                    // 添加点击事件
+                    item.addEventListener('click', () => {
+                        navigateTo(filePath);
                     });
                 });
             } else {
@@ -1217,6 +1238,17 @@ function isElementInSelectionBox(element, box) {
         elementRect.bottom < boxRect.top ||
         elementRect.top > boxRect.bottom);
 }
+
+// 在通用函数区域添加格式化文件大小的函数
+function formatFileSize(size) {
+    if (size === undefined || size === null) return '未知';
+    if (size < 1024) return size + ' B';
+    if (size < 1024 * 1024) return (size / 1024).toFixed(2) + ' KB';
+    if (size < 1024 * 1024 * 1024) return (size / (1024 * 1024)).toFixed(2) + ' MB';
+    return (size / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+}
+
+
 
 // 选择框开始
 function handleMouseDown(e) {
@@ -2079,10 +2111,17 @@ function updatePreview(file) {
                 <p>包含 ${files.length} 个项目</p>
                 <ul>${fileList}</ul>
                 ${files.length > 10 ? '<p>...</p>' : ''}
+                <p>创建时间: ${formatDate(file.stats.birthtime)}</p>
+                <p>修改时间: ${formatDate(file.stats.mtime)}</p>
             `;
         });
     } else if (['.jpg', '.jpeg', '.png', '.gif', '.svg'].includes(fileExt)) {
-        previewContent.innerHTML = `<img src="file://${filePath}" alt="${file.name}" style="max-width: 100%; max-height: 300px;">`;
+        previewContent.innerHTML = `
+            <img src="file://${filePath}" alt="${file.name}" style="max-width: 100%; max-height: 300px;">
+            <p>大小: ${formatFileSize(file.stats.size)}</p>
+            <p>创建时间: ${formatDate(file.stats.birthtime)}</p>
+            <p>修改时间: ${formatDate(file.stats.mtime)}</p>
+        `;
     } else if (['.txt', '.md', '.js', '.html', '.css', '.tap', '.nc', '.ini', '.ts'].includes(fileExt)) {
         fs.readFile(filePath, 'utf8', (err, data) => {
             if (err) {
@@ -2090,15 +2129,19 @@ function updatePreview(file) {
                 return;
             }
             const highlightedCode = hljs.highlightAuto(data.slice(0, 1000)).value;
-            previewContent.innerHTML = `<pre><code class="${fileExt.replace('.', '')}">${highlightedCode}</code></pre>`;
-            if (data.length > 1000) {
-                previewContent.innerHTML += '<p>...</p>';
-            }
+            previewContent.innerHTML = `
+                <pre><code class="${fileExt.replace('.', '')}">${highlightedCode}</code></pre>
+                ${data.length > 1000 ? '<p>...</p>' : ''}
+                <p>大小: ${formatFileSize(file.stats.size)}</p>
+                <p>创建时间: ${formatDate(file.stats.birthtime)}</p>
+                <p>修改时间: ${formatDate(file.stats.mtime)}</p>
+            `;
         });
     } else {
         previewContent.innerHTML = `
             <h3>${file.name}</h3>
-            <p>类��: ${fileExt || '未知'}</p>
+            <p>类型: ${fileExt || '未知'}</p>
+            <p>大小: ${formatFileSize(file.stats.size)}</p>
             <p>创建时间: ${formatDate(file.stats.birthtime)}</p>
             <p>修改时间: ${formatDate(file.stats.mtime)}</p>
         `;
@@ -2603,7 +2646,7 @@ function showDrives() {
     // 获取实际的下载文件夹路径
     if (process.platform === 'win32') {
         try {
-            // 使用注册表获取下载文件夹路径
+            // 使用注册表获取下载文件夹���径
             const result = execSync('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders" /v "{374DE290-123F-4565-9164-39C4925E467B}"', { encoding: 'buffer' });
             const match = iconv.decode(result, 'cp936').match(/REG_SZ\s+(.+)/);
             if (match) {
