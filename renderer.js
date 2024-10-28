@@ -424,7 +424,7 @@ let lastViewState = {
 
 // 修改 showAnnualReport 函数，保存状态
 function showAnnualReport() {
-    console.log('���示年报视图');
+    console.log('显示年报视图');
     const projectPaths = JSON.parse(localStorage.getItem('projectPaths') || '{}');
     let yearPath = projectPaths[currentReportYear.toString()];
 
@@ -473,7 +473,7 @@ function showAnnualReport() {
     // 加载年度数据
     loadAnnualData(yearPath);
 
-    // 添加滚���事件监听
+    // 添加滚轮事件监听
     const timeline = document.querySelector('.annual-timeline');
     if (timeline) {
         let isMouseDown = false;
@@ -631,15 +631,22 @@ function loadAnnualData(yearPath) {
                 monthProjects.querySelectorAll('.project-item').forEach(item => {
                     const filePath = item.getAttribute('data-path');
                     let lastActiveProject = null; // 记录最后点击的项目
+                    let hoverTimer = null; // 添加定时器变量
 
-                    // 双���事件 - 在资源管理器中打开
+                    // 双击事件 - 在资源管理器中打开
                     item.addEventListener('dblclick', (e) => {
                         e.stopPropagation();
                         shell.showItemInFolder(filePath);
                     });
 
-                    // 单击事件 - 固定预览和高亮
+                    // 单击事件 - 立即显示预览和高亮
                     item.addEventListener('click', () => {
+                        // 清除任何正在进行的悬停定时器
+                        if (hoverTimer) {
+                            clearTimeout(hoverTimer);
+                            hoverTimer = null;
+                        }
+
                         // 移除其他项目的高亮状态
                         document.querySelectorAll('.project-item.active').forEach(p => {
                             p.classList.remove('active');
@@ -649,24 +656,37 @@ function loadAnnualData(yearPath) {
                         item.classList.add('active');
                         lastActiveProject = filePath;
                         
-                        // 更新预览区域
+                        // 立即更新预览区域
                         updateProjectPreview(filePath);
                     });
 
-                    // 鼠标进入事件 - 临时预览
+                    // 鼠标进入事件 - 延迟预览
                     item.addEventListener('mouseenter', () => {
                         // 更新地址栏和状态栏
                         pathElement.value = filePath;
                         updateStatusBar(filePath);
                         
-                        // 临时显示当前悬停项目的预览
+                        // 如果不是当前高亮的项目，设置延迟预览
                         if (!item.classList.contains('active')) {
-                            updateProjectPreview(filePath);
+                            // 清除之前的定时器
+                            if (hoverTimer) {
+                                clearTimeout(hoverTimer);
+                            }
+                            // 设置新的定时器
+                            hoverTimer = setTimeout(() => {
+                                updateProjectPreview(filePath);
+                            }, 600); // 1秒延迟
                         }
                     });
 
                     // 鼠标离开事件
                     item.addEventListener('mouseleave', () => {
+                        // 清除定时器
+                        if (hoverTimer) {
+                            clearTimeout(hoverTimer);
+                            hoverTimer = null;
+                        }
+
                         // 恢复地址栏和状态栏
                         pathElement.value = currentPath;
                         updateStatusBar(currentPath);
@@ -699,27 +719,21 @@ function changeReportYear(delta) {
 }
 
 // 添加新函数：更新项目预览
+let previewCache = new Map(); // 添加缓存
+
 function updateProjectPreview(projectPath) {
-    if (!projectPath) {
-        // 如果有固定预览，则不清空预览内容
-        const hasFixedPreview = document.querySelector('.project-item.active');
-        if (hasFixedPreview) {
-            return;
-        }
-        
-        const previewHeader = document.querySelector('.preview-header .preview-title');
-        const previewContent = document.querySelector('.preview-content');
-        previewHeader.textContent = '选择项目以查看内容';
-        previewContent.innerHTML = '';
-        return;
-    }
+    if (!projectPath) return;
 
     const previewHeader = document.querySelector('.preview-header .preview-title');
     const previewContent = document.querySelector('.preview-content');
     const projectName = path.basename(projectPath);
-
-    // 更新预览标题，添加固定/临时状态指示
     previewHeader.textContent = projectName;
+
+    // 检查缓存
+    if (previewCache.has(projectPath)) {
+        previewContent.innerHTML = previewCache.get(projectPath);
+        return;
+    }
 
     // 读取项目文件夹内容
     fs.readdir(projectPath, { withFileTypes: true }, (err, files) => {
@@ -728,15 +742,8 @@ function updateProjectPreview(projectPath) {
             return;
         }
 
-        // 获取文件详情并显示
         Promise.all(files.map(file => getFileDetails(projectPath, file)))
             .then(fileDetails => {
-                // 如果在处理过程中预览状态改变，则不更新内容
-                const currentSelected = document.querySelector('.project-item.active');
-                if (currentSelected && currentSelected.getAttribute('data-path') !== projectPath) {
-                    return;
-                }
-
                 // 排序：文件夹在前，文件在后
                 fileDetails.sort((a, b) => {
                     if (a.isDirectory && !b.isDirectory) return -1;
@@ -744,7 +751,7 @@ function updateProjectPreview(projectPath) {
                     return a.name.localeCompare(b.name);
                 });
 
-                previewContent.innerHTML = fileDetails.map(file => `
+                const content = fileDetails.map(file => `
                     <div class="file-item" data-path="${path.join(projectPath, file.name)}">
                         <span class="file-icon">${file.isDirectory ? folderIcon : getUnknownIcon(path.extname(file.name))}</span>
                         <span class="file-name">${file.name}</span>
@@ -752,51 +759,33 @@ function updateProjectPreview(projectPath) {
                     </div>
                 `).join('');
 
-                // 为预览区域的文件添加点击事件
-                previewContent.querySelectorAll('.file-item').forEach(fileItem => {
-                    const filePath = fileItem.getAttribute('data-path');
+                // 缓存预览内容
+                previewCache.set(projectPath, content);
+                previewContent.innerHTML = content;
 
-                    // 双击打开文件
-                    fileItem.addEventListener('dblclick', () => {
-                        shell.openPath(filePath);
-                    });
-
-                    // 空格键预览
-                    fileItem.addEventListener('keydown', (e) => {
-                        if (e.code === 'Space') {
-                            e.preventDefault();
-                            showFullscreenPreview(filePath);
-                        }
-                    });
-
-                    // 添加 tabindex 使元素可以接收键盘事件
-                    fileItem.setAttribute('tabindex', '0');
-                });
+                // 添加文件项事件监听
+                addFileItemListeners(previewContent);
             });
     });
-
-    // 添加控制按钮事件
-    document.getElementById('preview-refresh').onclick = () => updateProjectPreview(projectPath);
-    document.getElementById('preview-open').onclick = () => shell.showItemInFolder(projectPath);
 }
 
-// 添加新函数：获取文件详情
-function getFileDetails(parentPath, file) {
-    const filePath = path.join(parentPath, file.name);
-    return new Promise((resolve, reject) => {
-        fs.stat(filePath, (err, stats) => {
-            if (err) {
-                reject(err);
-            } else {
-                resolve({
-                    name: file.name,
-                    isDirectory: file.isDirectory(),
-                    size: stats.size,
-                    birthtime: stats.birthtime,
-                    mtime: stats.mtime
-                });
+// 提取文件项事件监听器到单独的函数
+function addFileItemListeners(previewContent) {
+    previewContent.querySelectorAll('.file-item').forEach(fileItem => {
+        const filePath = fileItem.getAttribute('data-path');
+
+        fileItem.addEventListener('dblclick', () => {
+            shell.openPath(filePath);
+        });
+
+        fileItem.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                showFullscreenPreview(filePath);
             }
         });
+
+        fileItem.setAttribute('tabindex', '0');
     });
 }
 
@@ -1927,7 +1916,7 @@ function sortFiles(files) {
         if (a.isDirectory && !b.isDirectory) return -1;
         if (!a.isDirectory && b.isDirectory) return 1;
 
-        // 后根据排法进行排
+        // 后根据���进行排
         switch (currentSortMethod) {
             case 'name':
                 return currentSortOrder === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
