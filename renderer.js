@@ -109,7 +109,7 @@ function showCalendarView() {
   const yearPath = projectPaths[currentCalendarYear.toString()];
 
   if (!yearPath) {
-    fileListElement.innerHTML = `
+      fileListContainer.innerHTML = `
       <div class="calendar-error">
         未设置 ${currentCalendarYear} 年的项目文件夹。
         请在设置中配置项目文件夹路径。
@@ -120,8 +120,10 @@ function showCalendarView() {
   const monthNames = ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"];
   const weekDays = ["一", "二", "三", "四", "五", "六", "日"];
 
+    fileListContainer.className = 'calendar-view';
+    
   let calendarHTML = `
-    <div class="calendar-view">
+    <div class="calendar-view-container">
       <div class="calendar-controls" id="calendar-controls">
         <button id="prev-month">&lt;</button>
         <h2>${currentCalendarYear}年 ${monthNames[currentCalendarMonth]}</h2>
@@ -417,13 +419,13 @@ function showAnnualReport() {
     const projectPaths = JSON.parse(localStorage.getItem('projectPaths') || '{}');
     let yearPath = projectPaths[currentReportYear.toString()];
 
-    // 如果当前年份没有文件夹，则跳转到有文件夹的��
+    // 如果当前年份没有文件夹，则跳转到有文件夹的
     if (!yearPath) {
         console.warn('未找到当前年份的项目路径:', currentReportYear);
         // 寻找最近的有文件夹的年份
         let closestYear = currentReportYear;
         while (!yearPath) {
-            closestYear--;
+            closestYear--;// 向前寻找
             yearPath = projectPaths[closestYear.toString()];
         }
         console.log('跳转到最近的有文件夹的年份:', closestYear);
@@ -432,12 +434,15 @@ function showAnnualReport() {
 
     console.log('加载年度路径:', yearPath);
 
+
+    fileListContainer.className = 'annual-report-view';
+
     // 创建年报视图
     const annualReportHTML = `
-        <div class="annual-report-view">
+        <div class="annual-report-container">
             <div class="annual-report-controls">
                 <button id="prev-year">&lt;</button>
-                <h2>${currentReportYear}年度项目报告</h2>
+                <h2>${currentReportYear}</h2>
                 <button id="next-year">&gt;</button>
             </div>
             <div class="annual-timeline">
@@ -450,11 +455,9 @@ function showAnnualReport() {
 
     // 添加控制按钮事件监听
     document.getElementById('prev-year').addEventListener('click', () => {
-        console.log('切换到上一年');
         changeReportYear(-1);
     });
     document.getElementById('next-year').addEventListener('click', () => {
-        console.log('切换到下一年');
         changeReportYear(1);
     });
 
@@ -486,6 +489,7 @@ function generateMonthsTimeline() {
     `;
 }
 
+// 加载年度数据
 function loadAnnualData(yearPath) {
     console.log('开始加载年度数据:', yearPath);
 
@@ -559,7 +563,7 @@ function loadAnnualData(yearPath) {
                     item.addEventListener('mouseenter', () => {
                         const lastModified = item.querySelector('.last-modified-date');
                         if (lastModified) {
-                            lastModified.style.display = 'block';
+                            // lastModified.style.display = 'block';
                         }
                     });
 
@@ -1789,7 +1793,6 @@ function setViewMode(mode) {
             mode === 'timeline' ? 'file-list-timeline' : 'file-list-icons';
 
     // 添加类样式到 file-list-container
-    const fileListContainer = document.getElementById('file-list-container');
     fileListContainer.className = mode === 'list' ? 'list-view' :
         mode === 'group' ? 'group-view' :
             mode === 'timeline' ? 'timeline-view' : 'icon-view';
