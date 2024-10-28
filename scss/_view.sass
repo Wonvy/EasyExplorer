@@ -612,3 +612,66 @@ body.dark-theme
             .last-modified-date
               color: #FFC446
 
+
+// 年报视图中添加项目预览区域样式
+.annual-report-container
+  display: flex
+  flex-direction: column
+  height: 100%
+  position: relative // 添加相对定位
+
+  .annual-timeline
+    flex: 1
+    min-height: 0
+    overflow-y: auto
+
+  .project-preview
+    position: sticky // 改为 sticky 定位
+    bottom: 0
+    height: 300px
+    background: rgba(0, 0, 0, 0.2)
+    margin: 0
+    border-radius: 8px 8px 0 0 // 只保留上方的圆角
+    overflow: hidden
+    display: flex
+    flex-direction: column
+    z-index: 100 // 确保在内容之上
+    -webkit-backdrop-filter: blur(10px) // 添加 webkit 前缀
+    backdrop-filter: blur(10px) // 添加毛玻璃效果
+    border-top: 1px solid rgba(255, 196, 70, 0.2)
+
+    .preview-header
+      padding: 10px 15px
+      background: rgba(255, 196, 70, 0.1)
+      border-bottom: 1px solid rgba(255, 196, 70, 0.2)
+      display: flex
+      justify-content: space-between
+      align-items: center
+
+    .preview-content
+      flex: 1
+      overflow: auto
+      padding: 15px
+      display: flex
+      flex-wrap: wrap
+      gap: 10px
+      align-content: flex-start
+
+      .file-item
+        display: flex
+        align-items: center
+        padding: 5px 10px
+        border-radius: 4px
+        cursor: pointer
+        transition: background 0.2s
+        
+        &:hover
+          background: rgba(255, 255, 255, 0.1)
+
+        .file-icon
+          margin-right: 8px
+          
+        .file-name
+          color: #e0e0e0
+
+

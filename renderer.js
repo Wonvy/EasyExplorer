@@ -111,7 +111,7 @@ function showCalendarView() {
   if (!yearPath) {
       fileListContainer.innerHTML = `
       <div class="calendar-error">
-        未��置 ${currentCalendarYear} 年的项目文件夹。
+        未置 ${currentCalendarYear} 年的项目文件夹。
         请在设置中配置项目文件夹路径。
       </div>`;
     return;
@@ -539,6 +539,16 @@ function generateMonthsTimeline() {
                 `).join('')}
             </div>
         </div>
+        <div class="project-preview">
+            <div class="preview-header">
+                <div class="preview-title">选择项目以查看内容</div>
+                <div class="preview-controls">
+                    <button id="preview-refresh" title="刷新"><i class="fas fa-sync-alt"></i></button>
+                    <button id="preview-open" title="在文件夹中打开"><i class="fas fa-external-link-alt"></i></button>
+                </div>
+            </div>
+            <div class="preview-content"></div>
+        </div>
     `;
 }
 
@@ -607,6 +617,19 @@ function loadAnnualData(yearPath) {
                 monthProjects.querySelectorAll('.project-item').forEach(item => {
                     const filePath = item.getAttribute('data-path');
 
+                    // 添加双击事件
+                    item.addEventListener('dblclick', (e) => {
+                        e.stopPropagation();
+                        shell.showItemInFolder(filePath); // 在资源管理器中打开并选中文件夹
+                    });
+
+                    // 单击事件改为显示预览
+                    item.addEventListener('click', () => {
+                        document.querySelectorAll('.project-item').forEach(p => p.classList.remove('active'));
+                        item.classList.add('active');
+                        updateProjectPreview(filePath);
+                    });
+
                     // 添加鼠标进入事件
                     item.addEventListener('mouseenter', () => {
                         // 更新地址栏
@@ -643,11 +666,6 @@ function loadAnnualData(yearPath) {
                         // 清空预览
                         updatePreview(null);
                     });
-
-                    // 添加点击事件
-                    item.addEventListener('click', () => {
-                        navigateTo(filePath);
-                    });
                 });
             } else {
                 console.log(`${month} 月份文件夹不存在`);
@@ -664,6 +682,87 @@ function changeReportYear(delta) {
     showAnnualReport();
 }
 
+// 添加新函数：更新项目预览
+function updateProjectPreview(projectPath) {
+    const previewHeader = document.querySelector('.preview-header .preview-title');
+    const previewContent = document.querySelector('.preview-content');
+    const projectName = path.basename(projectPath);
+
+    previewHeader.textContent = projectName;
+
+    // 读取项目文件夹内容
+    fs.readdir(projectPath, { withFileTypes: true }, (err, files) => {
+        if (err) {
+            previewContent.innerHTML = `<div class="error">无法读取文件夹内容: ${err.message}</div>`;
+            return;
+        }
+
+        // 获取文件详情并显示
+        Promise.all(files.map(file => getFileDetails(projectPath, file)))
+            .then(fileDetails => {
+                // 排序：文件夹在前，文件在后
+                fileDetails.sort((a, b) => {
+                    if (a.isDirectory && !b.isDirectory) return -1;
+                    if (!a.isDirectory && b.isDirectory) return 1;
+                    return a.name.localeCompare(b.name);
+                });
+
+                previewContent.innerHTML = fileDetails.map(file => `
+                    <div class="file-item" data-path="${path.join(projectPath, file.name)}">
+                        <span class="file-icon">${file.isDirectory ? folderIcon : getUnknownIcon(path.extname(file.name))}</span>
+                        <span class="file-name">${file.name}</span>
+                        <span class="file-size">${formatFileSize(file.size)}</span>
+                    </div>
+                `).join('');
+
+                // 为预览区域的文件添加点击事件
+                previewContent.querySelectorAll('.file-item').forEach(fileItem => {
+                    fileItem.addEventListener('click', () => {
+                        const filePath = fileItem.getAttribute('data-path');
+                        shell.openPath(filePath);
+                    });
+                });
+            });
+    });
+
+    // 添加控制按钮事件
+    document.getElementById('preview-refresh').onclick = () => updateProjectPreview(projectPath);
+    document.getElementById('preview-open').onclick = () => shell.showItemInFolder(projectPath);
+}
+
+// 添加新函数：获取文件详情
+function getFileDetails(parentPath, file) {
+    const filePath = path.join(parentPath, file.name);
+    return new Promise((resolve, reject) => {
+        fs.stat(filePath, (err, stats) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve({
+                    name: file.name,
+                    isDirectory: file.isDirectory(),
+                    size: stats.size,
+                    birthtime: stats.birthtime,
+                    mtime: stats.mtime
+                });
+            }
+        });
+    });
+}
+
+// 添加新函数：格式化文件大小
+function formatFileSize(bytes) {
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    let size = bytes;
+    let unitIndex = 0;
+
+    while (size >= 1024 && unitIndex < units.length - 1) {
+        size /= 1024;
+        unitIndex++;
+    }
+
+    return `${size.toFixed(2)} ${units[unitIndex]}`;
+}
 
 // 修改 updateRecentTab 函数
 function updateRecentTab() {
@@ -1778,7 +1877,7 @@ function sortFiles(files) {
         if (a.isDirectory && !b.isDirectory) return -1;
         if (!a.isDirectory && b.isDirectory) return 1;
 
-        // 后根据前排法进行排序
+        // 后根据前排法进行排���
         switch (currentSortMethod) {
             case 'name':
                 return currentSortOrder === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
@@ -1797,7 +1896,7 @@ function sortFiles(files) {
 }
 
 
-// 获图标结果
+// 获标结果
 ipcRenderer.on('file-icon-result', (event, { base64, error }) => {
     if (error) {
         console.warn('获取文件图标时出错:', error);
@@ -2254,7 +2353,7 @@ statusBarElement.addEventListener('contextmenu', (e) => {
 // 状态栏右键菜单击事件
 ipcRenderer.on('status-bar-menu-item-clicked', (event, label) => {
     switch (label) {
-        case '显示路径':
+        case '显���路径':
             statusBarDisplayOptions.showPath = !statusBarDisplayOptions.showPath;
             break;
         case '显示类型':
@@ -2340,7 +2439,7 @@ document.addEventListener('keydown', (e) => {
         if (selectedItem) {
             const filePath = selectedItem.getAttribute('data-path'); // 假设文件路径存储在data-path属性中
             if (isPreviewOpen) {
-                hideFullscreenPreview(); // 如果预览已经打开，则关闭预览
+                hideFullscreenPreview(); // 果预览已经打开，则关闭预览
                 isPreviewOpen = false; // 更新状态
             } else {
                 showFullscreenPreview(filePath); // 如果预览未打开，则打开预览
@@ -2646,7 +2745,7 @@ function showDrives() {
     // 获取实际的下载文件夹路径
     if (process.platform === 'win32') {
         try {
-            // 使用注册表获取下载文件夹���径
+            // 使用注册表获取下载文件夹径
             const result = execSync('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders" /v "{374DE290-123F-4565-9164-39C4925E467B}"', { encoding: 'buffer' });
             const match = iconv.decode(result, 'cp936').match(/REG_SZ\s+(.+)/);
             if (match) {
