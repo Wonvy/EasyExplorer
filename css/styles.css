@@ -662,6 +662,11 @@ body.dark-theme .timeline-container .month-column .month-content .project-item .
   color: #e0e0e0;
 }
 
+.project-item.active {
+  background: rgba(255, 196, 70, 0.2);
+  border-left: 3px solid #FFC446;
+}
+
 #resizer {
   position: relative;
   width: 6px;

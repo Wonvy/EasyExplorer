@@ -415,10 +415,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 let currentReportYear = new Date().getFullYear();
 
+// 在文件顶部添加新的变量
+let lastViewState = {
+    view: '',
+    year: null,
+    path: ''
+};
 
-// 在文件末尾添加年报相关函数
+// 修改 showAnnualReport 函数，保存状态
 function showAnnualReport() {
-    console.log('显示年报视图');
+    console.log('���示年报视图');
     const projectPaths = JSON.parse(localStorage.getItem('projectPaths') || '{}');
     let yearPath = projectPaths[currentReportYear.toString()];
 
@@ -467,7 +473,7 @@ function showAnnualReport() {
     // 加载年度数据
     loadAnnualData(yearPath);
 
-    // 添加滚轮事件监听
+    // 添加滚���事件监听
     const timeline = document.querySelector('.annual-timeline');
     if (timeline) {
         let isMouseDown = false;
@@ -516,6 +522,14 @@ function showAnnualReport() {
         // 设置初始光标样式
         timeline.style.cursor = 'grab';
     }
+
+    // 保存年报视图状态
+    lastViewState = {
+        view: 'annual-report',
+        year: currentReportYear,
+        path: yearPath
+    };
+    localStorage.setItem('lastViewState', JSON.stringify(lastViewState));
 }
 
 function generateMonthsTimeline() {
@@ -616,56 +630,58 @@ function loadAnnualData(yearPath) {
                 // 为每个项目添加鼠标事件
                 monthProjects.querySelectorAll('.project-item').forEach(item => {
                     const filePath = item.getAttribute('data-path');
+                    let lastActiveProject = null; // 记录最后点击的项目
 
-                    // 添加双击事件
+                    // 双���事件 - 在资源管理器中打开
                     item.addEventListener('dblclick', (e) => {
                         e.stopPropagation();
-                        shell.showItemInFolder(filePath); // 在资源管理器中打开并选中文件夹
+                        shell.showItemInFolder(filePath);
                     });
 
-                    // 单击事件改为显示预览
+                    // 单击事件 - 固定预览和高亮
                     item.addEventListener('click', () => {
-                        document.querySelectorAll('.project-item').forEach(p => p.classList.remove('active'));
+                        // 移除其他项目的高亮状态
+                        document.querySelectorAll('.project-item.active').forEach(p => {
+                            p.classList.remove('active');
+                        });
+                        
+                        // 添加当前项目的高亮状态
                         item.classList.add('active');
+                        lastActiveProject = filePath;
+                        
+                        // 更新预览区域
                         updateProjectPreview(filePath);
                     });
 
-                    // 添加鼠标进入事件
+                    // 鼠标进入事件 - 临时预览
                     item.addEventListener('mouseenter', () => {
-                        // 更新地址栏
+                        // 更新地址栏和状态栏
                         pathElement.value = filePath;
-
-                        // 更新状态栏
                         updateStatusBar(filePath);
-
-                        // 更新预览面板
-                        fs.stat(filePath, (err, stats) => {
-                            if (err) {
-                                console.error('获取文件状态失败:', err);
-                                return;
-                            }
-
-                            const previewFile = {
-                                name: path.basename(filePath),
-                                isDirectory: true,
-                                stats: stats
-                            };
-
-                            updatePreview(previewFile);
-                        });
+                        
+                        // 临时显示当前悬停项目的预览
+                        if (!item.classList.contains('active')) {
+                            updateProjectPreview(filePath);
+                        }
                     });
 
-                    // 添加鼠标离开事件
+                    // 鼠标离开事件
                     item.addEventListener('mouseleave', () => {
-                        // 恢复地址栏
+                        // 恢复地址栏和状态栏
                         pathElement.value = currentPath;
-
-                        // 恢复状态栏
                         updateStatusBar(currentPath);
-
-                        // 清空预览
-                        updatePreview(null);
                     });
+                });
+
+                // 为预览区域添加鼠标进入事件
+                const previewContent = document.querySelector('.preview-content');
+                previewContent.addEventListener('mouseenter', () => {
+                    // 恢复到最后点击的项目的预览
+                    const activeItem = document.querySelector('.project-item.active');
+                    if (activeItem) {
+                        const activePath = activeItem.getAttribute('data-path');
+                        updateProjectPreview(activePath);
+                    }
                 });
             } else {
                 console.log(`${month} 月份文件夹不存在`);
@@ -684,10 +700,25 @@ function changeReportYear(delta) {
 
 // 添加新函数：更新项目预览
 function updateProjectPreview(projectPath) {
+    if (!projectPath) {
+        // 如果有固定预览，则不清空预览内容
+        const hasFixedPreview = document.querySelector('.project-item.active');
+        if (hasFixedPreview) {
+            return;
+        }
+        
+        const previewHeader = document.querySelector('.preview-header .preview-title');
+        const previewContent = document.querySelector('.preview-content');
+        previewHeader.textContent = '选择项目以查看内容';
+        previewContent.innerHTML = '';
+        return;
+    }
+
     const previewHeader = document.querySelector('.preview-header .preview-title');
     const previewContent = document.querySelector('.preview-content');
     const projectName = path.basename(projectPath);
 
+    // 更新预览标题，添加固定/临时状态指示
     previewHeader.textContent = projectName;
 
     // 读取项目文件夹内容
@@ -700,6 +731,12 @@ function updateProjectPreview(projectPath) {
         // 获取文件详情并显示
         Promise.all(files.map(file => getFileDetails(projectPath, file)))
             .then(fileDetails => {
+                // 如果在处理过程中预览状态改变，则不更新内容
+                const currentSelected = document.querySelector('.project-item.active');
+                if (currentSelected && currentSelected.getAttribute('data-path') !== projectPath) {
+                    return;
+                }
+
                 // 排序：文件夹在前，文件在后
                 fileDetails.sort((a, b) => {
                     if (a.isDirectory && !b.isDirectory) return -1;
@@ -717,10 +754,23 @@ function updateProjectPreview(projectPath) {
 
                 // 为预览区域的文件添加点击事件
                 previewContent.querySelectorAll('.file-item').forEach(fileItem => {
-                    fileItem.addEventListener('click', () => {
-                        const filePath = fileItem.getAttribute('data-path');
+                    const filePath = fileItem.getAttribute('data-path');
+
+                    // 双击打开文件
+                    fileItem.addEventListener('dblclick', () => {
                         shell.openPath(filePath);
                     });
+
+                    // 空格键预览
+                    fileItem.addEventListener('keydown', (e) => {
+                        if (e.code === 'Space') {
+                            e.preventDefault();
+                            showFullscreenPreview(filePath);
+                        }
+                    });
+
+                    // 添加 tabindex 使元素可以接收键盘事件
+                    fileItem.setAttribute('tabindex', '0');
                 });
             });
     });
@@ -1112,7 +1162,7 @@ ipcRenderer.on('menu-item-clicked', (event, action, path) => {
         case 'paste':
             const filePaths = clipboardEx.readFilePaths(); // 获取剪贴板中的文件路径
             if (filePaths.length > 0) {
-                // 发送粘贴事件到主进程
+                // 发送粘贴事件到主进
                 ipcRenderer.send('perform-paste', currentPath, filePaths);
             }
             break;
@@ -1877,7 +1927,7 @@ function sortFiles(files) {
         if (a.isDirectory && !b.isDirectory) return -1;
         if (!a.isDirectory && b.isDirectory) return 1;
 
-        // 后根据前排法进行排���
+        // 后根据排法进行排
         switch (currentSortMethod) {
             case 'name':
                 return currentSortOrder === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
@@ -2353,7 +2403,7 @@ statusBarElement.addEventListener('contextmenu', (e) => {
 // 状态栏右键菜单击事件
 ipcRenderer.on('status-bar-menu-item-clicked', (event, label) => {
     switch (label) {
-        case '显���路径':
+        case '显示路径':
             statusBarDisplayOptions.showPath = !statusBarDisplayOptions.showPath;
             break;
         case '显示类型':
