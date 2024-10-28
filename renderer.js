@@ -668,7 +668,7 @@ function loadAnnualData(yearPath) {
                         
                         // 如果不是当前高亮的项目，设置延迟预览
                         if (!item.classList.contains('active')) {
-                            // 清除之前的定时器
+                            // 清之前的定时器
                             if (hoverTimer) {
                                 clearTimeout(hoverTimer);
                             }
@@ -721,6 +721,7 @@ function changeReportYear(delta) {
 // 添加新函数：更新项目预览
 let previewCache = new Map(); // 添加缓存
 
+// 修改 updateProjectPreview 函数，添加事件委托
 function updateProjectPreview(projectPath) {
     if (!projectPath) return;
 
@@ -728,6 +729,20 @@ function updateProjectPreview(projectPath) {
     const previewContent = document.querySelector('.preview-content');
     const projectName = path.basename(projectPath);
     previewHeader.textContent = projectName;
+
+    // 移除旧的事件监听器
+    previewContent.removeEventListener('click', handlePreviewContentClick);
+    previewContent.removeEventListener('dblclick', handlePreviewContentDblClick);
+    previewContent.removeEventListener('mouseover', handlePreviewContentMouseOver);
+    previewContent.removeEventListener('mouseout', handlePreviewContentMouseOut);
+    previewContent.removeEventListener('keydown', handlePreviewContentKeyDown);
+
+    // 添加新的事件监听器
+    previewContent.addEventListener('click', handlePreviewContentClick);
+    previewContent.addEventListener('dblclick', handlePreviewContentDblClick);
+    previewContent.addEventListener('mouseover', handlePreviewContentMouseOver);
+    previewContent.addEventListener('mouseout', handlePreviewContentMouseOut);
+    previewContent.addEventListener('keydown', handlePreviewContentKeyDown);
 
     // 检查缓存
     if (previewCache.has(projectPath)) {
@@ -744,48 +759,140 @@ function updateProjectPreview(projectPath) {
 
         Promise.all(files.map(file => getFileDetails(projectPath, file)))
             .then(fileDetails => {
-                // 排序：文件夹在前，文件在后
                 fileDetails.sort((a, b) => {
                     if (a.isDirectory && !b.isDirectory) return -1;
                     if (!a.isDirectory && b.isDirectory) return 1;
                     return a.name.localeCompare(b.name);
                 });
 
-                const content = fileDetails.map(file => `
-                    <div class="file-item" data-path="${path.join(projectPath, file.name)}">
-                        <span class="file-icon">${file.isDirectory ? folderIcon : getUnknownIcon(path.extname(file.name))}</span>
-                        <span class="file-name">${file.name}</span>
-                        <span class="file-size">${formatFileSize(file.size)}</span>
-                    </div>
-                `).join('');
+                const content = fileDetails.map(file => {
+                    const filePath = path.join(projectPath, file.name);
+                    return `
+                        <div class="file-item" data-path="${filePath}" tabindex="0">
+                            <span class="file-icon">${file.isDirectory ? folderIcon : getUnknownIcon(path.extname(file.name))}</span>
+                            <span class="file-name">${file.name}</span>
+                            <span class="file-size">${formatFileSize(file.stats?.size)}</span>
+                        </div>
+                    `;
+                }).join('');
 
-                // 缓存预览内容
                 previewCache.set(projectPath, content);
                 previewContent.innerHTML = content;
-
-                // 添加文件项事件监听
-                addFileItemListeners(previewContent);
             });
     });
 }
+
+// 事件处理函数
+function handlePreviewContentClick(e) {
+    const fileItem = e.target.closest('.file-item');
+    if (!fileItem) return;
+
+    e.stopPropagation();
+    const filePath = fileItem.getAttribute('data-path');
+    console.log('点击文件项:', filePath);
+
+    // 移除其他文件的选中状态
+    fileItem.closest('.preview-content').querySelectorAll('.file-item.selected')
+        .forEach(item => {
+            if (item !== fileItem) {
+                item.classList.remove('selected');
+            }
+        });
+
+    // 切换当前文件的选中状态
+    fileItem.classList.toggle('selected');
+}
+
+function handlePreviewContentDblClick(e) {
+    const fileItem = e.target.closest('.file-item');
+    if (!fileItem) return;
+
+    e.stopPropagation();
+    const filePath = fileItem.getAttribute('data-path');
+    console.log('双击打开文件:', filePath);
+    shell.openPath(filePath);
+    debouncedUpdateRecentTab();
+}
+
+function handlePreviewContentMouseOver(e) {
+    const fileItem = e.target.closest('.file-item');
+    if (!fileItem) return;
+
+    const filePath = fileItem.getAttribute('data-path');
+    console.log('鼠标悬停:', filePath);
+    updateStatusBar(filePath);
+}
+
+function handlePreviewContentMouseOut(e) {
+    const fileItem = e.target.closest('.file-item');
+    if (!fileItem) return;
+
+    console.log('鼠标离开');
+    updateStatusBar(currentPath);
+}
+
+function handlePreviewContentKeyDown(e) {
+    const fileItem = e.target.closest('.file-item');
+    if (!fileItem || e.code !== 'Space') return;
+
+    e.preventDefault();
+    const filePath = fileItem.getAttribute('data-path');
+    console.log('空格键预览:', filePath);
+    showFullscreenPreview(filePath);
+}
+
+// 移除原来的 addFileItemListeners 函数，因为现在使用事件委托了
 
 // 提取文件项事件监听器到单独的函数
 function addFileItemListeners(previewContent) {
     previewContent.querySelectorAll('.file-item').forEach(fileItem => {
         const filePath = fileItem.getAttribute('data-path');
 
-        fileItem.addEventListener('dblclick', () => {
-            shell.openPath(filePath);
+        console.log(`添加事件监听器到文件项: ${filePath}`);
+
+        // 单击事件 - 选中文件
+        fileItem.addEventListener('click', (e) => {
+            e.stopPropagation();
+            console.log(`单击文件项: ${filePath}`);
+            // 移除其他文件的选中状态
+            previewContent.querySelectorAll('.file-item.selected').forEach(item => {
+                if (item !== fileItem) {
+                    item.classList.remove('selected');
+                }
+            });
+            // 切换当前文件的选中状态
+            fileItem.classList.toggle('selected');
         });
 
+        // 双击事件 - 打开文件
+        fileItem.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            console.log(`双击文件项: ${filePath}`);
+            shell.openPath(filePath);
+            debouncedUpdateRecentTab();
+        });
+
+        // 键盘事件 - 空格预览
+        fileItem.setAttribute('tabindex', '0'); // 使元素可以接收键盘焦点
         fileItem.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
                 e.preventDefault();
+                console.log(`按下空格键预览文件: ${filePath}`);
                 showFullscreenPreview(filePath);
             }
         });
 
-        fileItem.setAttribute('tabindex', '0');
+        // 鼠标悬停事件 - 更新状态栏
+        fileItem.addEventListener('mouseover', () => {
+            console.log(`鼠标悬停在文件项上: ${filePath}`);
+            updateStatusBar(filePath);
+        });
+
+        // 鼠标离开事件 - 恢复状态栏
+        fileItem.addEventListener('mouseout', () => {
+            console.log(`鼠标离开文件项: ${filePath}`);
+            updateStatusBar(currentPath);
+        });
     });
 }
 
@@ -1396,12 +1503,12 @@ function handleMouseDown(e) {
 
     // 检查是否在文件项上
     if (target.classList.contains('file-item') || target.closest('.file-item')) {
-        console.log('文件上:', target.closest('.file-item').getAttribute('data-path'));
-        // 如果在文件项上，开始拖拽
-        const filePath = target.closest('.file-item').getAttribute('data-path'); // 获取文路径
-        const fileData = [Buffer.from(fs.readFileSync(filePath))];
-        e.dataTransfer.setData('text/uri-list', `file://${filePath}`);
-        e.dataTransfer.effectAllowed = 'copy';  // 设置拖拽效果
+        // console.log('文件上:', target.closest('.file-item').getAttribute('data-path'));
+        // // 如果在文件项上，开始拖拽
+        // const filePath = target.closest('.file-item').getAttribute('data-path'); // 获取文路径
+        // const fileData = [Buffer.from(fs.readFileSync(filePath))];
+        // e.dataTransfer.setData('text/uri-list', `file://${filePath}`);
+        // e.dataTransfer.effectAllowed = 'copy';  // 设置拖拽效果
     } else if (!target.closest('.annual-report-container')) {
         // 如果在空白处，开始框选
         console.log('空白处');
@@ -1916,7 +2023,7 @@ function sortFiles(files) {
         if (a.isDirectory && !b.isDirectory) return -1;
         if (!a.isDirectory && b.isDirectory) return 1;
 
-        // 后根据���进行排
+        // ���根据行排
         switch (currentSortMethod) {
             case 'name':
                 return currentSortOrder === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
@@ -2250,7 +2357,7 @@ function updatePreview(file) {
                 <ul>${fileList}</ul>
                 ${files.length > 10 ? '<p>...</p>' : ''}
                 <p>创建时间: ${formatDate(file.stats.birthtime)}</p>
-                <p>修改时间: ${formatDate(file.stats.mtime)}</p>
+                <p>改时间: ${formatDate(file.stats.mtime)}</p>
             `;
         });
     } else if (['.jpg', '.jpeg', '.png', '.gif', '.svg'].includes(fileExt)) {

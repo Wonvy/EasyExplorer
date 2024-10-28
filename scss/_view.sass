@@ -681,3 +681,14 @@ body.dark-theme
   &.active
     background: rgba(255, 196, 70, 0.2)
     border-left: 3px solid #FFC446
+
+// 在 .project-preview .preview-content .file-item 样式块中添加
+.file-item
+    &.selected
+        background: rgba(255, 196, 70, 0.2)
+        border-left: 3px solid #FFC446
+        
+    // 添加键盘焦点样式
+    &:focus
+        outline: none
+        box-shadow: 0 0 0 2px rgba(255, 196, 70, 0.5)

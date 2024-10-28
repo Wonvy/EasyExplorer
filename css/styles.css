@@ -667,6 +667,15 @@ body.dark-theme .timeline-container .month-column .month-content .project-item .
   border-left: 3px solid #FFC446;
 }
 
+.file-item.selected {
+  background: rgba(255, 196, 70, 0.2);
+  border-left: 3px solid #FFC446;
+}
+.file-item:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 196, 70, 0.5);
+}
+
 #resizer {
   position: relative;
   width: 6px;
