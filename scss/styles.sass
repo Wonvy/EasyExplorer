@@ -658,7 +658,7 @@ html
   position: relative
   
   &::after
-    content: "滚动切换月份"
+    content: ""
     position: absolute
     bottom: -20px
     left: 50%
@@ -684,44 +684,59 @@ html
   padding: 10px
   text-transform: uppercase
 
-.calendar-day
-  border: 1px solid
-  padding: 5px
-  min-height: 100px
-  position: relative
-  transition: background-color 0.3s ease
+.calendar-view
 
-  &.empty
-    background-color: rgba(0, 0, 0, 0.05)
+  #file-list
+    .calendar-day
+      padding: 5px
+      padding-top: 30px
+      border-radius: 8px
+      min-height: 100px
+      position: relative
+      transition: background-color 0.3s ease
+      &:hover
+        background-color: rgba(0, 0, 0, 0.5)
 
-  &.has-content
-    cursor: pointer
+      &.empty
+        background-color: rgba(0, 0, 0, 0.05)
 
-  .day-number
-    position: absolute
-    top: 5px
-    left: 5px
-    font-weight: bold
+      &.has-content
+        cursor: pointer
 
-  .day-content
-    display: flex
-    margin-top: 25pxr
-    height: auto
-    flex-direction: column
-    align-items: flex-start
-    overflow-y: auto
+      .day-number
+        position: absolute
+        top: 5px
+        left: 5px
+        font-weight: bold
 
-    .folder-icon
-      font-size: 24px
-      color: #FFC446
+      .day-content
+        display: flex
+        margin-top: 25pxr
+        height: auto
+        flex-direction: column
+        align-items: flex-start
+        overflow-y: auto
 
-  &.today
-    background-color: #ffe6e6
-    border: 2px solid #ff4d4d
+        .folder-item
+          font-size: 14px
+          white-space: nowrap 
+          overflow: hidden // 超出部分隐藏
+          text-overflow: ellipsis // 显示省略号
+          &:hover
+            text-decoration: underline
 
-    .day-number
-      color: #ff4d4d
-      font-weight: bold
+        .folder-icon
+
+          color: #FFC446
+          svg
+            height: 12px
+
+      &.today
+        background-color: #ffe6e6
+
+        .day-number
+          color: #000
+          font-weight: bold
 
 // 在文件中添加或修改以下样式
 

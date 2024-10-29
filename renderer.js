@@ -101,7 +101,7 @@ function toggleCalendarView() {
 // 显示日历视图
 function showCalendarView() {
   const now = new Date();
-  currentCalendarYear = currentCalendarYear || now.getFullYear();
+  currentCalendarYear = currentCalendarYear || now.getFullYear(); // 如果未设置年份，则使用当前年份
   currentCalendarMonth = currentCalendarMonth !== undefined ? currentCalendarMonth : now.getMonth();
 
   // 从项目设置中获取当前年份的项目路径
@@ -109,11 +109,12 @@ function showCalendarView() {
   const yearPath = projectPaths[currentCalendarYear.toString()];
 
   if (!yearPath) {
-      fileListContainer.innerHTML = `
-      <div class="calendar-error">
-        未置 ${currentCalendarYear} 年的项目文件夹。
-        请在设置中配置项目文件夹路径。
-      </div>`;
+      alert(`未设置 ${currentCalendarYear} 年的项目文件夹。请在设置中配置项目文件夹路径。`);
+    //   fileListContainer.innerHTML = `
+    //   <div class="calendar-error">
+    //     未置 ${currentCalendarYear} 年的项目文件夹。
+    //     请在设置中配置项目文件夹路径。
+    //   </div>`;
     return;
   }
 
@@ -424,7 +425,6 @@ let lastViewState = {
 
 // 修改 showAnnualReport 函数，保存状态
 function showAnnualReport() {
-    console.log('显示年报视图');
     const projectPaths = JSON.parse(localStorage.getItem('projectPaths') || '{}');
     let yearPath = projectPaths[currentReportYear.toString()];
 
@@ -441,9 +441,6 @@ function showAnnualReport() {
         console.log('跳转到最近的有文件夹的年份:', closestYear);
         currentReportYear = closestYear;
     }
-
-    console.log('加载年度路径:', yearPath);
-
 
     fileListContainer.className = 'annual-report-view';
 

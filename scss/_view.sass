@@ -302,6 +302,7 @@
   &.annual-report-view
     #file-list
       height: 100%
+      width: 100%
       padding: 0
       display: flex
       flex-wrap: wrap
@@ -313,6 +314,7 @@
 #file-list-container.annual-report-view
   .annual-report-container
     height: 100%
+    width: 100%
     display: flex
     row-gap: 20px
     flex-direction: column
@@ -394,15 +396,15 @@ body.dark-theme
 .annual-timeline
   &::-webkit-scrollbar
     width: 8px
-    height: 8px
+    height: 2px
 
   &::-webkit-scrollbar-track
     background: rgba(0, 0, 0, 0.1)
-    border-radius: 4px
+    border-radius: 0px
 
   &::-webkit-scrollbar-thumb
-    background: rgba(255, 196, 70, 0.5)
-    border-radius: 4px
+    background: rgba(255, 255, 255, 1)
+    border-radius: 0px
     
     &:hover
       background: rgba(255, 196, 70, 0.8)
@@ -614,7 +616,16 @@ body.dark-theme
               color: #FFC446
 
 
-// 年报视图中添加项目预览区域样式
+
+
+// 月报 
+.calendar-view-container
+  width: 100%
+
+
+
+
+// 年报
 .annual-report-container
   display: flex
   flex-direction: column
@@ -639,15 +650,24 @@ body.dark-theme
     z-index: 100 // 确保在内容之上
     -webkit-backdrop-filter: blur(10px) // 添加 webkit 前缀
     backdrop-filter: blur(10px) // 添加毛玻璃效果
-    border-top: 1px solid rgba(255, 196, 70, 0.2)
 
     .preview-header
       padding: 10px 15px
-      background: rgba(255, 196, 70, 0.1)
-      border-bottom: 1px solid rgba(255, 196, 70, 0.2)
       display: flex
       justify-content: space-between
       align-items: center
+
+      .preview-title
+
+      .preview-controls
+        display: flex
+        column-gap: 10px
+        flex-direction: row
+
+
+
+      
+
 
     .preview-content
       flex: 1
@@ -659,8 +679,9 @@ body.dark-theme
       align-content: flex-start
 
       .file-item
-        width: 100px // 设置固定宽度
-        height: 100px // 设置固定高度
+        width: 100px
+        height: 100px
+        box-sizing: border-box
         display: flex
         flex-direction: column
         align-items: center
@@ -676,12 +697,11 @@ body.dark-theme
         
         &.selected
             background: rgba(255, 196, 70, 0.2)
-            border: 2px solid #FFC446
-            border-radius: 8px
+            border: 1px solid #FFC446
         
         &:focus
             outline: none
-            box-shadow: 0 0 0 2px rgba(255, 196, 70, 0.5)
+            // box-shadow: 0 0 0 2px rgba(255, 196, 70, 0.5)
 
         .file-icon
             width: 48px
