@@ -3102,14 +3102,14 @@ function showCreateFolderDialog(year, month, day) {
 function createFolder(year, month, day, folderName) {
   const projectPaths = JSON.parse(localStorage.getItem('projectPaths') || '{}');
   const yearPath = projectPaths[year.toString()];
-  
+  console.log('yearPath', yearPath);
   if (!yearPath) {
     console.error('未设置年份路径');
     return;
   }
   
   const monthPath = path.join(yearPath, `${month}月`);
-  const folderPath = path.join(monthPath, `${String(day).padStart(2, '0')}${folderName}`);
+  const folderPath = path.join(monthPath, `${folderName}`);
   
   try {
     // 确保月份文件夹存在
