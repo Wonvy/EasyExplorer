@@ -431,6 +431,7 @@ function showAnnualReport() {
     // 如当前年份没有文件夹，则跳转到有文件夹的
     if (!yearPath) {
         console.warn('未找到当前年份的项目路径:', currentReportYear);
+        return
         // 寻找最近的有文件夹的年份
         let closestYear = currentReportYear;
         while (!yearPath) {
@@ -456,6 +457,16 @@ function showAnnualReport() {
             </div>
             <div class="annual-timeline">
                 ${generateMonthsTimeline()}
+            </div>
+            <div class="project-preview">
+                <div class="preview-header">
+                    <div class="preview-title">选择项目以查看内容</div>
+                    <div class="preview-controls">
+                        <button id="preview-refresh" title="刷新"><i class="fas fa-sync-alt"></i></button>
+                        <button id="preview-open" title="在文件夹中打开"><i class="fas fa-external-link-alt"></i></button>
+                    </div>
+                </div>
+                <div class="preview-content"></div>
             </div>
         </div>
     `;
@@ -552,16 +563,6 @@ function generateMonthsTimeline() {
                     </div>
                 `).join('')}
             </div>
-        </div>
-        <div class="project-preview">
-            <div class="preview-header">
-                <div class="preview-title">选择项目以查看内容</div>
-                <div class="preview-controls">
-                    <button id="preview-refresh" title="刷新"><i class="fas fa-sync-alt"></i></button>
-                    <button id="preview-open" title="在文件夹中打开"><i class="fas fa-external-link-alt"></i></button>
-                </div>
-            </div>
-            <div class="preview-content"></div>
         </div>
     `;
 }
