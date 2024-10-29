@@ -109,7 +109,7 @@ function showCalendarView() {
   const yearPath = projectPaths[currentCalendarYear.toString()];
 
   if (!yearPath) {
-      alert(`未设置 ${currentCalendarYear} 年的项目文件夹。请在设置中配置项目文件夹路径。`);
+      alert(`��设置 ${currentCalendarYear} 年的项目文件夹。请在设置中配置项目文件夹路径。`);
     //   fileListContainer.innerHTML = `
     //   <div class="calendar-error">
     //     未置 ${currentCalendarYear} 年的项目文件夹。
@@ -236,18 +236,17 @@ function showCalendarView() {
 
   // 为文件夹添加点击事件
   document.querySelectorAll('.folder-item').forEach(item => {
-    // 添加双击事件监听器
+    // 修改双击事件为直接打开文件夹
     item.addEventListener('dblclick', (e) => {
       e.stopPropagation();
       const folderPath = item.getAttribute('data-path');
       if (folderPath) {
-        console.log('打开文件夹:', folderPath); // 添加调试日志
-        isFromCalendar = true; // 设置标记
-        navigateTo(folderPath);
+        console.log('打开文件夹:', folderPath);
+        shell.openPath(folderPath); // 使用 shell.openPath 直接打开文件夹
       }
     });
 
-    // 添加单击事件用于选中
+    // 单击事件保持不变
     item.addEventListener('click', (e) => {
       e.stopPropagation();
       // 移除其他文件夹的选中状态
@@ -488,7 +487,7 @@ function showAnnualReport() {
 
     fileListElement.innerHTML = annualReportHTML;
 
-    // 添加控制按钮事件监听
+    // 添加控��按钮事件监听
     document.getElementById('prev-year').addEventListener('click', () => {
         changeReportYear(-1);
     });
@@ -1500,7 +1499,7 @@ function isElementInSelectionBox(element, box) {
         elementRect.top > boxRect.bottom);
 }
 
-// 在通用函数区域添加格式化文件大小的函数
+// 在通用函区域添加格式化件大小的函数
 function formatFileSize(size) {
     if (size === undefined || size === null) return '未知';
     if (size < 1024) return size + ' B';
