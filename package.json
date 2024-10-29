@@ -7,7 +7,6 @@
     "sass": "sass --watch scss:css",
     "build": "electron-builder"
   },
-
   "keywords": [],
   "author": "",
   "license": "ISC",
