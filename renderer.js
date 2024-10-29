@@ -219,6 +219,9 @@ function showCalendarView() {
             </div>
           `).join('')}
         </div>
+        <div class="add-folder-icon" title="添加新文件夹">
+          <i class="fas fa-plus"></i>
+        </div>
       </div>
     `;
   }
@@ -233,11 +236,26 @@ function showCalendarView() {
 
   // 为文件夹添加点击事件
   document.querySelectorAll('.folder-item').forEach(item => {
-    item.addEventListener('click', (e) => {
+    // 添加双击事件监听器
+    item.addEventListener('dblclick', (e) => {
       e.stopPropagation();
       const folderPath = item.getAttribute('data-path');
-      isFromCalendar = true; // 设置标记
-      navigateTo(folderPath);
+      if (folderPath) {
+        console.log('打开文件夹:', folderPath); // 添加调试日志
+        isFromCalendar = true; // 设置标记
+        navigateTo(folderPath);
+      }
+    });
+
+    // 添加单击事件用于选中
+    item.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // 移除其他文件夹的选中状态
+      document.querySelectorAll('.folder-item.selected').forEach(folder => {
+        folder.classList.remove('selected');
+      });
+      // 添加选中状态到当前文件夹
+      item.classList.add('selected');
     });
   });
 
@@ -1503,7 +1521,7 @@ function handleMouseDown(e) {
     if (target.classList.contains('file-item') || target.closest('.file-item')) {
         // console.log('文件上:', target.closest('.file-item').getAttribute('data-path'));
         // // 如果在文件项上，开始拖拽
-        // const filePath = target.closest('.file-item').getAttribute('data-path'); // 获取文路径
+        // const filePath = target.closest('.file-item').getAttribute('data-path'); // 获取文径
         // const fileData = [Buffer.from(fs.readFileSync(filePath))];
         // e.dataTransfer.setData('text/uri-list', `file://${filePath}`);
         // e.dataTransfer.effectAllowed = 'copy';  // 设置拖拽效果
@@ -2021,7 +2039,7 @@ function sortFiles(files) {
         if (a.isDirectory && !b.isDirectory) return -1;
         if (!a.isDirectory && b.isDirectory) return 1;
 
-        // ���根据行排
+        // 根据行排
         switch (currentSortMethod) {
             case 'name':
                 return currentSortOrder === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
@@ -2821,14 +2839,22 @@ function navigateTo(newPath) {
         return;
     }
 
+    console.log('尝试导航到:', newPath); // 添加调试日志
+
     newPath = newPath.replace(/\\\\/g, '\\');
     if (process.platform === 'win32' && newPath.length === 2 && newPath[1] === ':') {
         newPath += '\\';  // 确保驱动器路径以反斜杠结尾
     }
 
+    // 检查路径是否存在
+    if (!fs.existsSync(newPath)) {
+        console.error('路径不存在:', newPath);
+        return;
+    }
+
     fs.access(newPath, fs.constants.R_OK, (err) => {
         if (err) {
-            console.error('访问目录:', err);
+            console.error('无法访问目录:', err);
             return;
         }
         fs.stat(newPath, (err, stats) => {
@@ -2847,6 +2873,8 @@ function navigateTo(newPath) {
                         console.error('读取目录失败:', err);
                         return;
                     }
+
+                    console.log('目录内容:', files); // 添加调试日志
 
                     if (files.length === 0 && isFromCalendar) {
                         // 如果是空目录且是从日历跳转来的，返回到日历视图
@@ -2983,3 +3011,96 @@ function debounce(func, wait) {
 
 // 创建一个防抖版本的 updateRecentTab 函数
 const debouncedUpdateRecentTab = debounce(updateRecentTab, 1000); // 1秒延迟
+
+// 添加创建文件夹对话框函数
+function showCreateFolderDialog(year, month, day) {
+  const dialog = document.createElement('div');
+  dialog.className = 'folder-dialog';
+  
+  const overlay = document.createElement('div');
+  overlay.className = 'dialog-overlay';
+  
+  dialog.innerHTML = `
+    <div class="dialog-header">创建新文件夹</div>
+    <input type="text" class="dialog-input" placeholder="请输入文件夹名称" value="${String(day).padStart(2, '0')}">
+    <div class="dialog-buttons">
+      <button class="cancel">取消</button>
+      <button class="confirm">确定</button>
+    </div>
+  `;
+  
+  document.body.appendChild(overlay);
+  document.body.appendChild(dialog);
+  
+  const input = dialog.querySelector('.dialog-input');
+  input.focus();
+  
+  // 处理按钮点击
+  dialog.querySelector('.cancel').addEventListener('click', () => {
+    overlay.remove();
+    dialog.remove();
+  });
+  
+  dialog.querySelector('.confirm').addEventListener('click', () => {
+    const folderName = input.value.trim();
+    if (folderName) {
+      createFolder(year, month, day, folderName);
+    }
+    overlay.remove();
+    dialog.remove();
+  });
+  
+  // 处理回车键
+  input.addEventListener('keyup', (e) => {
+    if (e.key === 'Enter') {
+      const folderName = input.value.trim();
+      if (folderName) {
+        createFolder(year, month, day, folderName);
+      }
+      overlay.remove();
+      dialog.remove();
+    }
+  });
+}
+
+// 添加创建文件夹函数
+function createFolder(year, month, day, folderName) {
+  const projectPaths = JSON.parse(localStorage.getItem('projectPaths') || '{}');
+  const yearPath = projectPaths[year.toString()];
+  
+  if (!yearPath) {
+    console.error('未设置年份路径');
+    return;
+  }
+  
+  const monthPath = path.join(yearPath, `${month}月`);
+  const folderPath = path.join(monthPath, `${String(day).padStart(2, '0')}${folderName}`);
+  
+  try {
+    // 确保月份文件夹存在
+    if (!fs.existsSync(monthPath)) {
+      fs.mkdirSync(monthPath, { recursive: true });
+    }
+    
+    // 创建新文件夹
+    fs.mkdirSync(folderPath);
+    console.log('文件夹创建成功:', folderPath); // 添加调试日志
+    
+    // 刷新日历视图
+    showCalendarView();
+    
+  } catch (err) {
+    console.error('创建文件夹失败:', err);
+    // 这里可以添加错误提示
+  }
+}
+
+// 在 showCalendarView 函数中添加加号图标的点击事件
+document.addEventListener('click', (e) => {
+  const addIcon = e.target.closest('.add-folder-icon');
+  if (addIcon) {
+    const dayElement = addIcon.closest('.calendar-day');
+    const day = parseInt(dayElement.getAttribute('data-date'));
+    showCreateFolderDialog(currentCalendarYear, currentCalendarMonth + 1, day);
+  }
+});

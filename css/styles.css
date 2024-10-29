@@ -724,6 +724,100 @@ body.dark-theme .timeline-container .month-column .month-content .project-item .
   box-shadow: 0 0 0 2px rgba(255, 196, 70, 0.5);
 }
 
+.calendar-day {
+  position: relative;
+}
+.calendar-day .add-folder-icon {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  width: 24px;
+  height: 24px;
+  background: rgba(255, 196, 70, 0.9);
+  border-radius: 50%;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  color: #fff;
+  transition: all 0.2s ease;
+}
+.calendar-day .add-folder-icon:hover {
+  background: #FFC446;
+  transform: scale(1.1);
+}
+.calendar-day:hover .add-folder-icon {
+  display: flex;
+}
+
+.folder-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  min-width: 300px;
+}
+.folder-dialog .dialog-header {
+  font-size: 16px;
+  margin-bottom: 15px;
+}
+.folder-dialog .dialog-input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+.folder-dialog .dialog-input:focus {
+  border-color: #FFC446;
+  outline: none;
+}
+.folder-dialog .dialog-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.folder-dialog .dialog-buttons button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.folder-dialog .dialog-buttons button.confirm {
+  background: #FFC446;
+  color: #fff;
+}
+.folder-dialog .dialog-buttons button.confirm:hover {
+  background: rgb(255, 179.7351351351, 19);
+}
+.folder-dialog .dialog-buttons button.cancel {
+  background: #f5f5f5;
+}
+.folder-dialog .dialog-buttons button.cancel:hover {
+  background: #e5e5e5;
+}
+
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.folder-item.selected {
+  background: rgba(255, 196, 70, 0.2);
+  border-left: 3px solid #FFC446;
+}
+
 #resizer {
   position: relative;
   width: 6px;
