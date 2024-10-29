@@ -109,7 +109,7 @@ function showCalendarView() {
   const yearPath = projectPaths[currentCalendarYear.toString()];
 
   if (!yearPath) {
-      alert(`��设置 ${currentCalendarYear} 年的项目文件夹。请在设置中配置项目文件夹路径。`);
+      alert(`设置 ${currentCalendarYear} 年的项目文件夹。请在设置中配置项目文件夹路径。`);
     //   fileListContainer.innerHTML = `
     //   <div class="calendar-error">
     //     未置 ${currentCalendarYear} 年的项目文件夹。
@@ -487,7 +487,7 @@ function showAnnualReport() {
 
     fileListElement.innerHTML = annualReportHTML;
 
-    // 添加控��按钮事件监听
+    // 添加控按钮事件监听
     document.getElementById('prev-year').addEventListener('click', () => {
         changeReportYear(-1);
     });
@@ -3013,6 +3013,11 @@ const debouncedUpdateRecentTab = debounce(updateRecentTab, 1000); // 1秒延迟
 
 // 添加创建文件夹对话框函数
 function showCreateFolderDialog(year, month, day) {
+  const projectPaths = JSON.parse(localStorage.getItem('projectPaths') || '{}');
+  const yearPath = projectPaths[year.toString()];
+  const monthPath = path.join(yearPath, `${month}月`);
+  const defaultFolderName = `${month.toString().padStart(2, '0')}${day.toString().padStart(2, '0')} `;
+  
   const dialog = document.createElement('div');
   dialog.className = 'folder-dialog';
   
@@ -3021,7 +3026,21 @@ function showCreateFolderDialog(year, month, day) {
   
   dialog.innerHTML = `
     <div class="dialog-header">创建新文件夹</div>
-    <input type="text" class="dialog-input" placeholder="请输入文件夹名称" value="${String(day).padStart(2, '0')}">
+    <div class="dialog-path">
+      <div class="path-label">位置：</div>
+      <div class="path-value">${monthPath}</div>
+    </div>
+    <div class="dialog-name">
+      <div class="name-label">名称：</div>
+      <div class="name-input-group">
+        <span class="name-prefix">${defaultFolderName}</span>
+        <input type="text" class="dialog-input" placeholder="请输入文件夹名称">
+      </div>
+    </div>
+    <div class="dialog-preview">
+      <div class="preview-label">完整路径：</div>
+      <div class="preview-path"></div>
+    </div>
     <div class="dialog-buttons">
       <button class="cancel">取消</button>
       <button class="confirm">确定</button>
@@ -3032,6 +3051,22 @@ function showCreateFolderDialog(year, month, day) {
   document.body.appendChild(dialog);
   
   const input = dialog.querySelector('.dialog-input');
+  const previewPath = dialog.querySelector('.preview-path');
+  
+  // 更新预览路径
+  function updatePreviewPath() {
+    const inputValue = input.value.trim();
+    const fullFolderName = defaultFolderName + inputValue;
+    const fullPath = path.join(monthPath, fullFolderName);
+    previewPath.textContent = fullPath;
+  }
+  
+  // 初始更新预览路径
+  updatePreviewPath();
+  
+  // 输入时更新预览路径
+  input.addEventListener('input', updatePreviewPath);
+  
   input.focus();
   
   // 处理按钮点击
@@ -3041,7 +3076,8 @@ function showCreateFolderDialog(year, month, day) {
   });
   
   dialog.querySelector('.confirm').addEventListener('click', () => {
-    const folderName = input.value.trim();
+    const folderName = defaultFolderName + input.value.trim();
+    console.log(folderName);
     if (folderName) {
       createFolder(year, month, day, folderName);
     }
@@ -3052,7 +3088,7 @@ function showCreateFolderDialog(year, month, day) {
   // 处理回车键
   input.addEventListener('keyup', (e) => {
     if (e.key === 'Enter') {
-      const folderName = input.value.trim();
+      const folderName = defaultFolderName + input.value.trim();
       if (folderName) {
         createFolder(year, month, day, folderName);
       }

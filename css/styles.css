@@ -755,52 +755,106 @@ body.dark-theme .timeline-container .month-column .month-content .project-item .
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: #fff;
+  background: var(--bg-color, #fff);
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
   z-index: 1000;
-  min-width: 300px;
+  min-width: 400px;
+  color: var(--text-color, #000);
 }
 .folder-dialog .dialog-header {
-  font-size: 16px;
-  margin-bottom: 15px;
+  font-size: 18px;
+  margin-bottom: 20px;
+  color: #FFC446;
+  font-weight: bold;
 }
-.folder-dialog .dialog-input {
-  width: 100%;
+.folder-dialog .dialog-path,
+.folder-dialog .dialog-name,
+.folder-dialog .dialog-preview {
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+}
+.folder-dialog .dialog-path .path-label,
+.folder-dialog .dialog-path .name-label,
+.folder-dialog .dialog-path .preview-label,
+.folder-dialog .dialog-name .path-label,
+.folder-dialog .dialog-name .name-label,
+.folder-dialog .dialog-name .preview-label,
+.folder-dialog .dialog-preview .path-label,
+.folder-dialog .dialog-preview .name-label,
+.folder-dialog .dialog-preview .preview-label {
+  width: 80px;
+  color: var(--text-color, #666);
+  flex-shrink: 0;
+}
+.folder-dialog .dialog-path .path-value,
+.folder-dialog .dialog-path .preview-path,
+.folder-dialog .dialog-name .path-value,
+.folder-dialog .dialog-name .preview-path,
+.folder-dialog .dialog-preview .path-value,
+.folder-dialog .dialog-preview .preview-path {
+  flex-grow: 1;
+  word-break: break-all;
   padding: 8px;
-  margin-bottom: 15px;
-  border: 1px solid #ddd;
+  background: var(--bg-secondary, #f5f5f5);
   border-radius: 4px;
+  font-family: monospace;
+  font-size: 13px;
 }
-.folder-dialog .dialog-input:focus {
-  border-color: #FFC446;
+.folder-dialog .name-input-group {
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  background: var(--bg-secondary, #f5f5f5);
+  border-radius: 4px;
+  padding: 0 8px;
+}
+.folder-dialog .name-input-group .name-prefix {
+  color: #FFC446;
+  font-weight: bold;
+  margin-right: 4px;
+  font-family: monospace;
+}
+.folder-dialog .name-input-group .dialog-input {
+  flex-grow: 1;
+  border: none;
+  background: none;
+  padding: 8px 0;
+  color: var(--text-color, #000);
+  font-family: monospace;
+}
+.folder-dialog .name-input-group .dialog-input:focus {
   outline: none;
 }
 .folder-dialog .dialog-buttons {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+  margin-top: 20px;
 }
 .folder-dialog .dialog-buttons button {
-  padding: 6px 12px;
+  padding: 8px 16px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-weight: bold;
 }
 .folder-dialog .dialog-buttons button.confirm {
   background: #FFC446;
-  color: #fff;
+  color: #000;
 }
 .folder-dialog .dialog-buttons button.confirm:hover {
   background: rgb(255, 179.7351351351, 19);
 }
 .folder-dialog .dialog-buttons button.cancel {
-  background: #f5f5f5;
+  background: var(--bg-secondary, #f5f5f5);
+  color: var(--text-color, #666);
 }
 .folder-dialog .dialog-buttons button.cancel:hover {
-  background: #e5e5e5;
+  background: var(--bg-hover, #e5e5e5);
 }
 
 .dialog-overlay {
@@ -810,12 +864,15 @@ body.dark-theme .timeline-container .month-column .month-content .project-item .
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
   z-index: 999;
 }
 
-.folder-item.selected {
-  background: rgba(255, 196, 70, 0.2);
-  border-left: 3px solid #FFC446;
+body.dark-theme .folder-dialog {
+  --bg-color: #2e2e2e;
+  --text-color: #e0e0e0;
+  --bg-secondary: #1e1e1e;
+  --bg-hover: #3a3a3a;
 }
 
 #resizer {
