@@ -14,6 +14,7 @@ const fsExtra = require('fs-extra'); // 引入 fs-extra
 const hljs = require('highlight.js'); // 引入 highlight.js
 const PSD = require('psd'); // 引入psd.js库
 const clipboardEx = require('electron-clipboard-ex');
+
 // #endregion
 
 // #region Dom元素
@@ -89,6 +90,8 @@ let isCalendarView = false;
 let currentCalendarYear;
 let currentCalendarMonth;
 let isFromCalendar = false; // 添加标记变量
+
+const occtimportjs = require('occt-import-js'); 
 
 // 在文件中添加以下新函数
 function toggleCalendarView() {
@@ -175,7 +178,7 @@ function showCalendarView() {
         } else {
           // 如果不符合格式，使用创建时间
           const createDate = new Date(stats.birthtime);
-          // 只有当创建时间在当前月份时才使用
+          // ��有当创建时间在当前月份时才使用
           if (createDate.getMonth() === currentCalendarMonth && 
               createDate.getFullYear() === currentCalendarYear) {
             day = createDate.getDate();
@@ -411,7 +414,7 @@ document.addEventListener('DOMContentLoaded', () => {
         activeTabButton.click();
     }
 
-    // 项目管理标签页中的事件监听器
+    // 项目管理标签页���的事件监听器
     document.getElementById('custom-projects').addEventListener('click', () => {
         console.log('项目按钮被点击');
     });
@@ -642,7 +645,7 @@ function loadAnnualData(yearPath) {
                     `;
                 }).join('');
 
-                // 为每个项目添加鼠标事件
+                // 为每个项目添加鼠标件
                 monthProjects.querySelectorAll('.project-item').forEach(item => {
                     const filePath = item.getAttribute('data-path');
                     let lastActiveProject = null; // 记录最后点击的项目
@@ -708,7 +711,7 @@ function loadAnnualData(yearPath) {
                     });
                 });
 
-                // 为预览区域添加鼠标进入事件
+                // 为预览区添加鼠标进事件
                 const previewContent = document.querySelector('.preview-content');
                 previewContent.addEventListener('mouseenter', () => {
                     // 恢复到最后点击的项目的预览
@@ -806,7 +809,7 @@ function handlePreviewContentClick(e) {
     const filePath = fileItem.getAttribute('data-path');
     console.log('点击文件项:', filePath);
 
-    // 移除其他文件的选中状态
+    // 除其他文件的选中状态
     fileItem.closest('.preview-content').querySelectorAll('.file-item.selected')
         .forEach(item => {
             if (item !== fileItem) {
@@ -1754,7 +1757,7 @@ function updateFileList(dirPath, isQuickAccess = false) {
 
     fs.readdir(dirPath, { withFileTypes: true }, (err, files) => {
         if (err) {
-            console.error('无法读取目录:', err, dirPath);
+            console.error('无法取目录:', err, dirPath);
             fileListElement.innerHTML = `<div class="error-message">无法读取目录: ${err.message}</div>`;
             return;
         }
@@ -2690,7 +2693,7 @@ function showFullscreenPreview(filePath) {
         // 处理文本文件
         fs.readFile(filePath, 'utf8', (err, data) => {
             if (err) {
-                review_content_fullscreen.innerHTML = `<div class="preview-content"><p>无法读取文件: ${err.message}</p></div>`;
+                review_content_fullscreen.innerHTML = `<div class="preview-content"><p>无法取文件: ${err.message}</p></div>`;
             } else {
                 review_content_fullscreen.innerHTML = `<div class="preview-content"><pre>${data}</pre></div>`;
             }
@@ -2758,11 +2761,53 @@ function showFullscreenPreview(filePath) {
             review_content_fullscreen.innerHTML = `<p>无法读取PSD文件: ${err.message}</p>`;
         });
 
+    } else if (fileExt === '.dwg') {
+        // 处理 DWG 文件预览
+    } else if (fileExt === '.step' || fileExt === '.stp') {
+        // 创建预览容器
+        const container = document.createElement('div');
+        container.style.width = '100%';
+        container.style.height = '100%';
+        review_content_fullscreen.innerHTML = '';
+        review_content_fullscreen.appendChild(container);
+
+        // 添加加载提示
+        const loadingDiv = document.createElement('div');
+        loadingDiv.style.position = 'absolute';
+        loadingDiv.style.top = '50%';
+        loadingDiv.style.left = '50%';
+        loadingDiv.style.transform = 'translate(-50%, -50%)';
+        loadingDiv.style.color = '#fff';
+        loadingDiv.textContent = '加载中...';
+        container.appendChild(loadingDiv);
+
+        
+
+        occtimportjs().then((occt) => {
+            let fileUrl = filePath;
+            let fileContent = fs.readFileSync(fileUrl);
+            console.log('fileContent',fileContent)
+            let result = occt.ReadStepFile(fileContent);
+            console.log('result', result);
+        }).catch(err => {
+            console.error('加载STEP文件时出错:', err);
+            loadingDiv.remove();
+            container.innerHTML = `
+                <div class="error-message">
+                    <p>加载STEP文件失败</p>
+                    <p>${err.message}</p>
+                </div>
+            `;
+        });
+
+
     } else {
         review_content_fullscreen.innerHTML = `<p>无法预览此文件类型</p>`;
     }
+
     fullscreen_preview.style.display = 'block';
 }
+
 
 
 // 添加转换函数

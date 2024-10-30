@@ -2149,4 +2149,37 @@ html {
   margin-right: 10px;
 }
 
+.model-controls {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.model-controls button {
+  padding: 5px 10px;
+  background: #fff;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.model-controls button:hover {
+  background: #eee;
+}
+
+.error-message {
+  padding: 20px;
+  color: #721c24;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  text-align: center;
+}
+
 /*# sourceMappingURL=styles.css.map */
