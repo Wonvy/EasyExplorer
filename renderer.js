@@ -57,6 +57,9 @@ let currentSortMethod = 'name';//
 let currentSortOrder = 'asc';// 排序顺序
 let isPreviewResizing = false; // 预览面板拖拽
 
+// 添加新的全局变量
+let lastHoveredPath = ''; // 最后划过的文件/文件夹路径
+let lastClickedPath = ''; // 最后点击的文件/文件夹路径
 
 let lastX = 0;
 let history = []
@@ -415,7 +418,7 @@ document.addEventListener('DOMContentLoaded', () => {
         activeTabButton.click();
     }
 
-    // 项目��理标签页的���件监听器
+    // 项目理标签页的件监听器
     document.getElementById('custom-projects').addEventListener('click', () => {
         console.log('项目按钮被点击');
     });
@@ -451,7 +454,7 @@ function showAnnualReport() {
 
     // 如当前年份没有文件夹，则跳转到有文件夹的
     if (!yearPath) {
-        console.warn('未找到当前年份的项目路径:', currentReportYear);
+        console.warn('未找到当前年份的目路径:', currentReportYear);
         return
         // 寻找最近的有文件夹的年份
         let closestYear = currentReportYear;
@@ -524,7 +527,7 @@ function showAnnualReport() {
             const deltaX = e.pageX - lastX;
             // 更新滚动位置
             timeline.scrollLeft -= deltaX;
-            // 更新最后的鼠标位置
+            // 更新最后的标位置
             lastX = e.pageX;
         });
 
@@ -608,7 +611,7 @@ function loadAnnualData(yearPath) {
                     const filePath = path.join(monthPath, file);
                     const stats = fs.statSync(filePath);
                     
-                    // 获取文件夹内最新修���时间
+                    // 获取文件夹内最新修时间
                     let lastModified = stats.mtime;
                     try {
                         const subFiles = fs.readdirSync(filePath);
@@ -626,7 +629,7 @@ function loadAnnualData(yearPath) {
                                 }
                             });
                     } catch (err) {
-                        console.warn(`读取子文件夹失败: ${filePath}`, err);
+                        console.warn(`读取子文夹失败: ${filePath}`, err);
                     }
 
                     return `
@@ -687,7 +690,7 @@ function loadAnnualData(yearPath) {
                         
                         // 如果不是当前高亮的项目，设置延迟预览
                         if (!item.classList.contains('active')) {
-                            // 清之���的定时器
+                            // 清之的定时器
                             if (hoverTimer) {
                                 clearTimeout(hoverTimer);
                             }
@@ -1041,7 +1044,7 @@ window.addEventListener('beforeunload', () => {
 
 // 复制文件
 function copyFile(filePaths) {
-    // 判断 filePaths 是否为字符串，如果是则转换为数组
+    // 判断 filePaths 是否为符串，如果是则转换为数组
     if (typeof filePaths === 'string') {
         filePaths = [filePaths]; // 将字符串包装在数组中
     }
@@ -1404,7 +1407,7 @@ fileListContainer.addEventListener('mousedown', handleMouseDown);
 fileListContainer.addEventListener('mousemove', handleMouseMove);
 fileListContainer.addEventListener('mouseup', handleMouseUp);
 
-// 创建选择��
+// 创建选择框
 function createSelectionBox(x, y) {
     selectionBox = document.createElement('div');
     selectionBox.className = 'selection-box';
@@ -1425,7 +1428,7 @@ function updateSelectionBox(x, y) {
     selectionBox.style.top = `${top}px`;
 }
 
-// 移除择框
+// 移除选择框
 function removeSelectionBox() {
     if (selectionBox) {
         selectionBox.remove();
@@ -1443,7 +1446,7 @@ function isElementInSelectionBox(element, box) {
         elementRect.top > boxRect.bottom);
 }
 
-// 在通用函区域添加格式化件大小的函数
+// 在通用函数区域添加格式化文件大小的函数
 function formatFileSize(size) {
     if (size === undefined || size === null) return '未知';
     if (size < 1024) return size + ' B';
@@ -1692,10 +1695,11 @@ function getFileIcon(file) {
 
 // 更新文件列表
 function updateFileList(dirPath, isQuickAccess = false) {
-
+    lastClickedPath = ''; // 重置最后点击的路径
+    lastHoveredPath = ''; // 重置最后划过的路径
     fileListElement.innerHTML = '';
     updatePreview(null);
-
+    
     fs.readdir(dirPath, { withFileTypes: true }, (err, files) => {
         if (err) {
             console.error('无法取目录:', err, dirPath);
@@ -1888,7 +1892,9 @@ function createFileItem(file, dirPath) {
 
             // 将事件监听器移到这里
             fileItem.addEventListener('mouseover', () => {
-                updateStatusBar(path.join(dirPath, file.name));
+                const filePath = path.join(dirPath, file.name);
+                lastHoveredPath = filePath; // 更新最后划过的路径
+                updateStatusBar(filePath);
                 updatePreview(file);
                 if (file.isDirectory) {
                     const folderPath = path.join(dirPath, file.name); // 构建文件夹完整路径
@@ -2037,13 +2043,15 @@ fileListContainer.addEventListener('contextmenu', (e) => {
 // 文件列表点击事件
 fileListContainer.addEventListener('click', (e) => {
     if (e.target === fileListContainer || e.target === fileListElement) {
+        lastClickedPath = ''; // 重置最后点击的路径
+        lastHoveredPath = ''; // 重置最后划过的路径
         if (selectedItem) {
             selectedItem.classList.remove('selected');
             selectedItem = null;
         }
-        removeSelectionBox(); // 移除择框
+        removeSelectionBox();
     }
-})
+});
 // #endregion
 
 // #region 文件-视图
@@ -2336,7 +2344,7 @@ function updatePreview(file) {
             previewContent.innerHTML = `
                 <pre><code class="${fileExt.replace('.', '')}">${highlightedCode}</code></pre>
                 ${data.length > 1000 ? '<p>...</p>' : ''}
-                <p>大小: ${formatFileSize(file.stats.size)}</p>
+                <p>小: ${formatFileSize(file.stats.size)}</p>
                 <p>创建时间: ${formatDate(file.stats.birthtime)}</p>
                 <p>修改时间: ${formatDate(file.stats.mtime)}</p>
             `;
@@ -2500,57 +2508,31 @@ statusBar.addEventListener('mousedown', (e) => {
 
 // #region 文件-空格预览
 
-// 添加函数来显示文件夹预览
-function showFolderPreview(folderPath, previewElement) {
-    fs.readdir(folderPath, (err, files) => {
-        if (err) {
-            console.error('无法取目:', err)
-            return
-        }
-
-        const previewItems = files.slice(0, 5)
-        previewElement.innerHTML = previewItems.map(item => {
-            const itemPath = path.join(folderPath, item).replace(/\\/g, '\\\\')
-            return `<span class="preview-item" data-path="${itemPath}">${item}</span>`
-        }).join('')
-
-        // 为预览项添加点击事件
-        previewElement.querySelectorAll('.preview-item').forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.stopPropagation() // 阻止事件冒泡
-                e.preventDefault() // 阻止默认行为
-                const itemPath = e.target.getAttribute('data-path').replace(/\\\\/g, '\\')
-                fs.stat(itemPath, (err, stats) => {
-                    if (err) {
-                        console.error('无法获取文件息:', err)
-                        return
-                    }
-                    if (stats.isDirectory()) {
-                        navigateTo(itemPath)
-                    } else {
-                        shell.openPath(itemPath)
-                    }
-                })
-            })
-        })
-    })
-}
-
 // 处理空格键和ESC键事件
 document.addEventListener('keydown', (e) => {
     if (e.code === 'Space') {
         e.preventDefault(); // 防止页面滚动
-        const selectedItem = document.querySelector('.file-item.selected');
-        if (selectedItem) {
-            const filePath = selectedItem.getAttribute('data-path'); // 假设文件路径存储在data-path属性中
-            if (isPreviewOpen) {
-                hideFullscreenPreview(); // 果预览已经打开，则关闭预览
-                isPreviewOpen = false; // 更新状态
-            } else {
-                showFullscreenPreview(filePath); // 如果预览未打开，则打开预览
-                isPreviewOpen = true; // 更新状态
-            }
+        if (lastHoveredPath && fs.existsSync(lastHoveredPath)) {
+            showFullscreenPreview(lastHoveredPath); // 如果预览未打开，则打开预览
+            // if (isPreviewOpen) {
+            //     hideFullscreenPreview(); // 果预览已经打开，则关闭预览
+            //     isPreviewOpen = false; // 更新状态
+            // } else {
+            //     showFullscreenPreview(lastHoveredPath); // 如果预览未打开，则打开预览
+            //     isPreviewOpen = true; // 更新状态
+            // }
         }
+        // const selectedItem = document.querySelector('.file-item.selected');
+        // if (selectedItem) {
+        //     const filePath = selectedItem.getAttribute('data-path'); // 假设文件路径存储在data-path属性中
+        //     if (isPreviewOpen) {
+        //         hideFullscreenPreview(); // 果预览已经打开，则关闭预览
+        //         isPreviewOpen = false; // 更新状态
+        //     } else {
+        //         showFullscreenPreview(filePath); // 如果预览未打开，则打开预览
+        //         isPreviewOpen = true; // 更新状态
+        //     }
+        // }
     } else if (e.code === 'Escape') {
         isPreviewOpen = false;
         hideFullscreenPreview();
@@ -2850,7 +2832,7 @@ function handlePathBlur() {
     pathElement.value = currentPath  // 失去焦点时恢复完整路径
 }
 
-// 地栏事件监听器
+// 地址栏事件监听器
 pathElement.addEventListener('focus', handlePathFocus)
 pathElement.addEventListener('blur', handlePathBlur)
 
