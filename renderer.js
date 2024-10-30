@@ -2676,10 +2676,15 @@ function showFullscreenPreview(filePath) {
     const previewSettings = JSON.parse(localStorage.getItem('previewSettings') || '{}');
     const fileExt = path.extname(filePath).toLowerCase();
 
-    // 封装调用 Seer 的逻辑
-    if (previewSettings.mode === 'seer' && openWithSeer(filePath, previewSettings.seerPath)) {
-        return; // 如果成功调用 Seer，结束函数
+
+    // 检查文件类型是否在 Seer 预览列表中
+    if (fileTypes.includes(fileExt.replace('.', ''))) {
+        // 封装调用 Seer 的逻辑
+        if (previewSettings.mode === 'seer' && openWithSeer(filePath, previewSettings.seerPath)) {
+            return; // 如果成功调用 Seer，结束函数
+        }
     }
+
     // 如果不使用 Seer 或文件类型不在列表中，使用默认预览
     showDefaultPreview(filePath, fileExt);
 }
