@@ -12,6 +12,7 @@
             <ul>
                 <li class="active" data-tab="general">常规设置</li>
                 <li data-tab="appearance">外观</li>
+                <li data-tab="preview">预览</li>
                 <li data-tab="projects">项目</li>
                 <li data-tab="advanced">高级设置</li>
                 <li data-tab="about">关于</li>
@@ -25,6 +26,53 @@
             <div id="appearance" class="tab-content">
                 <h2>外观</h2>
                 <!-- 在这里添加外观设置的内容 -->
+            </div>
+            <div id="preview" class="tab-content">
+                <h2>文件预览设置</h2>
+                <div class="preview-settings">
+                    <div class="preview-mode">
+                        <h3>预览方式</h3>
+                        <div class="radio-group">
+                            <label>
+                                <input type="radio" name="preview-mode" value="default" checked>
+                                默认预览
+                            </label>
+                            <label>
+                                <input type="radio" name="preview-mode" value="seer">
+                                使用 Seer
+                            </label>
+                        </div>
+                        <div class="seer-path-container" style="display: none;">
+                            <label for="seer-path">Seer 路径:</label>
+                            <div class="path-input-group">
+                                <input type="text" id="seer-path" placeholder="请输入 Seer.exe 的完整路径">
+                                <button id="select-seer-path">浏览...</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="file-types" style="display: none;">
+                        <h3>文件类型设置</h3>
+                        <p class="description">在此处添加的文件类型将使用 Seer 进行预览</p>
+                        <div class="file-types-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>文件类型</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="file-types-list">
+                                    <!-- 文件类型列表将通过 JavaScript 动态添加 -->
+                                </tbody>
+                            </table>
+                            <div class="add-type-container">
+                                <input type="text" id="new-file-type" placeholder="输入文件类型（如: pdf）">
+                                <button id="add-file-type">添加</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div id="projects" class="tab-content">
                 <h2>项目设置</h2>
