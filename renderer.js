@@ -2676,34 +2676,27 @@ function showFullscreenPreview(filePath) {
     const previewSettings = JSON.parse(localStorage.getItem('previewSettings') || '{}');
     const fileExt = path.extname(filePath).toLowerCase();
 
-    // 检查是否使用 Seer 预览
-    if (previewSettings.mode === 'seer') {
-        const seerPath = previewSettings.seerPath;
-        const fileTypes = previewSettings.fileTypes || [];
-
-        // 检查文件类型是否在 Seer 预览列表中
-        if (fileTypes.includes(fileExt.replace('.', ''))) {
-            // 使用 Seer 预览
-            if (seerPath && fs.existsSync(seerPath)) {
-                exec(`"${seerPath}" "${filePath}"`, (error) => {
-                    if (error) {
-                        console.error('启动 Seer 失败:', error);
-                        console.error('错误信息:', error.message); // 打印错误信息
-                        // showDefaultPreview(filePath, fileExt);
-                    }
-                });
-                return; // 结束函数执行
-            } else {
-                console.warn('Seer 路径无效，使用默认预览');
-            }
-        }
+    // 封装调用 Seer 的逻辑
+    if (previewSettings.mode === 'seer' && openWithSeer(filePath, previewSettings.seerPath)) {
+        return; // 如果成功调用 Seer，结束函数
     }
-
     // 如果不使用 Seer 或文件类型不在列表中，使用默认预览
     showDefaultPreview(filePath, fileExt);
 }
 
-
+// 封装调用 Seer 的函数
+function openWithSeer(filePath, seerPath) {
+    if (seerPath && fs.existsSync(seerPath)) {
+        exec(`"${seerPath}" "${filePath}"`, (error) => {
+            if (error) {
+                console.log('启动 Seer 失败:', error);
+                console.log('错误信息:', error.message); /
+            }
+        });
+        return true; // 成功调用 Seer
+    }
+    return false; // Seer 路径无效
+}
 
 
 // 添加默认预览函数
@@ -2837,9 +2830,11 @@ function showDefaultPreview(filePath, fileExt) {
 
 
     } else {
-        review_content_fullscreen.innerHTML = `<p>无法预览此文件类型</p>`;
+        const previewSettings = JSON.parse(localStorage.getItem('previewSettings') || '{}');
+        openWithSeer(filePath, previewSettings.seerPath);
+        return;
+        
     }
-
     fullscreen_preview.style.display = 'block';
 }
 
