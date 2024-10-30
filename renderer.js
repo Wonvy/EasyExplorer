@@ -239,9 +239,11 @@ function showCalendarView() {
 
   // 为文件夹添加点击事件
   document.querySelectorAll('.folder-item').forEach(item => {
+
     // 修改双击事件为直接打开文件夹
     item.addEventListener('dblclick', (e) => {
-      e.stopPropagation();
+        console.log('dblclick', e);
+        e.stopPropagation();// 阻止事件冒泡
       const folderPath = item.getAttribute('data-path');
       if (folderPath) {
         console.log('打开文件夹:', folderPath);
@@ -249,7 +251,6 @@ function showCalendarView() {
       }
     });
 
-    // 单击事件保持不变
     item.addEventListener('click', (e) => {
       e.stopPropagation();
       // 移除其他文件夹的选中状态
@@ -414,7 +415,7 @@ document.addEventListener('DOMContentLoaded', () => {
         activeTabButton.click();
     }
 
-    // 项目管理标签页的事件监听器
+    // 项目��理标签页的���件监听器
     document.getElementById('custom-projects').addEventListener('click', () => {
         console.log('项目按钮被点击');
     });
@@ -607,7 +608,7 @@ function loadAnnualData(yearPath) {
                     const filePath = path.join(monthPath, file);
                     const stats = fs.statSync(filePath);
                     
-                    // 获取文件夹内最新修改时间
+                    // 获取文件夹内最新修���时间
                     let lastModified = stats.mtime;
                     try {
                         const subFiles = fs.readdirSync(filePath);
@@ -686,7 +687,7 @@ function loadAnnualData(yearPath) {
                         
                         // 如果不是当前高亮的项目，设置延迟预览
                         if (!item.classList.contains('active')) {
-                            // 清之前的定时器
+                            // 清之���的定时器
                             if (hoverTimer) {
                                 clearTimeout(hoverTimer);
                             }
@@ -859,60 +860,6 @@ function handlePreviewContentKeyDown(e) {
     showFullscreenPreview(filePath);
 }
 
-// 移除原来的 addFileItemListeners 函数，因为现在使用事件委托了
-
-// 提取文件项事件监听器到单独的函数
-function addFileItemListeners(previewContent) {
-    previewContent.querySelectorAll('.file-item').forEach(fileItem => {
-        const filePath = fileItem.getAttribute('data-path');
-
-        console.log(`添加事件监听器到文件项: ${filePath}`);
-
-        // 单击事件 - 选中文件
-        fileItem.addEventListener('click', (e) => {
-            e.stopPropagation();
-            console.log(`单击文件项: ${filePath}`);
-            // 移除其他文件的选中状态
-            previewContent.querySelectorAll('.file-item.selected').forEach(item => {
-                if (item !== fileItem) {
-                    item.classList.remove('selected');
-                }
-            });
-            // 切换当前文件的选中状态
-            fileItem.classList.toggle('selected');
-        });
-
-        // 双击事件 - 打开文件
-        fileItem.addEventListener('dblclick', (e) => {
-            e.stopPropagation();
-            console.log(`双击文件项: ${filePath}`);
-            shell.openPath(filePath);
-            debouncedUpdateRecentTab();
-        });
-
-        // 键盘事件 - 空格预览
-        fileItem.setAttribute('tabindex', '0'); // 使元素可以接收键盘焦点
-        fileItem.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
-                e.preventDefault();
-                console.log(`按下空格键预览文件: ${filePath}`);
-                showFullscreenPreview(filePath);
-            }
-        });
-
-        // 鼠标悬停事件 - 更新状态栏
-        fileItem.addEventListener('mouseover', () => {
-            console.log(`鼠标悬停在文件项上: ${filePath}`);
-            updateStatusBar(filePath);
-        });
-
-        // 鼠标离开事件 - 恢复状态栏
-        fileItem.addEventListener('mouseout', () => {
-            console.log(`鼠标离开文件项: ${filePath}`);
-            updateStatusBar(currentPath);
-        });
-    });
-}
 
 // 添加新函数：格式化文件大小
 function formatFileSize(bytes) {
@@ -1080,13 +1027,7 @@ function formatTime(date) {
     return date.toLocaleTimeString('zh-CN', options);
 }
 
-// 修改 updateQuickAccess 函数，使其同时更新"最近"标签
-function updateQuickAccess() {
-    // ... 现有的代码 ...
 
-    // 在更新快速访问后，也更新"最近"标签
-    updateRecentTab();
-}
 
 // 在应用程序关闭前保存当前路径和选项卡状态
 window.addEventListener('beforeunload', () => {
@@ -1463,7 +1404,7 @@ fileListContainer.addEventListener('mousedown', handleMouseDown);
 fileListContainer.addEventListener('mousemove', handleMouseMove);
 fileListContainer.addEventListener('mouseup', handleMouseUp);
 
-// 创建选择框
+// 创建选择��
 function createSelectionBox(x, y) {
     selectionBox = document.createElement('div');
     selectionBox.className = 'selection-box';
@@ -1880,7 +1821,7 @@ function createFileItem(file, dirPath) {
     fileItem.appendChild(icon);
     fileItem.appendChild(name);
 
-    // 添加拖拽事件监听器
+    // 加拖拽事件监听器
     fileItem.setAttribute('draggable', true); // 使元素可拖拽
     fileItem.addEventListener('dragstart', (e) => {
         e.preventDefault();
@@ -2998,7 +2939,7 @@ function showDrives() {
     // 获取实际的下载文件夹路径
     if (process.platform === 'win32') {
         try {
-            // 使用注册表获取下载文件夹径
+            // 使用注册表获取下载文件夹路径
             const result = execSync('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders" /v "{374DE290-123F-4565-9164-39C4925E467B}"', { encoding: 'buffer' });
             const match = iconv.decode(result, 'cp936').match(/REG_SZ\s+(.+)/);
             if (match) {
@@ -3020,12 +2961,17 @@ function showDrives() {
     // 添加下载文件夹
     drives.push({ letter: 'Downloads', path: downloadsPath, name: '下载', icon: '<i class="fas fa-download"></i>' });
 
+    // 磁盘
     if (process.platform === 'win32') {
+
+        // 获取本地驱动器
         for (let i = 65; i <= 90; i++) {
-            const driveLetter = String.fromCharCode(i);
+            const driveLetter = String.fromCharCode(i);// 获取驱动器字母
+            // 检查驱动器是否存在
             if (fs.existsSync(`${driveLetter}:`)) {
                 const drivePath = `${driveLetter}:\\`;
                 let volumeName = '';
+                let isNetworkDrive = false; // 新增变量判断是否为网络驱动器
                 try {
                     const volOutputBuffer = execSync(`vol ${driveLetter}:`);
                     const volOutput = iconv.decode(volOutputBuffer, 'gbk');
@@ -3037,9 +2983,37 @@ function showDrives() {
                 } catch (error) {
                     console.error(`无法获取驱动器 ${driveLetter}: 的卷标名称`, error);
                 }
-                drives.push({ letter: driveLetter, path: drivePath, name: volumeName, icon: driveIcon });
+
+                // 检查是否为网络驱动器
+                try {
+                    const stats = fs.statSync(drivePath);
+                    isNetworkDrive = !stats.isDirectory(); // 如果不是目录，则可能是网络驱动器
+                } catch (error) {
+                    console.error(`无法获取驱动器 ${driveLetter}: 的信息`, error);
+                }
+
+                drives.push({ letter: driveLetter, path: drivePath, name: volumeName, icon: driveIcon, isNetwork: isNetworkDrive });
             }
         }
+
+        // 获取映射驱动器
+        try {
+            const output = execSync('net use').toString();
+            const lines = output.split('\n');
+            lines.forEach(line => {
+                const match = line.match(/([A-Z]:)\s+([^\s]+)/);
+                if (match) {
+                    const driveLetter = match[1];
+                    const mappedPath = match[2];
+                    drives.push({ letter: driveLetter, path: mappedPath, type: 'mapped' });
+                }
+            });
+        } catch (error) {
+            console.error('获取映射驱动器时出错:', error);
+        }
+
+
+
     } else {
         drives.push({ letter: '/', path: '/', name: 'Root', icon: driveIcon });
     }
@@ -3053,7 +3027,7 @@ function showDrives() {
       ${drives.map(drive => `
         <div class="drive-item" data-path="${drive.path}">
           <span class="file-icon">${drive.icon}</span>
-          <span>${drive.name || 'Local Disk'} ${!['Desktop', 'Downloads'].includes(drive.letter) ? `(${drive.letter}:)` : ''}</span>
+          <span>${drive.name || 'Local Disk'} ${!['Desktop', 'Downloads'].includes(drive.letter) ? `(${drive.letter}:)` : ''} ${drive.isNetwork ? '(网络驱动器)' : ''}</span>
         </div>
       `).join('')}
     </div>
