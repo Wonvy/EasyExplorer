@@ -2690,7 +2690,7 @@ function openWithSeer(filePath, seerPath) {
         exec(`"${seerPath}" "${filePath}"`, (error) => {
             if (error) {
                 console.log('启动 Seer 失败:', error);
-                console.log('错误信息:', error.message); /
+                console.log('错误信息:', error.message); 
             }
         });
         return true; // 成功调用 Seer
