@@ -3,7 +3,7 @@ const fs = require('fs')
 const path = require('path')
 const { shell, ipcRenderer, clipboard } = require('electron')
 const os = require('os')
-const { execSync } = require('child_process')
+const { execSync, exec } = require('child_process')  // 修改这行，添加 exec
 const iconv = require('iconv-lite')
 const Sortable = require('sortablejs')
 const iconExtractor = require('icon-extractor');
@@ -178,7 +178,7 @@ function showCalendarView() {
         } else {
           // 如果不符合格式，使用创建时间
           const createDate = new Date(stats.birthtime);
-          // ��有当创建时间在当前月份时才使用
+          // 有当创建时间在当前月份时才使用
           if (createDate.getMonth() === currentCalendarMonth && 
               createDate.getFullYear() === currentCalendarYear) {
             day = createDate.getDate();
@@ -414,7 +414,7 @@ document.addEventListener('DOMContentLoaded', () => {
         activeTabButton.click();
     }
 
-    // 项目管理标签页���的事件监听器
+    // 项目管理标签页的事件监听器
     document.getElementById('custom-projects').addEventListener('click', () => {
         console.log('项目按钮被点击');
     });
@@ -2670,9 +2670,44 @@ document.addEventListener('wheel', (e) => {
 });
 
 
-// 显示全屏预览
+// 在文件-空格预览部分修改 showFullscreenPreview 函数
 function showFullscreenPreview(filePath) {
+    // 获取预览设置
+    const previewSettings = JSON.parse(localStorage.getItem('previewSettings') || '{}');
     const fileExt = path.extname(filePath).toLowerCase();
+
+    // 检查是否使用 Seer 预览
+    if (previewSettings.mode === 'seer') {
+        const seerPath = previewSettings.seerPath;
+        const fileTypes = previewSettings.fileTypes || [];
+
+        // 检查文件类型是否在 Seer 预览列表中
+        if (fileTypes.includes(fileExt.replace('.', ''))) {
+            // 使用 Seer 预览
+            if (seerPath && fs.existsSync(seerPath)) {
+                exec(`"${seerPath}" "${filePath}"`, (error) => {
+                    if (error) {
+                        console.error('启动 Seer 失败:', error);
+                        console.error('错误信息:', error.message); // 打印错误信息
+                        // showDefaultPreview(filePath, fileExt);
+                    }
+                });
+                return; // 结束函数执行
+            } else {
+                console.warn('Seer 路径无效，使用默认预览');
+            }
+        }
+    }
+
+    // 如果不使用 Seer 或文件类型不在列表中，使用默认预览
+    showDefaultPreview(filePath, fileExt);
+}
+
+
+
+
+// 添加默认预览函数
+function showDefaultPreview(filePath, fileExt) {
     if (['.jpg', '.jpeg', '.png', '.gif', '.svg'].includes(fileExt)) {
         review_content_fullscreen.innerHTML = `<img src="file://${filePath}" alt="预览" style="max-width: 100%; max-height: 100%; object-fit: contain;">`;
     } else if (fileExt === '.pdf') {
@@ -2693,7 +2728,7 @@ function showFullscreenPreview(filePath) {
         // 处理文本文件
         fs.readFile(filePath, 'utf8', (err, data) => {
             if (err) {
-                review_content_fullscreen.innerHTML = `<div class="preview-content"><p>无法取文件: ${err.message}</p></div>`;
+                review_content_fullscreen.innerHTML = `<div class="preview-content"><p>无法读取文件: ${err.message}</p></div>`;
             } else {
                 review_content_fullscreen.innerHTML = `<div class="preview-content"><pre>${data}</pre></div>`;
             }
@@ -2723,14 +2758,14 @@ function showFullscreenPreview(filePath) {
             document.fonts.add(fontFace);
             // 创建字体预览内容
             review_content_fullscreen.innerHTML = `
-            <div style="font-family: '${fontName}'; text-align: center;">
-                <h1 style="font-size: 48px;">${fontName}</h1>
-                <h2 style="font-size: 36px;">Font Preview</h2>
+                <div style="font-family: '${fontName}'; text-align: center;">
+                    <h1 style="font-size: 48px;">${fontName}</h1>
+                    <h2 style="font-size: 36px;">Font Preview</h2>
                 <p style="font-size: 24px;">中文测试: 你好，世</p>
-                <p style="font-size: 24px;">English Test: Hello, World!</p>
-                <p style="font-size: 24px;">数字测试: 1234567890</p>
-            </div>
-        `;
+                    <p style="font-size: 24px;">English Test: Hello, World!</p>
+                    <p style="font-size: 24px;">数字测试: 1234567890</p>
+                </div>
+            `;
         }).catch(err => {
             // 调试信息：打印错误信息
             console.error('字体加载失败:', err);
