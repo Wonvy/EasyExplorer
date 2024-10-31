@@ -263,6 +263,13 @@ function showCalendarView() {
       // 添加选中状态到当前文件夹
       item.classList.add('selected');
     });
+
+
+    item.addEventListener('mouseover', (e) => {
+      pathElement.value = item.getAttribute('data-path'); // 更新路径输入框的值 
+      lastHoveredPath = item.getAttribute('data-path'); // 更新最后划过的路径
+    });
+
   });
 
   // 修改事件监听器的添加方式
@@ -686,6 +693,7 @@ function loadAnnualData(yearPath) {
                     item.addEventListener('mouseenter', () => {
                         // 更新地址栏和状态栏
                         pathElement.value = filePath;
+                        lastHoveredPath = filePath; // 更新最后划过的路径
                         updateStatusBar(filePath);
                         
                         // 如果不是当前高亮的项目，设置延迟预览
@@ -839,9 +847,9 @@ function handlePreviewContentDblClick(e) {
 function handlePreviewContentMouseOver(e) {
     const fileItem = e.target.closest('.file-item');
     if (!fileItem) return;
-
+    
     const filePath = fileItem.getAttribute('data-path');
-    console.log('鼠标悬停:', filePath);
+    lastHoveredPath = filePath; // 更新最后划过的路径
     updateStatusBar(filePath);
 }
 
@@ -973,6 +981,7 @@ function updateRecentTab() {
 
                     // 添加鼠标悬停事件
                     timelineItem.addEventListener('mouseover', () => {
+                        lastHoveredPath = item.path; // 更新最后划过的路径
                         updateStatusBar(item.path);
                         updatePreview({
                             name: item.name,
@@ -1318,6 +1327,7 @@ function createTimelineItems(fileDetails) {
             // 添加鼠标移入事件监听器
             timelineItem.addEventListener('mouseover', () => {
                 updateStatusBar(path.join(currentPath, file.name));
+                lastHoveredPath = path.join(currentPath, file.name); // 更新最后划过的路径
                 updatePreview(file);
             });
 
@@ -1563,6 +1573,7 @@ function updateFavorites() {
 
         item.addEventListener('mouseover', () => {
             const favPath = item.getAttribute('data-path');
+            lastHoveredPath = favPath; // 更新最后划过的路径
             updateStatusBar(favPath);
         });
 
@@ -2513,7 +2524,12 @@ document.addEventListener('keydown', (e) => {
     if (e.code === 'Space') {
         e.preventDefault(); // 防止页面滚动
         if (lastHoveredPath && fs.existsSync(lastHoveredPath)) {
+            if (isPreviewOpen) {
+                hideFullscreenPreview(); // 果预览已经打开，则关闭预览
+                isPreviewOpen = false; // 更新状态
+            }
             showFullscreenPreview(lastHoveredPath); // 如果预览未打开，则打开预览
+
             // if (isPreviewOpen) {
             //     hideFullscreenPreview(); // 果预览已经打开，则关闭预览
             //     isPreviewOpen = false; // 更新状态
@@ -2631,6 +2647,7 @@ function openWithSeer(filePath, seerPath) {
 
 // 添加默认预览函数
 function showDefaultPreview(filePath, fileExt) {
+    isPreviewOpen = true;
     if (['.jpg', '.jpeg', '.png', '.gif', '.svg'].includes(fileExt)) {
         review_content_fullscreen.innerHTML = `<img src="file://${filePath}" alt="预览" style="max-width: 100%; max-height: 100%; object-fit: contain;">`;
     } else if (fileExt === '.pdf') {
