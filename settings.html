@@ -76,11 +76,18 @@
             </div>
             <div id="projects" class="tab-content">
                 <h2>项目设置</h2>
-                <div class="project-years">
-                    <!-- 现有的年份项会通过 JavaScript 动态生成 -->
-                </div>
-                <div class="add-year-container">
-                    <button id="add-year-btn">添加新年份</button>
+                <div class="project-years-container">
+                    <div class="project-years-header">
+                        <span class="year-column">年份</span>
+                        <span class="path-column">项目路径</span>
+                        <span class="action-column">操作</span>
+                    </div>
+                    <div class="project-years-list">
+                        <!-- 年份列表会通过 JavaScript 动态生成 -->
+                    </div>
+                    <div class="add-year-container">
+                        <button id="add-year-btn">添加新年份</button>
+                    </div>
                 </div>
             </div>
             <div id="advanced" class="tab-content">

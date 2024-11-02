@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             try {
                 const result = await ipcRenderer.invoke('select-folder');
-                console.log('选择文件夹结果:', result);
+                console.log('��择文件夹结果:', result);
                 
                 if (result.filePaths && result.filePaths[0]) {
                     const selectedPath = result.filePaths[0];
@@ -205,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 删除文件类型按钮点击事件
+    // 删除文件类型按��点击事件
     fileTypesList.addEventListener('click', (e) => {
         if (e.target.classList.contains('delete-type')) {
             e.target.closest('tr').remove();
@@ -235,25 +235,23 @@ function initProjectYears() {
 
 // 更新显示的路径
 function updateProjectPath(year, path) {
-    // 查找包含指定年份的 project-year 元素
-    const yearElements = document.querySelectorAll('.project-year');
-    const yearElement = Array.from(yearElements).find(el =>
-        el.querySelector('.year').textContent === year
+    const yearElements = document.querySelectorAll('.project-year-item');
+    const yearElement = Array.from(yearElements).find(el => 
+        el.querySelector('.year-column').textContent === year
     );
 
     if (yearElement) {
         const pathDisplay = yearElement.querySelector('.path-display');
         pathDisplay.textContent = path || '未设置';
         pathDisplay.title = path || '未设置';
-
-        // 如果有路径，添加点击事件和样式
+        
         if (path) {
             pathDisplay.style.cursor = 'pointer';
             pathDisplay.classList.add('has-path');
-
+            
             // 移除旧的事件监听器（如果存在）
             pathDisplay.removeEventListener('click', pathDisplay.clickHandler);
-
+            
             // 添加新的事件监听器
             pathDisplay.clickHandler = () => shell.openPath(path);
             pathDisplay.addEventListener('click', pathDisplay.clickHandler);
@@ -267,20 +265,22 @@ function updateProjectPath(year, path) {
 
 // 更新项目年份列表显示
 function updateProjectYearsList() {
-    const container = document.querySelector('.project-years');
+    const container = document.querySelector('.project-years-list');
     container.innerHTML = projectYears
         .sort((a, b) => a - b) // 按年份排序
         .map(year => `
-            <div class="project-year">
-                <div class="year-header">
-                    <span class="year">${year}</span>
-                    <button class="delete-year-btn" data-year="${year}">
-                        <i class="fas fa-times"></i>
-                    </button>
+            <div class="project-year-item">
+                <span class="year-column">${year}</span>
+                <div class="path-column">
+                    <span class="path-display" title="未设置">未设置</span>
                 </div>
-                <div class="project-path">
-                    <span class="path-display">未设置</span>
-                    <button class="select-folder-btn">选择文件夹</button>
+                <div class="action-column">
+                    <button class="select-folder-btn" title="选择文件夹">
+                        <i class="fas fa-folder-open"></i>
+                    </button>
+                    <button class="delete-year-btn" data-year="${year}" title="删除年份">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </div>
             </div>
         `).join('');
@@ -304,8 +304,8 @@ function updateProjectYearsList() {
     // 重新绑定选择文件夹按钮事件
     document.querySelectorAll('.select-folder-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
-            const yearElement = btn.closest('.project-year');
-            const year = yearElement.querySelector('.year').textContent;
+            const yearElement = btn.closest('.project-year-item');
+            const year = yearElement.querySelector('.year-column').textContent;
             
             try {
                 const result = await ipcRenderer.invoke('select-folder');
