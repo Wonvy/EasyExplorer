@@ -412,7 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateRecentTab();
             }
 
-            // 保存当前活动的标签
+            // ��当前活动标��
             activeTab = tabName;
             localStorage.setItem('activeTab', activeTab);
         });
@@ -1794,7 +1794,7 @@ function updateFileList(dirPath, isQuickAccess = false) {
             })
             .catch(error => {
                 console.error('获取文件详情时出错:', error);
-                // fileListElement.innerHTML = `<div class="error-message">获取文件详情时出错: ${error.message}</div>`;
+                // fileListElement.innerHTML = `<div class="error-message">获取文件详情���出错: ${error.message}</div>`;
             });
     });
 
@@ -2295,7 +2295,7 @@ function initPreviewResize(e) {
     document.addEventListener('mouseup', stopPreviewResize);
 }
 
-// 调整预览面板大小
+// 整预览面板大小
 function resizePreview(e) {
     if (!isPreviewResizing) return;
     lastPreviewX = e.clientX;
@@ -2765,7 +2765,7 @@ function showDefaultPreview(filePath, fileExt) {
             let result = occt.ReadStepFile(fileContent);
             console.log('result', result);
         }).catch(err => {
-            console.error('加载STEP文件时出错:', err);
+            console.error('加载STEP文件���出错:', err);
             loadingDiv.remove();
             container.innerHTML = `
                 <div class="error-message">
@@ -3193,4 +3193,162 @@ document.addEventListener('click', (e) => {
     const day = parseInt(dayElement.getAttribute('data-date'));
     showCreateFolderDialog(currentCalendarYear, currentCalendarMonth + 1, day);
   }
+});
+
+// 在文件顶部添加新的变量
+let folderGroups = JSON.parse(localStorage.getItem('folderGroups')) || {};
+
+// 添加分组相关函数
+function showAddGroupDialog() {
+    const dialog = document.createElement('div');
+    dialog.className = 'folder-dialog';
+    dialog.innerHTML = `
+        <div class="dialog-header">新建分组</div>
+        <div class="dialog-name">
+            <div class="name-label">名称：</div>
+            <input type="text" class="dialog-input" placeholder="请输入分组名称">
+        </div>
+        <div class="dialog-buttons">
+            <button class="cancel">取消</button>
+            <button class="confirm">确定</button>
+        </div>
+    `;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'dialog-overlay';
+    
+    document.body.appendChild(overlay);
+    document.body.appendChild(dialog);
+
+    const input = dialog.querySelector('.dialog-input');
+    input.focus();
+
+    dialog.querySelector('.cancel').addEventListener('click', () => {
+        overlay.remove();
+        dialog.remove();
+    });
+
+    dialog.querySelector('.confirm').addEventListener('click', () => {
+        const groupName = input.value.trim();
+        if (groupName) {
+            createGroup(groupName);
+        }
+        overlay.remove();
+        dialog.remove();
+    });
+}
+
+function createGroup(groupName) {
+    folderGroups[groupName] = [];
+    localStorage.setItem('folderGroups', JSON.stringify(folderGroups));
+    updateFolderGroups();
+}
+
+function updateFolderGroups() {
+    const groupsList = document.getElementById('folder-groups-list');
+    groupsList.innerHTML = '';
+
+    Object.entries(folderGroups).forEach(([groupName, folders]) => {
+        const groupElement = document.createElement('div');
+        groupElement.className = 'folder-group';
+        groupElement.innerHTML = `
+            <div class="group-header">
+                <i class="fas fa-chevron-down"></i>
+                <span class="group-name">${groupName}</span>
+                <button class="add-to-group" title="添加当前文件夹到分组">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            <div class="group-content">
+                ${folders.map(folder => `
+                    <div class="group-folder" data-path="${folder.path}">
+                        <span class="file-icon">${folderIcon}</span>
+                        <span class="folder-name">${folder.name}</span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+
+        // 添加折叠/展开功能
+        const header = groupElement.querySelector('.group-header');
+        const content = groupElement.querySelector('.group-content');
+        header.addEventListener('click', (e) => {
+            if (!e.target.closest('.add-to-group')) {
+                header.classList.toggle('collapsed');
+                content.style.display = content.style.display === 'none' ? 'block' : 'none';
+            }
+        });
+
+        // 添加当前文件夹到分组
+        const addButton = groupElement.querySelector('.add-to-group');
+        addButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (currentPath) {
+                addToGroup(groupName, {
+                    name: path.basename(currentPath),
+                    path: currentPath
+                });
+            }
+        });
+
+        // 为分组中的文件夹添加事件
+        groupElement.querySelectorAll('.group-folder').forEach(folder => {
+            folder.addEventListener('click', () => {
+                const folderPath = folder.getAttribute('data-path');
+                navigateTo(folderPath);
+            });
+
+            // 添加右键菜单
+            folder.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                showGroupFolderContextMenu(e, groupName, folder.getAttribute('data-path'));
+            });
+        });
+
+        groupsList.appendChild(groupElement);
+    });
+}
+
+function addToGroup(groupName, folder) {
+    if (!folderGroups[groupName].some(f => f.path === folder.path)) {
+        folderGroups[groupName].push(folder);
+        localStorage.setItem('folderGroups', JSON.stringify(folderGroups));
+        updateFolderGroups();
+    }
+}
+
+function removeFromGroup(groupName, folderPath) {
+    folderGroups[groupName] = folderGroups[groupName].filter(f => f.path !== folderPath);
+    localStorage.setItem('folderGroups', JSON.stringify(folderGroups));
+    updateFolderGroups();
+}
+
+function showGroupFolderContextMenu(e, groupName, folderPath) {
+    // 修改为与主进程期望的格式一致
+    ipcRenderer.send('show-context-menu', {
+        isDirectory: true,
+        path: folderPath,
+        hasSelection: true,
+        template: [
+            {
+                label: '移出分组',
+                click: () => removeFromGroup(groupName, folderPath)
+            },
+            {
+                label: '在资源管理器中打开',
+                click: () => shell.showItemInFolder(folderPath)
+            }
+        ]
+    });
+}
+
+// 在 DOMContentLoaded 事件中添加
+document.addEventListener('DOMContentLoaded', () => {
+    // 现有代码...
+
+    // 添加新分组按钮事件
+    document.getElementById('add-group-btn').addEventListener('click', showAddGroupDialog);
+    
+    // 初始化分组显示
+    updateFolderGroups();
 });

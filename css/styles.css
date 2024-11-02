@@ -99,9 +99,6 @@ button:disabled {
 #file-list-container.list-view .file-list-list .file-item {
   transition: background-color 0.2s;
 }
-#file-list-container.list-view .file-list-list .file-item:hover {
-  background-color: rgba(240, 240, 240, 0.1);
-}
 #file-list-container.list-view .file-list-list .file-item > * {
   display: table-cell;
   padding: 8px 12px;
@@ -146,9 +143,6 @@ button:disabled {
   text-align: center;
   transition: background-color 0.2s;
   border-radius: 8px;
-}
-#file-list-container.icon-view #file-list .file-item:hover {
-  background-color: rgba(240, 240, 240, 0.1);
 }
 #file-list-container.icon-view #file-list .file-item video {
   border-radius: 5px;
@@ -267,9 +261,6 @@ button:disabled {
   justify-content: center;
   transition: background-color 0.15s;
 }
-#file-list-container.group-view #file-list .file-list-group .file-list-group-content .file-item:hover {
-  background-color: rgba(240, 240, 240, 0.1);
-}
 #file-list-container.group-view #file-list .file-list-group .file-list-group-content .file-item .file-icon {
   width: 25px;
 }
@@ -295,9 +286,6 @@ button:disabled {
   padding: 5px;
   cursor: pointer;
   transition: background-color 0.2s;
-}
-#file-list-container.group-view #file-list .folder-item:hover {
-  background-color: rgba(240, 240, 240, 0.1);
 }
 #file-list-container.group-view #file-list .folder-icon {
   width: 24px;
@@ -373,7 +361,7 @@ button:disabled {
   height: 100%;
   overflow-y: hidden;
   overflow-x: auto;
-  padding: 0 20px 20px 20px;
+  padding: 0 20px 20px 19px;
   margin-top: -20px;
   scroll-behavior: smooth;
 }
@@ -873,6 +861,126 @@ body.dark-theme .folder-dialog {
   --text-color: #e0e0e0;
   --bg-secondary: #1e1e1e;
   --bg-hover: #3a3a3a;
+}
+
+#folder-groups {
+  margin-top: 20px;
+  padding: 0 10px;
+}
+#folder-groups .folder-groups-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  margin-bottom: 15px;
+  background: rgba(255, 196, 70, 0.1);
+  border-radius: 8px;
+}
+#folder-groups .folder-groups-header button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-color);
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+#folder-groups .folder-groups-header button:hover {
+  background: rgba(255, 196, 70, 0.2);
+  color: #FFC446;
+}
+#folder-groups .folder-group {
+  margin: 0 0 12px 0;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+#folder-groups .folder-group .group-header {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.2s ease;
+}
+#folder-groups .folder-group .group-header:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+#folder-groups .folder-group .group-header i {
+  margin-right: 8px;
+  transition: transform 0.3s;
+  color: #FFC446;
+  opacity: 0.7;
+}
+#folder-groups .folder-group .group-header.collapsed {
+  border-bottom: none;
+}
+#folder-groups .folder-group .group-header.collapsed i {
+  transform: rotate(-90deg);
+}
+#folder-groups .folder-group .group-header .group-name {
+  flex-grow: 1;
+  font-size: 13px;
+}
+#folder-groups .folder-group .group-header .add-to-group {
+  opacity: 0;
+  transition: all 0.2s ease;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+#folder-groups .folder-group .group-header .add-to-group:hover {
+  background: rgba(255, 196, 70, 0.2);
+  color: #FFC446;
+}
+#folder-groups .folder-group .group-header:hover .add-to-group {
+  opacity: 1;
+}
+#folder-groups .folder-group .group-content {
+  padding: 8px 0 8px 25px;
+}
+#folder-groups .folder-group .group-content .group-folder {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  margin: 2px 8px 2px 0;
+  transition: all 0.2s ease;
+}
+#folder-groups .folder-group .group-content .group-folder:hover {
+  background: rgba(255, 196, 70, 0.1);
+}
+#folder-groups .folder-group .group-content .group-folder .file-icon {
+  margin-right: 8px;
+  opacity: 0.7;
+}
+#folder-groups .folder-group .group-content .group-folder .folder-name {
+  flex-grow: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12px;
+}
+
+body.dark-theme #folder-groups .folder-group {
+  background: rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+body.dark-theme #folder-groups .folder-group .group-header {
+  background: rgba(0, 0, 0, 0.1);
+}
+body.dark-theme #folder-groups .folder-group .group-header:hover {
+  background: rgba(255, 255, 255, 0.01);
 }
 
 #resizer {
@@ -1532,8 +1640,10 @@ html {
   width: 100%;
   padding: 6px;
   margin-bottom: 10px;
+  border: 0px;
   border-radius: 3px;
 }
+
 .sidebar-section {
   margin-bottom: 20px;
 }
@@ -2147,39 +2257,6 @@ html {
 }
 #project-management-tab .custom-item .file-icon {
   margin-right: 10px;
-}
-
-.model-controls {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 10px;
-  background: rgba(0, 0, 0, 0.5);
-  padding: 10px;
-  border-radius: 5px;
-}
-
-.model-controls button {
-  padding: 5px 10px;
-  background: #fff;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-}
-
-.model-controls button:hover {
-  background: #eee;
-}
-
-.error-message {
-  padding: 20px;
-  color: #721c24;
-  background-color: #f8d7da;
-  border: 1px solid #f5c6cb;
-  border-radius: 4px;
-  text-align: center;
 }
 
 /*# sourceMappingURL=styles.css.map */

@@ -40,54 +40,55 @@ function createWindow () {
     const template = [];
 
     if (params.hasSelection) {
-      // 只有在选中文件或文件夹时才添加这些选项
-      template.push(
-        {
-          label: '在资源管理器中打开',
-          click: () => event.reply('menu-item-clicked', 'open-in-explorer', params.path)
-        },
-        {
-          label: '复制',
-          click: () => event.reply('menu-item-clicked', 'copy', params.path)
-        },
-        {
-          label: '打开方式',
-          click: () => {
-            ipcMain.emit('open-file-dialog', event, params.path); // 调用打开方式对话框
-          }
-        }
-      );
-
-      if (params.isDirectory) {
-        if (params.isFavorite) {
-          template.push({
-            label: '从收藏夹中移除',
-            click: () => event.reply('menu-item-clicked', 'remove-from-favorites', params.path)
-          });
+        // 如果有自定义模板，使用自定义模板
+        if (params.template) {
+            template.push(...params.template.map(item => ({
+                label: item.label,
+                click: () => event.reply('menu-item-clicked', item.label === '移出分组' ? 'remove-from-group' : 'open-in-explorer', 
+                    `groupName=${encodeURIComponent(params.groupName)}&path=${encodeURIComponent(params.path)}`)
+            })));
         } else {
-          template.push({
-            label: '添加到收藏夹',
-            click: () => event.reply('menu-item-clicked', 'add-to-favorites', params.path)
-          });
+            // 使用默认模板
+            template.push(
+                {
+                    label: '在资源管理器中打开',
+                    click: () => event.reply('menu-item-clicked', 'open-in-explorer', params.path)
+                },
+                {
+                    label: '复制',
+                    click: () => event.reply('menu-item-clicked', 'copy', params.path)
+                },
+                {
+                    label: '打开方式',
+                    click: () => {
+                        ipcMain.emit('open-file-dialog', event, params.path);
+                    }
+                }
+            );
+
+            if (params.isDirectory) {
+                if (params.isFavorite) {
+                    template.push({
+                        label: '从收藏夹中移除',
+                        click: () => event.reply('menu-item-clicked', 'remove-from-favorites', params.path)
+                    });
+                } else {
+                    template.push({
+                        label: '添加到收藏夹',
+                        click: () => event.reply('menu-item-clicked', 'add-to-favorites', params.path)
+                    });
+                }
+            }
         }
-      }
     }
 
     // 粘贴选项
     template.push(
-      {
-        label: '粘贴',
-        click: () => event.reply('menu-item-clicked', 'paste', params.path)
-      }
+        {
+            label: '粘贴',
+            click: () => event.reply('menu-item-clicked', 'paste', params.path)
+        }
     );
-
-    // 状态栏
-    if (params.isCurrentDir) {
-      // 如果是当前目录（空白处右键），修改第一个选项的标签
-      if (template.length > 0 && template[0].label === '在资源管理器中打开') {
-        template[0].label = '在资源管理器中打开当前文件夹';
-      }
-    }
 
     const menu = Menu.buildFromTemplate(template);
     menu.popup(BrowserWindow.fromWebContents(event.sender));
