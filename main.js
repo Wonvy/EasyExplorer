@@ -188,6 +188,15 @@ app.on('activate', () => {
   }
 })
 
+// 添加文件选择对话框的 IPC 处理
+ipcMain.handle('select-file', async (event, options) => {
+  return dialog.showOpenDialog({
+    properties: ['openFile'],
+    ...options
+  });
+});
+
+
 // 获取文件图标
 ipcMain.handle('get-file-icon', async (event, filePath) => {
   try {
