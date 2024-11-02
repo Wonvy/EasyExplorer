@@ -1,5 +1,7 @@
 const { ipcRenderer, shell } = require('electron');
 
+let projectYears = [2023, 2024, 2025]; // 初始年份列表
+
 document.addEventListener('DOMContentLoaded', () => {
     const sidebar = document.getElementById('settings-sidebar');
     const content = document.getElementById('settings-content');
@@ -47,36 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 加载保存的项目路径
     const projectPaths = JSON.parse(localStorage.getItem('projectPaths') || '{}');
     
-    // 更新显示的路径
-    function updateProjectPath(year, path) {
-        // 查找包含指定年份的 project-year 元素
-        const yearElements = document.querySelectorAll('.project-year');
-        const yearElement = Array.from(yearElements).find(el => 
-            el.querySelector('.year').textContent === year
-        );
 
-        if (yearElement) {
-            const pathDisplay = yearElement.querySelector('.path-display');
-            pathDisplay.textContent = path || '未设置';
-            pathDisplay.title = path || '未设置';
-            
-            // 如果有路径，添加点击事件和样式
-            if (path) {
-                pathDisplay.style.cursor = 'pointer';
-                pathDisplay.classList.add('has-path');
-                
-                // 移除旧的事件监听器（如果存在）
-                pathDisplay.removeEventListener('click', pathDisplay.clickHandler);
-                
-                // 添加新的事件监听器
-                pathDisplay.clickHandler = () => shell.openPath(path);
-                pathDisplay.addEventListener('click', pathDisplay.clickHandler);
-            } else {
-                pathDisplay.style.cursor = 'default';
-                pathDisplay.classList.remove('has-path');
-            }
-        }
-    }
 
     // 初始化显示保存的路径
     document.querySelectorAll('.project-year').forEach(yearDiv => {
@@ -242,4 +215,201 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 初始加载设置
     loadPreviewSettings();
+
+    // 初始化项目年份列表
+    initProjectYears();
+
+    // 添加新年份按钮点击事件
+    document.getElementById('add-year-btn').addEventListener('click', showAddYearDialog);
 });
+
+// 初始化项目年份列表
+function initProjectYears() {
+    // 从 localStorage 加载保存的年份列表
+    const savedYears = JSON.parse(localStorage.getItem('projectYears') || '[]');
+    projectYears = savedYears.length > 0 ? savedYears : [2023, 2024, 2025];
+    
+    // 更新显示
+    updateProjectYearsList();
+}
+
+// 更新显示的路径
+function updateProjectPath(year, path) {
+    // 查找包含指定年份的 project-year 元素
+    const yearElements = document.querySelectorAll('.project-year');
+    const yearElement = Array.from(yearElements).find(el =>
+        el.querySelector('.year').textContent === year
+    );
+
+    if (yearElement) {
+        const pathDisplay = yearElement.querySelector('.path-display');
+        pathDisplay.textContent = path || '未设置';
+        pathDisplay.title = path || '未设置';
+
+        // 如果有路径，添加点击事件和样式
+        if (path) {
+            pathDisplay.style.cursor = 'pointer';
+            pathDisplay.classList.add('has-path');
+
+            // 移除旧的事件监听器（如果存在）
+            pathDisplay.removeEventListener('click', pathDisplay.clickHandler);
+
+            // 添加新的事件监听器
+            pathDisplay.clickHandler = () => shell.openPath(path);
+            pathDisplay.addEventListener('click', pathDisplay.clickHandler);
+        } else {
+            pathDisplay.style.cursor = 'default';
+            pathDisplay.classList.remove('has-path');
+        }
+    }
+}
+
+
+// 更新项目年份列表显示
+function updateProjectYearsList() {
+    const container = document.querySelector('.project-years');
+    container.innerHTML = projectYears
+        .sort((a, b) => a - b) // 按年份排序
+        .map(year => `
+            <div class="project-year">
+                <div class="year-header">
+                    <span class="year">${year}</span>
+                    <button class="delete-year-btn" data-year="${year}">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="project-path">
+                    <span class="path-display">未设置</span>
+                    <button class="select-folder-btn">选择文件夹</button>
+                </div>
+            </div>
+        `).join('');
+
+    // 重新加载已保存的路径
+    const projectPaths = JSON.parse(localStorage.getItem('projectPaths') || '{}');
+    projectYears.forEach(year => {
+        if (projectPaths[year]) {
+            updateProjectPath(year.toString(), projectPaths[year]);
+        }
+    });
+
+    // 添加删除年份按钮的事件监听
+    document.querySelectorAll('.delete-year-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const year = parseInt(e.currentTarget.getAttribute('data-year'));
+            deleteProjectYear(year);
+        });
+    });
+
+    // 重新绑定选择文件夹按钮事件
+    document.querySelectorAll('.select-folder-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const yearElement = btn.closest('.project-year');
+            const year = yearElement.querySelector('.year').textContent;
+            
+            try {
+                const result = await ipcRenderer.invoke('select-folder');
+                if (result.filePaths && result.filePaths[0]) {
+                    updateProjectPath(year, result.filePaths[0]);
+                    
+                    // 保存到 localStorage
+                    const projectPaths = JSON.parse(localStorage.getItem('projectPaths') || '{}');
+                    projectPaths[year] = result.filePaths[0];
+                    localStorage.setItem('projectPaths', JSON.stringify(projectPaths));
+                }
+            } catch (error) {
+                console.error('选择文件夹时出错:', error);
+            }
+        });
+    });
+}
+
+// 显示添加年份对话框
+function showAddYearDialog() {
+    const dialog = document.createElement('div');
+    dialog.className = 'year-dialog';
+    
+    const overlay = document.createElement('div');
+    overlay.className = 'dialog-overlay';
+    
+    dialog.innerHTML = `
+        <div class="dialog-header">添加新年份</div>
+        <div class="dialog-content">
+            <input type="number" id="new-year-input" min="1900" max="9999" placeholder="请输入年份">
+        </div>
+        <div class="dialog-buttons">
+            <button class="cancel">取消</button>
+            <button class="confirm">确定</button>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    document.body.appendChild(dialog);
+    
+    const input = dialog.querySelector('#new-year-input');
+    input.value = new Date().getFullYear() + 1; // 默认显示下一年
+    input.focus();
+    
+    // 处理按钮点击
+    dialog.querySelector('.cancel').addEventListener('click', () => {
+        overlay.remove();
+        dialog.remove();
+    });
+    
+    dialog.querySelector('.confirm').addEventListener('click', () => {
+        const year = parseInt(input.value);
+        if (isValidYear(year)) {
+            addProjectYear(year);
+            overlay.remove();
+            dialog.remove();
+        } else {
+            alert('请输入有效的年份（1900-9999）');
+        }
+    });
+    
+    // 处理回车键
+    input.addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') {
+            const year = parseInt(input.value);
+            if (isValidYear(year)) {
+                addProjectYear(year);
+                overlay.remove();
+                dialog.remove();
+            } else {
+                alert('请输入有效的年份（1900-9999）');
+            }
+        }
+    });
+}
+
+// 验证年份是否有效
+function isValidYear(year) {
+    return !isNaN(year) && year >= 1900 && year <= 9999 && !projectYears.includes(year);
+}
+
+// 添加新年份
+function addProjectYear(year) {
+    if (!projectYears.includes(year)) {
+        projectYears.push(year);
+        localStorage.setItem('projectYears', JSON.stringify(projectYears));
+        updateProjectYearsList();
+    }
+}
+
+// 删除年份
+function deleteProjectYear(year) {
+    if (confirm(`确定要删除 ${year} 年的项目设置吗？`)) {
+        projectYears = projectYears.filter(y => y !== year);
+        
+        // 同时删除该年份的路径设置
+        const projectPaths = JSON.parse(localStorage.getItem('projectPaths') || '{}');
+        delete projectPaths[year];
+        
+        // 保存更新后的设置
+        localStorage.setItem('projectYears', JSON.stringify(projectYears));
+        localStorage.setItem('projectPaths', JSON.stringify(projectPaths));
+        
+        // 更新显示
+        updateProjectYearsList();
+    }
+}
