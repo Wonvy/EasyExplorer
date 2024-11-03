@@ -599,6 +599,8 @@ html
 
       .file-name
         flex-grow: 1
+        color: #d7d7d7
+        font-size: 12px
         white-space: nowrap
         overflow: hidden
         text-overflow: ellipsis
@@ -642,6 +644,7 @@ html
   align-items: center
 
   button
+    position: relative
     background: none
     border: none
     font-size: 16px
@@ -651,12 +654,15 @@ html
     border-radius: 4px
 
     &#today-button
-      background-color: #007bff
+      background-color: transparent
+      border: 1px solid #fff
       color: white
+      transition: all 0.3s ease
       &:hover
-        background-color: #0056b3
+        color: #ffc446
+        background-color: #ffc446
 
-  position: relative
+    
   
   &::after
     content: ""
@@ -694,6 +700,7 @@ html
       border-radius: 8px
       min-height: 100px
       position: relative
+      overflow: hidden
       transition: background-color 0.3s ease
       &:hover
         background-color: rgba(0, 0, 0, 0.5)
@@ -706,8 +713,10 @@ html
 
       .day-number
         position: absolute
-        top: 5px
-        left: 5px
+        opacity: 0.03
+        font-size: 99px
+        bottom: -41px
+        right: 5px
         font-weight: bold
 
       .day-content
@@ -717,9 +726,11 @@ html
         flex-direction: column
         align-items: flex-start
         overflow-y: auto
+        overflow-x: hidden
 
         .folder-item
           font-size: 14px
+          font-family: cursiv
           white-space: nowrap 
           overflow: hidden // 超出部分隐藏
           text-overflow: ellipsis // 显示省略号
@@ -777,7 +788,7 @@ html
     transition: background-color 0.2s
 
     &:hover
-      background-color: rgba(0, 0, 0, 0.05)
+      background-color: rgba(0, 0, 0, 1)
 
     .file-icon
       margin-right: 10px
