@@ -40,13 +40,27 @@ function createWindow () {
     const template = [];
 
     if (params.hasSelection) {
-        // 如果有自定义模板，使用自定义模板
         if (params.template) {
-            template.push(...params.template.map(item => ({
-                label: item.label,
-                click: () => event.reply('menu-item-clicked', item.label === '移出分组' ? 'remove-from-group' : 'open-in-explorer', 
-                    `groupName=${encodeURIComponent(params.groupName)}&path=${encodeURIComponent(params.path)}`)
-            })));
+            // 处理自定义模板
+            params.template.forEach(item => {
+                template.push({
+                    label: item.label,
+                    click: () => {
+                        if (item.label === '移出分组') {
+                            event.reply('menu-item-clicked', 'remove-from-group', {
+                                groupName: params.groupName,
+                                path: params.path
+                            });
+                        } else if (item.label === '在资源管理器中打开') {
+                            shell.showItemInFolder(params.path);
+                        } else if (item.label === '设置颜色') {
+                            event.reply('menu-item-clicked', 'set-color', {
+                                groupName: params.groupName
+                            });
+                        }
+                    }
+                });
+            });
         } else {
             // 使用默认模板
             template.push(
@@ -82,13 +96,13 @@ function createWindow () {
         }
     }
 
-    // 粘贴选项
-    template.push(
-        {
+    // 只在非自定义模板时添加粘贴选项
+    if (!params.template) {
+        template.push({
             label: '粘贴',
             click: () => event.reply('menu-item-clicked', 'paste', params.path)
-        }
-    );
+        });
+    }
 
     const menu = Menu.buildFromTemplate(template);
     menu.popup(BrowserWindow.fromWebContents(event.sender));
