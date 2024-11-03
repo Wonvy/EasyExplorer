@@ -893,7 +893,7 @@ function updateRecentTab() {
 
     fs.readdir(quickAccessPath, (err, files) => {
         if (err) {
-            console.error('法读取最近访问目录:', err);
+            console.error('无法读取最近访问目录:', err);
             recentTab.innerHTML = '<p>无法加载最近访问的项目</p>';
             return;
         }
@@ -919,7 +919,7 @@ function updateRecentTab() {
                                     name: path.basename(targetPath),
                                     parentDir: path.dirname(targetPath),
                                     isDirectory: stats.isDirectory(),
-                                    atime: stats.atime // 使用访问时间而不是修改间
+                                    stats: stats
                                 });
                             }
                         });
@@ -927,19 +927,10 @@ function updateRecentTab() {
                 });
             })))
             .then(recentItems => {
-                recentItems = recentItems.filter(item => item !== null && !item.isDirectory);
+                recentItems = recentItems.filter(item => item !== null);
                 
-                // 去除重复项，只保留最近的一条
-                const uniqueItems = {};
-                recentItems.forEach(item => {
-                    if (!uniqueItems[item.path] || item.atime > uniqueItems[item.path].atime) {
-                        uniqueItems[item.path] = item;
-                    }
-                });
-                recentItems = Object.values(uniqueItems);
-
                 // 按访问时间排序，最新的排在前面
-                recentItems.sort((a, b) => b.atime - a.atime);
+                recentItems.sort((a, b) => b.stats.atime - a.stats.atime);
 
                 const timelineContainer = document.createElement('div');
                 timelineContainer.className = 'timeline-container';
@@ -947,14 +938,14 @@ function updateRecentTab() {
                 let currentDate = null;
 
                 recentItems.forEach(item => {
-                    const itemDate = item.atime.toDateString();
+                    const itemDate = item.stats.atime.toDateString();
                     
                     if (itemDate !== currentDate) {
                         currentDate = itemDate;
                         const dateHeader = document.createElement('div');
                         dateHeader.className = 'timeline-date-header';
                         dateHeader.innerHTML = `
-                            <span class="date-text">${item.atime.toISOString().split('T')[0]}</span>
+                            <span class="date-text">${formatDate(item.stats.atime)}</span>
                             <i class="fas fa-chevron-down"></i>
                         `;
                         dateHeader.addEventListener('click', toggleDateItems);
@@ -969,47 +960,36 @@ function updateRecentTab() {
                     timelineItem.className = 'timeline-item';
                     timelineItem.innerHTML = `
                         <div class="timeline-item-content">
-                            <span class="file-icon">${file.isDirectory ? folderIcon : getUnknownIcon(path.extname(file.name))}</span>
-                            <span class="file-name">${file.name}</span>
-                            <div class="file-time">
-                                <span>创建: ${formatDate(file.stats.birthtime)}</span>
-                                <span>修改: ${formatDate(file.stats.mtime)}</span>
-                                <span>访问: ${formatDate(file.stats.atime)}</span>
+                            <span class="file-icon">${item.isDirectory ? folderIcon : getUnknownIcon(path.extname(item.name))}</span>
+                            <div class="file-info">
+                                <span class="file-name">${item.name}</span>
+                                <span class="file-parent-dir">${item.parentDir}</span>
+                                <div class="file-time">
+                                    <span>访问: ${formatTime(item.stats.atime)}</span>
+                                    <span>修改: ${formatTime(item.stats.mtime)}</span>
+                                </div>
                             </div>
                         </div>
                     `;
 
-                    const fileName = timelineItem.querySelector('.file-name');
-                    const parentDir = timelineItem.querySelector('.file-parent-dir');
+                    // 添加事件监听器
+                    timelineItem.addEventListener('click', () => {
+                        navigateTo(item.path);
+                    });
 
-                    // 添加鼠标悬停事件
                     timelineItem.addEventListener('mouseover', () => {
-                        lastHoveredPath = item.path; // 更新最后划过的路径
+                        lastHoveredPath = item.path;
                         updateStatusBar(item.path);
                         updatePreview({
                             name: item.name,
                             isDirectory: item.isDirectory,
-                            stats: {
-                                birthtime: item.atime,
-                                mtime: item.atime
-                            }
+                            stats: item.stats
                         });
                     });
 
                     timelineItem.addEventListener('mouseout', () => {
                         updateStatusBar('');
                         updatePreview(null);
-                    });
-
-                    fileName.addEventListener('dblclick', (e) => {
-                        e.stopPropagation();
-                        shell.openPath(item.path);
-                        debouncedUpdateRecentTab();
-                    });
-
-                    parentDir.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        navigateTo(item.parentDir);
                     });
 
                     timelineContainer.lastElementChild.appendChild(timelineItem);
@@ -1073,7 +1053,7 @@ function pasteFile(targetDir, source) {
 
     fs.copyFile(source, destination, (err) => {
         if (err) {
-            console.error('复制件时出错:', err);
+            console.error('复制件���出错:', err);
         } else {
             console.log(`文件已粘贴到: ${destination}`);
             // updateFileList(targetDir); // 更新文件列表
@@ -1164,7 +1144,7 @@ sidebarToggle.addEventListener('click', () => {
 previewToggle.addEventListener('click', () => {
     if (previewPanel.classList.contains('collapsed')) {
         previewPanel.classList.remove('collapsed');
-        previewPanel.style.width = '250px';  // 或者使用上次调���的宽度
+        previewPanel.style.width = '250px';  // 或者使用上次调的宽度
     } else {
         previewPanel.classList.add('collapsed');
         previewPanel.style.width = '0';
@@ -1558,7 +1538,7 @@ function showFavoriteContextMenu(favPath, x, y) {
     ipcRenderer.send('show-favorite-context-menu', { path: favPath, x, y });
 }
 
-// 更新收藏夹
+// 更���收藏夹
 function updateFavorites() {
     favoritesElement.innerHTML = `
     <div class="sidebar-section-header" onclick="toggleSidebarSection('favorites')">
