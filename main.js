@@ -35,80 +35,60 @@ function createWindow () {
   mainWindow.webContents.setDevToolsWebContents(devToolsWindow.webContents)
   mainWindow.webContents.openDevTools({ mode: 'detach' })
 
-  // 处理右键菜单请求
+  // 右键菜单
   ipcMain.on('show-context-menu', (event, params) => {
-    const template = [];
+    console.log('show-context-menu-params', params);
+    let template = [];
 
-    if (params.hasSelection) {
-        if (params.template) {
-            // 处理自定义模板
-            params.template.forEach(item => {
-                template.push({
-                    label: item.label,
-                    click: () => {
-                        if (item.label === '移出分组') {
-                            event.reply('menu-item-clicked', 'remove-from-group', {
-                                groupName: params.groupName,
-                                path: params.path
-                            });
-                        } else if (item.label === '在资源管理器中打开') {
-                            shell.showItemInFolder(params.path);
-                        } else if (item.label === '设置颜色') {
-                            event.reply('menu-item-clicked', 'set-color', {
-                                groupName: params.groupName
-                            });
-                        }
-                    }
+    if (params.template) {
+        // 处理自定义模板
+        template = params.template.map(item => ({
+            label: item.label,
+            click: () => {
+                event.reply('menu-item-clicked', item.label, {
+                    path: params.path,
+                    groupName: params.groupName
                 });
-            });
-        } else {
-            // 使用默认模板
-            template.push(
-                {
-                    label: '在资源管理器中打开',
-                    click: () => event.reply('menu-item-clicked', 'open-in-explorer', params.path)
-                },
-                {
-                    label: '复制',
-                    click: () => event.reply('menu-item-clicked', 'copy', params.path)
-                },
-                {
-                    label: '打开方式',
-                    click: () => {
-                        ipcMain.emit('open-file-dialog', event, params.path);
-                    }
-                }
-            );
-
-            if (params.isDirectory) {
-                if (params.isFavorite) {
-                    template.push({
-                        label: '从收藏夹中移除',
-                        click: () => event.reply('menu-item-clicked', 'remove-from-favorites', params.path)
-                    });
-                } else {
-                    template.push({
-                        label: '添加到收藏夹',
-                        click: () => event.reply('menu-item-clicked', 'add-to-favorites', params.path)
-                    });
-                }
             }
+        }));
+    } else {
+        // 默认模板处理...
+        template = [
+            {
+                label: '在资源管理器中打开',
+                click: () => event.reply('menu-item-clicked', 'open-in-explorer', { path: params.path })
+            },
+            {
+                label: '复制',
+                click: () => event.reply('menu-item-clicked', 'copy', { path: params.path })
+            }
+        ];
+
+        if (params.isCurrentDir) {
+            template.push({
+                label: '粘贴',
+                click: () => event.reply('menu-item-clicked', 'paste', { path: params.path })
+            });
+        }
+
+        if (params.isDirectory) {
+            template.push({
+                label: params.isFavorite ? '从收藏夹中移除' : '添加到收藏夹',
+                click: () => event.reply('menu-item-clicked', 
+                    params.isFavorite ? 'remove-from-favorites' : 'add-to-favorites', 
+                    { path: params.path }
+                )
+            });
         }
     }
 
-    // 只在非自定义模板时添加粘贴选项
-    if (!params.template) {
-        template.push({
-            label: '粘贴',
-            click: () => event.reply('menu-item-clicked', 'paste', params.path)
-        });
+    if (template.length > 0) {
+        const menu = Menu.buildFromTemplate(template);
+        menu.popup(BrowserWindow.fromWebContents(event.sender));
     }
+  });
 
-    const menu = Menu.buildFromTemplate(template);
-    menu.popup(BrowserWindow.fromWebContents(event.sender));
-  })
-
-  // 添加新的 ipcMain 监听器
+  // 收藏夹右键菜单
   ipcMain.on('show-favorite-context-menu', (event, params) => {
     const template = [
       {
@@ -124,6 +104,7 @@ function createWindow () {
     const menu = Menu.buildFromTemplate(template);
     menu.popup({ window: BrowserWindow.fromWebContents(event.sender), x: params.x, y: params.y });
   });
+
 
   // 当主窗口关闭时，关闭开发者工具窗口
   mainWindow.on('closed', () => {

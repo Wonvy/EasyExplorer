@@ -173,7 +173,7 @@
         box-sizing: border-box 
         padding: 30px
         padding-top: 15px
-        border: 1px solid rgba(245, 245, 245, 0.1) // 使用半透明的边框色
+        border: 1px solid rgba(245, 245, 245, 0.1) // 使用半透明的框色
         border-left: none
         display: inline-block
         vertical-align: top
@@ -736,7 +736,7 @@ body.dark-theme
     background: rgba(255, 196, 70, 0.2)
     border-left: 3px solid #FFC446
 
-// 在 .project-preview .preview-content .file-item 样式块中添加
+// 在 .project-preview .preview-content .file-item 样式块添加
 .file-item
     &.selected
         background: rgba(255, 196, 70, 0.2)
@@ -958,65 +958,45 @@ body.dark-theme
         color: rgba(255, 255, 255, 0.9)  // 调整文字颜色以适应不同背景色
       
       .group-header-controls
+        opacity: 0  // 默认隐藏控制按钮
+        transition: opacity 0.2s ease
         display: flex
         align-items: center
         gap: 8px
+        position: absolute  // 使用绝对定位
+        right: 8px         // 固定在右侧
+        top: 50%
+        transform: translateY(-50%)
         
-        .color-picker
-          width: 16px
-          height: 16px
-          border-radius: 4px
-          cursor: pointer
-          border: 1px solid rgba(255, 255, 255, 0.2)
-          transition: all 0.2s ease
-          
-          &:hover
-            transform: scale(1.1)
-            border-color: rgba(255, 255, 255, 0.4)
-      
-      .add-to-group
-        opacity: 0
-        transition: all 0.2s ease
-        width: 24px
-        height: 24px
-        display: flex
-        align-items: center
-        justify-content: center
-        border-radius: 4px
-        
-        &:hover
-          background: rgba(255, 255, 255, 0.2)
-          color: #FFC446
-      
-      &:hover
-        .add-to-group
-          opacity: 1
+        .move-up,
+        .move-down
+            width: 20px
+            height: 20px
+            display: flex
+            align-items: center
+            justify-content: center
+            border-radius: 3px
+            background: none
+            border: none
+            cursor: pointer
+            color: rgba(255, 255, 255, 0.5)  // 降低默认颜色的透明度
+            padding: 0
+            
+            i
+                font-size: 12px  // 减小图标尺寸
+            
+            &:hover
+                background: rgba(255, 255, 255, 0.1)
+                color: #FFC446
 
-    .group-content
-      padding: 8px
-      
-      .group-folder
-        display: flex
-        align-items: center
-        cursor: pointer
-        border-radius: 4px
-        transition: all 0.2s ease
-        
-        &:hover
-          text-decoration: underline
-          background: rgba(255, 196, 70, 0.1)
-        
-        .file-icon
-          width: 18px
-          margin-right: 8px
-          opacity: 0.7
-          
-        .folder-name
-          flex-grow: 1
-          white-space: nowrap
-          overflow: hidden
-          text-overflow: ellipsis
-          font-size: 12px
+    // 鼠标悬停时显示控制按钮
+    &:hover
+        .group-header-controls
+            opacity: 1
+
+    // 调整分组名称的位置，避免与控制按钮重叠
+    .group-name
+        margin-right: 100px  // 为控制按钮预留空间
 
 // 暗色主题支持
 body.dark-theme
@@ -1030,3 +1010,259 @@ body.dark-theme
         
         &:hover
           background: rgba(255, 255, 255, 0.01)
+
+// 添加分组相关样式
+.color-picker-dialog
+  position: fixed
+  top: 50%
+  left: 50%
+  transform: translate(-50%, -50%)
+  background: var(--bg-color, #2e2e2e)
+  padding: 20px
+  border-radius: 8px
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2)
+  z-index: 1000
+  min-width: 300px
+  
+  .dialog-header
+    font-size: 18px
+    margin-bottom: 20px
+    color: #FFC446
+    font-weight: bold
+  
+  .default-colors
+    display: grid
+    grid-template-columns: repeat(5, 1fr)
+    gap: 10px
+    margin: 15px 0
+    
+    .color-option
+      width: 30px
+      height: 30px
+      border-radius: 4px
+      cursor: pointer
+      border: 2px solid transparent
+      transition: all 0.2s ease
+      
+      &:hover
+        transform: scale(1.1)
+      
+      &.selected
+        border-color: #FFC446
+  
+  .custom-color
+    margin: 15px 0
+    display: flex
+    align-items: center
+    gap: 10px
+    
+    label
+      color: var(--text-color, #e0e0e0)
+    
+    input[type="color"]
+      width: 50px
+      height: 30px
+      padding: 0
+      border: none
+      border-radius: 4px
+      cursor: pointer
+  
+  .dialog-buttons
+    display: flex
+    justify-content: flex-end
+    gap: 10px
+    margin-top: 20px
+    
+    button
+      padding: 8px 16px
+      border: none
+      border-radius: 4px
+      cursor: pointer
+      transition: all 0.2s ease
+      font-weight: bold
+      
+      &.confirm
+        background: #FFC446
+        color: #000
+        
+        &:hover
+          background: darken(#FFC446, 10%)
+      
+      &.cancel
+        background: var(--bg-secondary, #1e1e1e)
+        color: var(--text-color, #e0e0e0)
+        
+        &:hover
+          background: var(--bg-hover, #3a3a3a)
+
+.rename-dialog
+  position: fixed
+  top: 50%
+  left: 50%
+  transform: translate(-50%, -50%)
+  background: var(--bg-color, #2e2e2e)
+  padding: 20px
+  border-radius: 8px
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2)
+  z-index: 1000
+  min-width: 300px
+  
+  .dialog-header
+    font-size: 18px
+    margin-bottom: 20px
+    color: #FFC446
+    font-weight: bold
+  
+  .dialog-content
+    margin: 15px 0
+    
+    .rename-input
+      width: 100%
+      padding: 8px
+      border: none
+      border-radius: 4px
+      background: var(--bg-secondary, #1e1e1e)
+      color: var(--text-color, #e0e0e0)
+      font-size: 14px
+      
+      &:focus
+        outline: none
+        box-shadow: 0 0 0 2px rgba(255, 196, 70, 0.3)
+  
+  .dialog-buttons
+    display: flex
+    justify-content: flex-end
+    gap: 10px
+    margin-top: 20px
+    
+    button
+      padding: 8px 16px
+      border: none
+      border-radius: 4px
+      cursor: pointer
+      transition: all 0.2s ease
+      font-weight: bold
+      
+      &.confirm
+        background: #FFC446
+        color: #000
+        
+        &:hover
+          background: darken(#FFC446, 10%)
+      
+      &.cancel
+        background: var(--bg-secondary, #1e1e1e)
+        color: var(--text-color, #e0e0e0)
+        
+        &:hover
+          background: var(--bg-hover, #3a3a3a)
+
+.dialog-overlay
+  position: fixed
+  top: 0
+  left: 0
+  right: 0
+  bottom: 0
+  background: rgba(0, 0, 0, 0.5)
+  -webkit-backdrop-filter: blur(2px)
+  backdrop-filter: blur(2px)
+  z-index: 999
+
+// 暗色主题支持
+body.dark-theme
+  .color-picker-dialog,
+  .rename-dialog
+    --bg-color: #2e2e2e
+    --text-color: #e0e0e0
+    --bg-secondary: #1e1e1e
+    --bg-hover: #3a3a3a
+
+// 在 .group-name 样式中添加
+.group-name
+    flex-grow: 1
+    font-size: 13px
+    color: rgba(255, 255, 255, 0.9)
+    padding: 2px 4px
+    border-radius: 4px
+    transition: all 0.2s ease
+    
+    &[contenteditable="true"]
+        cursor: text
+        outline: none
+        
+        &:hover
+            background: rgba(255, 255, 255, 0.1)
+        
+        &:focus
+            background: rgba(255, 255, 255, 0.15)
+            box-shadow: 0 0 0 2px rgba(255, 196, 70, 0.3)
+
+.group-folder
+    // ... 现有样式保持不变 ...
+    
+    &.highlighted
+        background: rgba(255, 196, 70, 0.2)
+        border-left: 3px solid #FFC446
+        animation: highlight-pulse 3s ease-in-out
+    
+@keyframes highlight-pulse
+    0%
+        background: rgba(255, 196, 70, 0.2)
+    50%
+        background: rgba(255, 196, 70, 0.3)
+    100%
+        background: rgba(255, 196, 70, 0.2)
+
+.group-folders-container
+    .group-folder
+        display: flex
+        align-items: center
+        padding: 5px
+        margin: 2px 0
+        border-radius: 4px
+        cursor: move
+        transition: all 0.2s ease
+        
+        .drag-handle
+            width: 16px
+            height: 16px
+            display: flex
+            align-items: center
+            justify-content: center
+            margin-right: 4px
+            opacity: 0
+            cursor: move
+            color: rgba(255, 255, 255, 0.5)
+            transition: all 0.2s ease
+            
+            i
+                font-size: 12px
+        
+        &:hover
+            background: rgba(255, 255, 255, 0.05)
+            
+            .drag-handle
+                opacity: 1
+                
+                &:hover
+                    color: #FFC446
+        
+        &.folder-ghost
+            opacity: 0.5
+            background: rgba(255, 196, 70, 0.1)
+        
+        &.folder-chosen
+            background: rgba(255, 196, 70, 0.2)
+            
+        &.folder-drag
+            background: rgba(255, 196, 70, 0.3)
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2)
+            
+        .file-icon
+            margin: 0 8px
+            
+        .folder-name
+            flex-grow: 1
+            white-space: nowrap
+            overflow: hidden
+            text-overflow: ellipsis
