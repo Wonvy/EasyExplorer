@@ -525,7 +525,7 @@ function showAnnualReport() {
             lastX = e.pageX;
         });
 
-        // 鼠标移动事件 - 改为实时移动
+        // 鼠标移动事件 - 改为实时移
         timeline.addEventListener('mousemove', (e) => {
             if (!isMouseDown) return;
             e.preventDefault();
@@ -1026,15 +1026,35 @@ function formatTime(date) {
 
 // 在应用程序关闭前保存当前路径和选项卡状态
 window.addEventListener('beforeunload', () => {
-    localStorage.setItem('lastOpenedPath', currentPath);
-    localStorage.setItem('activeTab', activeTab);
+    try {
+        // 保存当前路径和选项卡状态
+        localStorage.setItem('lastOpenedPath', currentPath);
+        localStorage.setItem('activeTab', activeTab);
+        
+        // 保存所有分组相关的数据
+        localStorage.setItem('folderGroups', JSON.stringify(folderGroups));
+        localStorage.setItem('folderOrder', JSON.stringify(folderOrder));
+        localStorage.setItem('groupCollapseStates', JSON.stringify(groupCollapseStates));
+        localStorage.setItem('groupColors', JSON.stringify(groupColors));
+        localStorage.setItem('groupOrder', JSON.stringify(groupOrder));
+        
+        console.log('保存所有数据成功:', {
+            folderGroups,
+            folderOrder,
+            groupCollapseStates,
+            groupColors,
+            groupOrder
+        });
+    } catch (error) {
+        console.error('保存数据失败:', error);
+    }
 });
 
 // #endregion
 
 // #region 通用函数-文件
 
-// 复制文件
+// 制文件
 function copyFile(filePaths) {
     // 判断 filePaths 是否为符串，如果是则转换为数组
     if (typeof filePaths === 'string') {
@@ -1065,7 +1085,7 @@ function pasteFile(targetDir, source) {
 ipcRenderer.on('copy-progress', (data) => {
     // 解析进度信息更新进度条
     console.log('复制进度:', data);
-    // 更新进度条的辑
+    // 更新进度���的辑
 });
 
 
@@ -1129,7 +1149,7 @@ function stopResize() {
     document.body.style.userSelect = '';
 }
 
-// 侧栏切换
+// 侧栏切
 sidebarToggle.addEventListener('click', () => {
     if (sidebar.classList.contains('collapsed')) {
         sidebar.classList.remove('collapsed');
@@ -1410,7 +1430,7 @@ upBtn.addEventListener('click', () => {
 
 // #endregion
 
-// #region 文件��选
+// #region 文件选
 
 fileListContainer.addEventListener('mousedown', handleMouseDown);
 fileListContainer.addEventListener('mousemove', handleMouseMove);
@@ -1725,7 +1745,7 @@ function updateFileList(dirPath, isQuickAccess = false) {
 
         // 取文件详细信息并排序
         Promise.all(files.map(file => getFileDetails(dirPath, file).catch(err => {
-            console.error(`获取文件 ${file.name} 的详情时出错: ${err}`);
+            console.error(`获文件 ${file.name} 详情时出错: ${err}`);
             return null; // 如果获取详情失败，返回null以跳该文件
         })))
             .then(fileDetails => {
@@ -1985,7 +2005,6 @@ function groupFilesByType(files) {
 
     return groups;
 }
-
 // 排序文件
 function sortFiles(files) {
     return files.sort((a, b) => {
@@ -2562,7 +2581,7 @@ document.addEventListener('keydown', (e) => {
     } else if (e.code === 'ArrowLeft') { // 左键切换到上一张
         const prevItem = getPreviousSelectedItem();
         if (prevItem) {
-            updateSelectedItem(prevItem); // 更新选中的项目
+            updateSelectedItem(prevItem); // 新选中的项目
             const filePath = prevItem.getAttribute('data-path');
             showFullscreenPreview(filePath);
         }
@@ -2820,7 +2839,7 @@ function convertToPdf(inputPath, outputPath) {
             //         })
             //         .catch(removeErr => {
             //             console.error('清理临时目录时出错:', removeErr);
-            //             resolve(); // 续执行，即使清理失败
+            //             resolve(); // 续行，即使清理失败
             //         });
             // }, 1000); // 延迟 1 秒
         });
@@ -3199,8 +3218,10 @@ document.addEventListener('click', (e) => {
 
 // 在文件顶部添加新的变量
 let folderGroups = JSON.parse(localStorage.getItem('folderGroups')) || {};
+let folderOrder = JSON.parse(localStorage.getItem('folderOrder')) || {};
 let groupCollapseStates = JSON.parse(localStorage.getItem('groupCollapseStates')) || {};
-let groupColors = JSON.parse(localStorage.getItem('groupColors')) || {}; // 新增：存储分组颜色
+let groupColors = JSON.parse(localStorage.getItem('groupColors')) || {};
+let groupOrder = JSON.parse(localStorage.getItem('groupOrder')) || [];
 
 // 添加分组相关函数
 function showAddGroupDialog() {
@@ -3242,29 +3263,54 @@ function showAddGroupDialog() {
     });
 }
 
+// 修改 createGroup 函数
 function createGroup(groupName) {
+    console.log('创建新分组:', groupName); // 添加调试日志
+
+    // 确保所有数据结构都已初始化
+    if (!folderGroups) folderGroups = {};
+    if (!folderOrder) folderOrder = {};
+    if (!groupCollapseStates) groupCollapseStates = {};
+    if (!groupColors) groupColors = {};
+    if (!groupOrder) groupOrder = [];
+
+    // 创建新分组
     folderGroups[groupName] = [];
-    groupCollapseStates[groupName] = false; // 新建分组默认展开
-    groupColors[groupName] = '#2c2c2c'; // 设置默认颜色
-    
-    localStorage.setItem('folderGroups', JSON.stringify(folderGroups));
-    localStorage.setItem('groupCollapseStates', JSON.stringify(groupCollapseStates));
-    localStorage.setItem('groupColors', JSON.stringify(groupColors));
+    folderOrder[groupName] = [];
+    groupCollapseStates[groupName] = false;
+    groupColors[groupName] = '#2c2c2c';
+    groupOrder.push(groupName);
+
+    // 保存所有数据到 localStorage
+    try {
+        localStorage.setItem('folderGroups', JSON.stringify(folderGroups));
+        localStorage.setItem('folderOrder', JSON.stringify(folderOrder));
+        localStorage.setItem('groupCollapseStates', JSON.stringify(groupCollapseStates));
+        localStorage.setItem('groupColors', JSON.stringify(groupColors));
+        localStorage.setItem('groupOrder', JSON.stringify(groupOrder));
+        
+        console.log('分组数据保存成功:', {
+            folderGroups,
+            folderOrder,
+            groupCollapseStates,
+            groupColors,
+            groupOrder
+        });
+    } catch (error) {
+        console.error('保存分组数据失败:', error);
+    }
+
+    // 更新视图
     updateFolderGroups();
 }
-
-// 在文件顶部添加新变量
-let groupOrder = JSON.parse(localStorage.getItem('groupOrder') || []);
 
 // 修改 updateFolderGroups 函数
 function updateFolderGroups() {
     const groupsList = document.getElementById('folder-groups-list');
     groupsList.innerHTML = '';
 
-    // 获取所有分组条目
+    // 获取所有分组条目并排序
     let groupEntries = Object.entries(folderGroups || {});
-
-    // 根据 groupOrder 排序分组
     if (groupOrder.length > 0) {
         groupEntries.sort((a, b) => {
             const indexA = groupOrder.indexOf(a[0]);
@@ -3294,6 +3340,7 @@ function updateFolderGroups() {
             return indexA - indexB;
         });
 
+        // 构建分组的 HTML 结构
         groupElement.innerHTML = `
             <div class="group-header${groupCollapseStates[groupName] ? ' collapsed' : ''}" 
                  style="background: ${backgroundColor}">
@@ -3324,8 +3371,13 @@ function updateFolderGroups() {
             </div>
         `;
 
-        // 初始化拖拽排序
+        // 获取DOM元素的引用
+        const headerElement = groupElement.querySelector('.group-header');
+        const groupNameElement = headerElement.querySelector('.group-name');
+        const content = groupElement.querySelector('.group-content');
         const container = groupElement.querySelector('.group-folders-container');
+
+        // 初始化拖拽排序
         Sortable.create(container, {
             animation: 150,
             handle: '.group-folder', // 修改为整行可拖动
@@ -3361,24 +3413,68 @@ function updateFolderGroups() {
                 document.body.appendChild(indicator);
             },
             onEnd: function(evt) {
-                // ... 保持原有的 onEnd 逻辑 ...
                 // 移除指示线
                 document.querySelectorAll('.drag-indicator').forEach(el => el.remove());
                 document.body.classList.remove('dragging');
+
+                const fromGroup = evt.from.closest('.folder-group').querySelector('.group-name').textContent;
+                const toGroup = evt.to.closest('.folder-group').querySelector('.group-name').textContent;
+                const folderPath = evt.item.getAttribute('data-path');
+                const folderName = evt.item.querySelector('.folder-name').textContent;
+
+                // 如果是跨分组拖拽
+                if (fromGroup !== toGroup) {
+                    // 从原分组中移除
+                    folderGroups[fromGroup] = folderGroups[fromGroup].filter(f => f.path !== folderPath);
+                    
+                    // 添加到新分组
+                    if (!folderGroups[toGroup]) {
+                        folderGroups[toGroup] = [];
+                    }
+                    folderGroups[toGroup].push({
+                        name: folderName,
+                        path: folderPath
+                    });
+                }
+
+                // 更新所有分组的文件夹顺序
+                const allGroups = document.querySelectorAll('.folder-group');
+                allGroups.forEach(group => {
+                    const groupName = group.querySelector('.group-name').textContent;
+                    const foldersContainer = group.querySelector('.group-folders-container');
+                    const folders = Array.from(foldersContainer.querySelectorAll('.group-folder')).map(folder => ({
+                        name: folder.querySelector('.folder-name').textContent,
+                        path: folder.getAttribute('data-path')
+                    }));
+
+                    // 更新分组数据
+                    folderGroups[groupName] = folders;
+                    
+                    // 更新文件夹顺序
+                    folderOrder[groupName] = folders.map(f => f.path);
+                });
+
+                // 立即保存所有更新的数据
+                try {
+                    localStorage.setItem('folderGroups', JSON.stringify(folderGroups));
+                    localStorage.setItem('folderOrder', JSON.stringify(folderOrder));
+                    console.log('保存拖拽后的数据成功:', {
+                        folderGroups,
+                        folderOrder
+                    });
+                } catch (error) {
+                    console.error('保存拖拽后的数据失败:', error);
+                }
             }
         });
 
-        // 获取DOM元素的引用
-        const headerElement = groupElement.querySelector('.group-header');
-        const groupNameElement = headerElement.querySelector('.group-name');
-        
         // 添加分组名称编辑功能
         groupNameElement.addEventListener('blur', () => {
             const newName = groupNameElement.textContent.trim();
             if (newName && newName !== groupName) {
                 renameGroup(groupName, newName);
             } else {
-                groupNameElement.textContent = groupName; // 恢复原名称
+                groupNameElement.textContent = groupName;
             }
         });
 
@@ -3392,9 +3488,7 @@ function updateFolderGroups() {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 groupNameElement.blur();
-            }
-            // ESC键取消编辑
-            if (e.key === 'Escape') {
+            } else if (e.key === 'Escape') {
                 groupNameElement.textContent = groupName;
                 groupNameElement.blur();
             }
@@ -3422,29 +3516,25 @@ function updateFolderGroups() {
             });
         });
 
-        // 添加颜色选择器点击事件
-        groupElement.querySelector('.color-picker').addEventListener('click', (e) => {
+        // 添加移动按钮事件监听器
+        const moveUpBtn = groupElement.querySelector('.move-up');
+        const moveDownBtn = groupElement.querySelector('.move-down');
+
+        moveUpBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            const input = document.createElement('input');
-            input.type = 'color';
-            input.value = groupColors[groupName] || '#2c2c2c';
-            
-            input.addEventListener('change', (event) => {
-                groupColors[groupName] = event.target.value;
-                localStorage.setItem('groupColors', JSON.stringify(groupColors));
-                updateFolderGroups();
-            });
-            
-            input.click();
+            moveGroup(groupName, 'up');
+        });
+
+        moveDownBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            moveGroup(groupName, 'down');
         });
 
         // 添加折叠/展开功能
         headerElement.addEventListener('click', (e) => {
             if (!e.target.closest('.add-to-group')) {
                 const isCollapsed = headerElement.classList.toggle('collapsed');
-                groupElement.querySelector('.group-content').style.display = isCollapsed ? 'none' : 'block';
-                
-                // 保存折叠状态
+                content.style.display = isCollapsed ? 'none' : 'block';
                 groupCollapseStates[groupName] = isCollapsed;
                 localStorage.setItem('groupCollapseStates', JSON.stringify(groupCollapseStates));
             }
@@ -3583,26 +3673,33 @@ document.addEventListener('DOMContentLoaded', () => {
     // 现有代码...
 
     // 添加新分组按钮事件
-    document.getElementById('add-group-btn').addEventListener('click', () => {
-        // 直接创建一个新分组
-        const tempName = '新建分组';
-        createGroup(tempName);
-        
-        // 获取新创建的分组名称元素并触发编辑
-        setTimeout(() => {
-            const groupNameElement = document.querySelector(`.folder-group:last-child .group-name`);
-            if (groupNameElement) {
-                groupNameElement.focus();
-                // 选中全部文本
-                const range = document.createRange();
-                range.selectNodeContents(groupNameElement);
-                const selection = window.getSelection();
-                selection.removeAllRanges();
-                selection.addRange(range);
-            }
-        }, 0);
-    });
-    
+    const addGroupBtn = document.getElementById('add-group-btn');
+    if (addGroupBtn) {
+        addGroupBtn.addEventListener('click', () => {
+            console.log('点击添加分组按钮'); // 添加调试日志
+            
+            // 创建新分组
+            const tempName = '新建分组';
+            createGroup(tempName);
+            
+            // 获取新创建的分组名称元素并触发编辑
+            setTimeout(() => {
+                const groupNameElement = document.querySelector(`.folder-group:last-child .group-name`);
+                if (groupNameElement) {
+                    groupNameElement.focus();
+                    // 选中全部文本
+                    const range = document.createRange();
+                    range.selectNodeContents(groupNameElement);
+                    const selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                }
+            }, 0);
+        });
+    } else {
+        console.error('未找到添加分组按钮');
+    }
+
     // 初始化分组显示
     updateFolderGroups();
 });
@@ -3822,7 +3919,7 @@ function deleteGroup(groupName) {
     updateFolderGroups();
 }
 
-// 添加移动分组函数
+// 修改 moveGroup 函数，立即保存分组顺序
 function moveGroup(groupName, direction) {
     const currentIndex = groupOrder.indexOf(groupName);
     if (currentIndex === -1) return;
@@ -3838,252 +3935,44 @@ function moveGroup(groupName, direction) {
 
     // 交换位置
     [groupOrder[currentIndex], groupOrder[newIndex]] = [groupOrder[newIndex], groupOrder[currentIndex]];
-    localStorage.setItem('groupOrder', JSON.stringify(groupOrder));
+    
+    // 立即保存分组顺序
+    try {
+        localStorage.setItem('groupOrder', JSON.stringify(groupOrder));
+        console.log('保存分组顺序成功:', groupOrder);
+    } catch (error) {
+        console.error('保存分组顺序失败:', error);
+    }
+    
     updateFolderGroups();
 }
 
-// 在文件顶部添加新变量
-let folderOrder = JSON.parse(localStorage.getItem('folderOrder')) || {};
+// 添加数据初始化验证
+function validateAndInitData() {
+    // 确保所有数据结构都存在
+    if (!folderGroups) folderGroups = {};
+    if (!folderOrder) folderOrder = {};
+    if (!groupCollapseStates) groupCollapseStates = {};
+    if (!groupColors) groupColors = {};
+    if (!groupOrder) groupOrder = [];
 
-// 修改 updateFolderGroups 函数
-function updateFolderGroups() {
-    const groupsList = document.getElementById('folder-groups-list');
-    groupsList.innerHTML = '';
-
-    // 获取所有分组条目并排序
-    let groupEntries = Object.entries(folderGroups || {});
-    if (groupOrder.length > 0) {
-        groupEntries.sort((a, b) => {
-            const indexA = groupOrder.indexOf(a[0]);
-            const indexB = groupOrder.indexOf(b[0]);
-            if (indexA === -1) return 1;
-            if (indexB === -1) return -1;
-            return indexA - indexB;
-        });
-    }
-
-    groupEntries.forEach(([groupName, folders]) => {
-        const groupElement = document.createElement('div');
-        groupElement.className = 'folder-group';
-        const backgroundColor = groupColors[groupName] || '#2c2c2c';
-
-        // 获取或初始化该分组的文件夹顺序
+    // 确保每个分组都有对应的顺序数据
+    Object.keys(folderGroups).forEach(groupName => {
         if (!folderOrder[groupName]) {
-            folderOrder[groupName] = folders.map(folder => folder.path);
+            folderOrder[groupName] = folderGroups[groupName].map(f => f.path);
         }
-
-        // 根据 folderOrder 排序文件夹
-        const sortedFolders = [...folders].sort((a, b) => {
-            const indexA = folderOrder[groupName].indexOf(a.path);
-            const indexB = folderOrder[groupName].indexOf(b.path);
-            if (indexA === -1) return 1;
-            if (indexB === -1) return -1;
-            return indexA - indexB;
-        });
-
-        // 构建分组的 HTML 结构
-        groupElement.innerHTML = `
-            <div class="group-header${groupCollapseStates[groupName] ? ' collapsed' : ''}" 
-                 style="background: ${backgroundColor}">
-                <i class="fas fa-chevron-down"></i>
-                <span class="group-name" contenteditable="true">${groupName}</span>
-                <div class="group-header-controls">
-                    <button class="move-up" title="向上移动">
-                        <i class="fas fa-chevron-up"></i>
-                    </button>
-                    <button class="move-down" title="向下移动">
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
-                    <div class="color-picker" title="设置颜色" style="background: ${backgroundColor}"></div>
-                    <button class="add-to-group" title="添加当前文件夹到分组">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="group-content" style="display: ${groupCollapseStates[groupName] ? 'none' : 'block'}">
-                <div class="group-folders-container">
-                    ${sortedFolders.map(folder => `
-                        <div class="group-folder" data-path="${folder.path}" draggable="true">
-                            <span class="file-icon">${folderIcon}</span>
-                            <span class="folder-name">${folder.name}</span>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-
-        // 获取DOM元素的引用
-        const headerElement = groupElement.querySelector('.group-header');
-        const groupNameElement = headerElement.querySelector('.group-name');
-        const content = groupElement.querySelector('.group-content');
-        const container = groupElement.querySelector('.group-folders-container');
-
-        // 初始化拖拽排序
-        Sortable.create(container, {
-            animation: 150,
-            handle: '.group-folder', // 修改为整行可拖动
-            ghostClass: 'folder-ghost',
-            chosenClass: 'folder-chosen',
-            dragClass: 'folder-drag',
-            group: 'shared-folders',
-            dragoverBubble: true,
-            // 添加拖拽时的视觉效果
-            onMove: function(evt) {
-                const draggedRect = evt.dragged.getBoundingClientRect();
-                const relatedRect = evt.related.getBoundingClientRect();
-                const insertBefore = evt.willInsertAfter ? false : true;
-                
-                // 移除所有现有的指示线
-                document.querySelectorAll('.drag-indicator').forEach(el => el.remove());
-                
-                // 创建新的指示线
-                const indicator = document.createElement('div');
-                indicator.className = 'drag-indicator';
-                indicator.style.position = 'absolute';
-                indicator.style.left = '0';
-                indicator.style.right = '0';
-                indicator.style.height = '2px';
-                
-                // 设置指示线位置
-                if (insertBefore) {
-                    indicator.style.top = `${relatedRect.top}px`;
-                } else {
-                    indicator.style.top = `${relatedRect.bottom}px`;
-                }
-                
-                document.body.appendChild(indicator);
-            },
-            onEnd: function(evt) {
-                // ... 保持原有的 onEnd 逻辑 ...
-                // 移除指示线
-                document.querySelectorAll('.drag-indicator').forEach(el => el.remove());
-                document.body.classList.remove('dragging');
-            }
-        });
-
-        // 添加分组名称编辑功能
-        groupNameElement.addEventListener('blur', () => {
-            const newName = groupNameElement.textContent.trim();
-            if (newName && newName !== groupName) {
-                renameGroup(groupName, newName);
-            } else {
-                groupNameElement.textContent = groupName;
-            }
-        });
-
-        // 防止编辑时触发折叠
-        groupNameElement.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
-
-        // 处理回车键完成编辑
-        groupNameElement.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                groupNameElement.blur();
-            } else if (e.key === 'Escape') {
-                groupNameElement.textContent = groupName;
-                groupNameElement.blur();
-            }
-        });
-
-        // 为分组标题添加右键菜单
-        headerElement.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            showGroupContextMenu(e, groupName);
-        });
-
-        // 为分组中的文件夹添加事件
-        groupElement.querySelectorAll('.group-folder').forEach(folder => {
-            folder.addEventListener('click', () => {
-                const folderPath = folder.getAttribute('data-path');
-                navigateTo(folderPath);
-            });
-
-            folder.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const folderPath = folder.getAttribute('data-path');
-                showGroupFolderContextMenu(e, groupName, folderPath);
-            });
-        });
-
-        // 添加移动按钮事件监听器
-        const moveUpBtn = groupElement.querySelector('.move-up');
-        const moveDownBtn = groupElement.querySelector('.move-down');
-
-        moveUpBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            moveGroup(groupName, 'up');
-        });
-
-        moveDownBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            moveGroup(groupName, 'down');
-        });
-
-        // 添加折叠/展开功能
-        headerElement.addEventListener('click', (e) => {
-            if (!e.target.closest('.add-to-group')) {
-                const isCollapsed = headerElement.classList.toggle('collapsed');
-                content.style.display = isCollapsed ? 'none' : 'block';
-                groupCollapseStates[groupName] = isCollapsed;
-                localStorage.setItem('groupCollapseStates', JSON.stringify(groupCollapseStates));
-            }
-        });
-
-        // 添加当前文件夹到分组
-        groupElement.querySelector('.add-to-group').addEventListener('click', (e) => {
-            e.stopPropagation();
-            handleAddToGroup(groupName);
-        });
-
-        groupsList.appendChild(groupElement);
     });
 
-    // 更新 groupOrder
-    groupOrder = groupEntries.map(([name]) => name);
+    // 保存初始化后的数据
+    localStorage.setItem('folderGroups', JSON.stringify(folderGroups));
+    localStorage.setItem('folderOrder', JSON.stringify(folderOrder));
+    localStorage.setItem('groupCollapseStates', JSON.stringify(groupCollapseStates));
+    localStorage.setItem('groupColors', JSON.stringify(groupColors));
     localStorage.setItem('groupOrder', JSON.stringify(groupOrder));
 }
 
-// 修改 addToGroup 函数，添加新文件夹时更新顺序
-function addToGroup(groupName, folder) {
-    if (!folderOrder[groupName]) {
-        folderOrder[groupName] = [];
-    }
-    
-    // 检查文件夹是否已存在
-    const existingFolder = folderGroups[groupName].find(f => f.path === folder.path);
-    if (!existingFolder) {
-        folderGroups[groupName].push(folder);
-        folderOrder[groupName].push(folder.path);
-        
-        localStorage.setItem('folderGroups', JSON.stringify(folderGroups));
-        localStorage.setItem('folderOrder', JSON.stringify(folderOrder));
-    }
-    
+// 在应用启动时初始化数据
+document.addEventListener('DOMContentLoaded', () => {
+    validateAndInitData();
     updateFolderGroups();
-}
-
-// 修改 removeFromGroup 函数，移除文件夹时更新顺序
-function removeFromGroup(groupName, folderPath) {
-    if (folderGroups[groupName]) {
-        folderGroups[groupName] = folderGroups[groupName].filter(f => f.path !== folderPath);
-        folderOrder[groupName] = folderOrder[groupName].filter(path => path !== folderPath);
-        
-        if (folderGroups[groupName].length === 0) {
-            delete folderGroups[groupName];
-            delete folderOrder[groupName];
-            delete groupCollapseStates[groupName];
-            delete groupColors[groupName];
-        }
-        
-        localStorage.setItem('folderGroups', JSON.stringify(folderGroups));
-        localStorage.setItem('folderOrder', JSON.stringify(folderOrder));
-        localStorage.setItem('groupCollapseStates', JSON.stringify(groupCollapseStates));
-        localStorage.setItem('groupColors', JSON.stringify(groupColors));
-        
-        updateFolderGroups();
-    }
-}
+});
