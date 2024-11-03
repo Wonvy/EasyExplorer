@@ -1217,55 +1217,66 @@ body.dark-theme
     .group-folder
         display: flex
         align-items: center
-        padding: 5px
+        padding: 8px
         margin: 2px 0
         border-radius: 4px
         cursor: move
         transition: all 0.2s ease
         
-        .drag-handle
-            width: 16px
-            height: 16px
-            display: flex
-            align-items: center
-            justify-content: center
-            margin-right: 4px
-            opacity: 0
-            cursor: move
-            color: rgba(255, 255, 255, 0.5)
-            transition: all 0.2s ease
-            
-            i
-                font-size: 12px
-        
-        &:hover
-            background: rgba(255, 255, 255, 0.05)
-            
-            .drag-handle
-                opacity: 1
-                
-                &:hover
-                    color: #FFC446
-        
-        &.folder-ghost
-            opacity: 0.5
-            background: rgba(255, 196, 70, 0.1)
-        
-        &.folder-chosen
-            background: rgba(255, 196, 70, 0.2)
-            
-        &.folder-drag
-            background: rgba(255, 196, 70, 0.3)
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2)
-            
         .file-icon
-            margin: 0 8px
+            margin-right: 8px
             
         .folder-name
             flex-grow: 1
             white-space: nowrap
             overflow: hidden
             text-overflow: ellipsis
+        
+        &:hover
+            background: rgba(255, 255, 255, 0.05)
+        
+        &.folder-ghost
+            opacity: 0.5
+            background: rgba(255, 196, 70, 0.1)
+            box-shadow: 0 0 0 1px #4a90e2
+            
+        &.folder-chosen
+            background: rgba(255, 196, 70, 0.2)
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1)
+            
+        &.folder-drag
+            background: rgba(255, 196, 70, 0.3)
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15)
+            transform: scale(1.02)
+            z-index: 1000
+
+// 添加拖拽指示线样式
+.drag-indicator
+    position: absolute
+    height: 2px
+    background-color: #4a90e2
+    box-shadow: 0 0 4px rgba(74, 144, 226, 0.5)
+    pointer-events: none
+    z-index: 1000
+
+// 拖拽时的全局样式
+body.dragging
+    cursor: grabbing
+    
+    .group-folders-container:not(:has(.folder-ghost))
+        position: relative
+        
+        &::after
+            content: ''
+            position: absolute
+            top: 0
+            left: 0
+            right: 0
+            bottom: 0
+            background: rgba(74, 144, 226, 0.1)
+            border: 2px dashed #4a90e2
+            border-radius: 4px
+            pointer-events: none
 
 // 最近访问时间轴样式
 .timeline-date-header

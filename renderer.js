@@ -1053,7 +1053,7 @@ function pasteFile(targetDir, source) {
 
     fs.copyFile(source, destination, (err) => {
         if (err) {
-            console.error('复制件���出错:', err);
+            console.error('复制件出错:', err);
         } else {
             console.log(`文件已粘贴到: ${destination}`);
             // updateFileList(targetDir); // 更新文件列表
@@ -1410,7 +1410,7 @@ upBtn.addEventListener('click', () => {
 
 // #endregion
 
-// #region 文件框选
+// #region 文件��选
 
 fileListContainer.addEventListener('mousedown', handleMouseDown);
 fileListContainer.addEventListener('mousemove', handleMouseMove);
@@ -1538,7 +1538,7 @@ function showFavoriteContextMenu(favPath, x, y) {
     ipcRenderer.send('show-favorite-context-menu', { path: favPath, x, y });
 }
 
-// 更���收藏夹
+// 更收藏夹
 function updateFavorites() {
     favoritesElement.innerHTML = `
     <div class="sidebar-section-header" onclick="toggleSidebarSection('favorites')">
@@ -3316,9 +3316,6 @@ function updateFolderGroups() {
                 <div class="group-folders-container">
                     ${sortedFolders.map(folder => `
                         <div class="group-folder" data-path="${folder.path}" draggable="true">
-                            <div class="drag-handle">
-                                <i class="fas fa-grip-vertical"></i>
-                            </div>
                             <span class="file-icon">${folderIcon}</span>
                             <span class="folder-name">${folder.name}</span>
                         </div>
@@ -3327,25 +3324,47 @@ function updateFolderGroups() {
             </div>
         `;
 
-        // 初始化拖拽排
+        // 初始化拖拽排序
         const container = groupElement.querySelector('.group-folders-container');
         Sortable.create(container, {
             animation: 150,
-            handle: '.drag-handle',
+            handle: '.group-folder', // 修改为整行可拖动
             ghostClass: 'folder-ghost',
             chosenClass: 'folder-chosen',
             dragClass: 'folder-drag',
-            onEnd: function(evt) {
-                const folders = Array.from(container.children).map(item => item.getAttribute('data-path'));
-                folderOrder[groupName] = folders;
-                localStorage.setItem('folderOrder', JSON.stringify(folderOrder));
+            group: 'shared-folders',
+            dragoverBubble: true,
+            // 添加拖拽时的视觉效果
+            onMove: function(evt) {
+                const draggedRect = evt.dragged.getBoundingClientRect();
+                const relatedRect = evt.related.getBoundingClientRect();
+                const insertBefore = evt.willInsertAfter ? false : true;
                 
-                // 更新分组中文件夹的顺序
-                folderGroups[groupName] = folders.map(path => ({
-                    name: path.basename(path),
-                    path: path
-                }));
-                localStorage.setItem('folderGroups', JSON.stringify(folderGroups));
+                // 移除所有现有的指示线
+                document.querySelectorAll('.drag-indicator').forEach(el => el.remove());
+                
+                // 创建新的指示线
+                const indicator = document.createElement('div');
+                indicator.className = 'drag-indicator';
+                indicator.style.position = 'absolute';
+                indicator.style.left = '0';
+                indicator.style.right = '0';
+                indicator.style.height = '2px';
+                
+                // 设置指示线位置
+                if (insertBefore) {
+                    indicator.style.top = `${relatedRect.top}px`;
+                } else {
+                    indicator.style.top = `${relatedRect.bottom}px`;
+                }
+                
+                document.body.appendChild(indicator);
+            },
+            onEnd: function(evt) {
+                // ... 保持原有的 onEnd 逻辑 ...
+                // 移除指示线
+                document.querySelectorAll('.drag-indicator').forEach(el => el.remove());
+                document.body.classList.remove('dragging');
             }
         });
 
@@ -3435,20 +3454,6 @@ function updateFolderGroups() {
         groupElement.querySelector('.add-to-group').addEventListener('click', (e) => {
             e.stopPropagation();
             handleAddToGroup(groupName);
-        });
-
-        // 添加移动按钮事件监听器
-        const moveUpBtn = groupElement.querySelector('.move-up');
-        const moveDownBtn = groupElement.querySelector('.move-down');
-
-        moveUpBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            moveGroup(groupName, 'up');
-        });
-
-        moveDownBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            moveGroup(groupName, 'down');
         });
 
         groupsList.appendChild(groupElement);
@@ -3899,9 +3904,6 @@ function updateFolderGroups() {
                 <div class="group-folders-container">
                     ${sortedFolders.map(folder => `
                         <div class="group-folder" data-path="${folder.path}" draggable="true">
-                            <div class="drag-handle">
-                                <i class="fas fa-grip-vertical"></i>
-                            </div>
                             <span class="file-icon">${folderIcon}</span>
                             <span class="folder-name">${folder.name}</span>
                         </div>
@@ -3919,21 +3921,43 @@ function updateFolderGroups() {
         // 初始化拖拽排序
         Sortable.create(container, {
             animation: 150,
-            handle: '.drag-handle',
+            handle: '.group-folder', // 修改为整行可拖动
             ghostClass: 'folder-ghost',
             chosenClass: 'folder-chosen',
             dragClass: 'folder-drag',
-            onEnd: function (evt) {
-                const folders = Array.from(container.children).map(item => item.getAttribute('data-path'));
-                folderOrder[groupName] = folders;
-                localStorage.setItem('folderOrder', JSON.stringify(folderOrder));
-
-                // 更新分组中文件夹的顺序
-                folderGroups[groupName] = folders.map(path => ({
-                    name: path.basename(path),
-                    path: path
-                }));
-                localStorage.setItem('folderGroups', JSON.stringify(folderGroups));
+            group: 'shared-folders',
+            dragoverBubble: true,
+            // 添加拖拽时的视觉效果
+            onMove: function(evt) {
+                const draggedRect = evt.dragged.getBoundingClientRect();
+                const relatedRect = evt.related.getBoundingClientRect();
+                const insertBefore = evt.willInsertAfter ? false : true;
+                
+                // 移除所有现有的指示线
+                document.querySelectorAll('.drag-indicator').forEach(el => el.remove());
+                
+                // 创建新的指示线
+                const indicator = document.createElement('div');
+                indicator.className = 'drag-indicator';
+                indicator.style.position = 'absolute';
+                indicator.style.left = '0';
+                indicator.style.right = '0';
+                indicator.style.height = '2px';
+                
+                // 设置指示线位置
+                if (insertBefore) {
+                    indicator.style.top = `${relatedRect.top}px`;
+                } else {
+                    indicator.style.top = `${relatedRect.bottom}px`;
+                }
+                
+                document.body.appendChild(indicator);
+            },
+            onEnd: function(evt) {
+                // ... 保持原有的 onEnd 逻辑 ...
+                // 移除指示线
+                document.querySelectorAll('.drag-indicator').forEach(el => el.remove());
+                document.body.classList.remove('dragging');
             }
         });
 
