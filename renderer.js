@@ -632,7 +632,7 @@ function loadAnnualData(yearPath) {
                                         lastModified = subStats.mtime;
                                     }
                                 } catch (err) {
-                                    console.warn(`无法取件状态: ${subFilePath}`, err);
+                                    console.warn(`无法取状态: ${subFilePath}`, err);
                                 }
                             });
                     } catch (err) {
@@ -1010,7 +1010,7 @@ function toggleDateItems(e) {
     dateHeader.querySelector('i').className = isCollapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-down';
 }
 
-// 添加格式化日期的函数
+// 添加格式化日期的��数
 function formatDate(date) {
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return date.toLocaleDateString('zh-CN', options);
@@ -1085,16 +1085,16 @@ function pasteFile(targetDir, source) {
 ipcRenderer.on('copy-progress', (data) => {
     // 解析进度信息更新进度条
     console.log('复制进度:', data);
-    // 更新进度���的辑
+    // 更新进度的辑
 });
 
 
 
 // #endregion
 
-// #region 布局-调整
+// #region 布局-整
 
-// 侧栏切换
+// 侧栏换
 function toggleSidebarSection(sectionId) {
     const section = document.getElementById(sectionId);
     const content = section.querySelector('.sidebar-section-content');
@@ -1964,7 +1964,7 @@ function getFileDetails(dirPath, file) {
         const filePath = path.join(dirPath, file.name);
         fs.stat(filePath, (err, stats) => {
             if (err) {
-                console.warn(`无法获取文件 ${filePath} 的详细信息: ${err.message}`);
+                console.warn(`无法获取件 ${filePath} 的详细信息: ${err.message}`);
                 resolve({
                     name: file.name,
                     isDirectory: file.isDirectory(),
@@ -2198,7 +2198,7 @@ function updateQuickAccess() {
     </div>
 `;
 
-                // 为快速访问项添加点击事件监听器
+                // 为快访问项添加击事件监听器
                 const quickAccessElements = quickAccessElement.querySelectorAll('.quick-access-item');
                 quickAccessElements.forEach(item => {
                     item.addEventListener('click', () => {
@@ -2430,7 +2430,7 @@ function updateStatusBar(filePath) {
     });
 }
 
-// 添加新的函数来更新状态栏
+// 添加新的函数更新状态栏
 function updateStatusBar(filePath) {
     if (!filePath) {
         statusBarElement.textContent = '';
@@ -2539,38 +2539,21 @@ statusBar.addEventListener('mousedown', (e) => {
 
 // 处理空格键和ESC键事件
 document.addEventListener('keydown', (e) => {
-    if (e.code === 'Space') {
-        e.preventDefault(); // 防止页滚动
+    // 检查是否正在编辑分组名称
+    const isEditingGroupName = document.activeElement.classList.contains('group-name');
+    
+    if (e.code === 'Space' && !isEditingGroupName) { // 添加判断条件
+        e.preventDefault(); // 防止页面滚动
         if (lastHoveredPath && fs.existsSync(lastHoveredPath)) {
             if (isPreviewOpen) {
-                hideFullscreenPreview(); // 果预览已经打开，则关闭预览
-                isPreviewOpen = false; // 更新状态
+                hideFullscreenPreview();
+                isPreviewOpen = false;
             }
-            showFullscreenPreview(lastHoveredPath); // 如果预览未打开，则打开预览
-
-            // if (isPreviewOpen) {
-            //     hideFullscreenPreview(); // 果预览已经打开，则关闭预览
-            //     isPreviewOpen = false; // 更新状态
-            // } else {
-            //     showFullscreenPreview(lastHoveredPath); // 如果预览未打开，则打开预览
-            //     isPreviewOpen = true; // 更新状态
-            // }
+            showFullscreenPreview(lastHoveredPath);
         }
-        // const selectedItem = document.querySelector('.file-item.selected');
-        // if (selectedItem) {
-        //     const filePath = selectedItem.getAttribute('data-path'); // 假文路径存储在data-path属性中
-        //     if (isPreviewOpen) {
-        //         hideFullscreenPreview(); // 果预览已经打开，则关闭预览
-        //         isPreviewOpen = false; // 更新状态
-        //     } else {
-        //         showFullscreenPreview(filePath); // 如果预览未打开，则打开预览
-        //         isPreviewOpen = true; // 更新状态
-        //     }
-        // }
     } else if (e.code === 'Escape') {
         isPreviewOpen = false;
         hideFullscreenPreview();
-
     } else if (e.code === 'ArrowRight') { // 右切换到下一张
         const nextItem = getNextSelectedItem();
         if (nextItem) {
@@ -2839,7 +2822,7 @@ function convertToPdf(inputPath, outputPath) {
             //         })
             //         .catch(removeErr => {
             //             console.error('清理临时目录时出错:', removeErr);
-            //             resolve(); // 续行，即使清理失败
+            //             resolve(); // 续行，即使清失败
             //         });
             // }, 1000); // 延迟 1 秒
         });
@@ -2968,7 +2951,7 @@ function showDrives() {
                 throw new Error('无法从注册表获取下载文件夹路径');
             }
         } catch (error) {
-            console.error('无法获取下载文件夹路径:', error);
+            console.error('法获取下载件夹路径:', error);
             downloadsPath = path.join(os.homedir(), 'Downloads'); // 回退到默认路径
         }
     } else {
@@ -2991,7 +2974,7 @@ function showDrives() {
             if (fs.existsSync(`${driveLetter}:`)) {
                 const drivePath = `${driveLetter}:\\`;
                 let volumeName = '';
-                let isNetworkDrive = false; // 新增变量判断是否为网络驱动器
+                let isNetworkDrive = false; // 新增量判断是否网络驱动器
                 try {
                     const volOutputBuffer = execSync(`vol ${driveLetter}:`);
                     const volOutput = iconv.decode(volOutputBuffer, 'gbk');
@@ -3469,7 +3452,22 @@ function updateFolderGroups() {
         });
 
         // 添加分组名称编辑功能
+        groupNameElement.addEventListener('dblclick', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            groupNameElement.contentEditable = 'true';
+            groupNameElement.focus();
+            // 选中全部文本
+            const range = document.createRange();
+            range.selectNodeContents(groupNameElement);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+        });
+
+        // 编辑完成时的处理
         groupNameElement.addEventListener('blur', () => {
+            groupNameElement.contentEditable = 'false';
             const newName = groupNameElement.textContent.trim();
             if (newName && newName !== groupName) {
                 renameGroup(groupName, newName);
@@ -3478,12 +3476,7 @@ function updateFolderGroups() {
             }
         });
 
-        // 防止编辑时触发折叠
-        groupNameElement.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
-
-        // 处理回车键完成编辑
+        // 处理回车键和ESC键
         groupNameElement.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -3492,6 +3485,34 @@ function updateFolderGroups() {
                 groupNameElement.textContent = groupName;
                 groupNameElement.blur();
             }
+        });
+
+        // 修改折叠/展开功能
+        let clickTimer = null;
+        let isEditing = false;
+
+        headerElement.addEventListener('click', (e) => {
+            // 如果点击的是控制按钮或正在编辑，不处理折叠/展开
+            if (e.target.closest('.group-header-controls') || 
+                e.target === groupNameElement || 
+                isEditing) {
+                return;
+            }
+
+            // 单击处理折叠/展开
+            const isCollapsed = headerElement.classList.toggle('collapsed');
+            content.style.display = isCollapsed ? 'none' : 'block';
+            groupCollapseStates[groupName] = isCollapsed;
+            localStorage.setItem('groupCollapseStates', JSON.stringify(groupCollapseStates));
+        });
+
+        // 更新编辑状态标记
+        groupNameElement.addEventListener('focus', () => {
+            isEditing = true;
+        });
+
+        groupNameElement.addEventListener('blur', () => {
+            isEditing = false;
         });
 
         // 为分组标题添加右键菜单
@@ -3630,7 +3651,7 @@ function removeFromGroup(groupName, folderPath) {
     if (folderGroups[groupName]) {
         folderGroups[groupName] = folderGroups[groupName].filter(f => f.path !== folderPath);
         
-        // 如果分组为空，可以选择删除分组
+        // 果分组为空，可以选择删除分组
         if (folderGroups[groupName].length === 0) {
             delete folderGroups[groupName];
             delete groupCollapseStates[groupName];
@@ -3735,9 +3756,6 @@ function showGroupContextMenu(e, groupName) {
         groupName: groupName,
         template: [
             {
-                label: '设置颜色'
-            },
-            {
                 label: '删除分组'
             }
         ]
@@ -3746,7 +3764,7 @@ function showGroupContextMenu(e, groupName) {
     ipcRenderer.send('show-context-menu', params);
 }
 
-// 添加默认颜色数组
+// 添加预定义颜色数组
 const defaultColors = [
     '#2c2c2c', // 深灰
     '#e74c3c', // 红色
@@ -3880,21 +3898,41 @@ function showRenameDialog(groupName) {
     });
 }
 
-// 添加重命名分组函数
+// 添加重命名分组���数
 function renameGroup(oldName, newName) {
     if (folderGroups[oldName]) {
-        folderGroups[newName] = folderGroups[oldName];
-        groupColors[newName] = groupColors[oldName];
-        groupCollapseStates[newName] = groupCollapseStates[oldName];
+        // 保存旧数据
+        const oldFolders = folderGroups[oldName];
+        const oldColor = groupColors[oldName];
+        const oldCollapseState = groupCollapseStates[oldName];
+        const oldOrder = folderOrder[oldName];
         
+        // 在 groupOrder 中替换名称，保持原有位置
+        const orderIndex = groupOrder.indexOf(oldName);
+        if (orderIndex !== -1) {
+            groupOrder[orderIndex] = newName;
+        }
+        
+        // 使用新名称创建条目，保持原有数据
+        folderGroups[newName] = oldFolders;
+        groupColors[newName] = oldColor;
+        groupCollapseStates[newName] = oldCollapseState;
+        folderOrder[newName] = oldOrder;
+        
+        // 删除旧名称的数据
         delete folderGroups[oldName];
         delete groupColors[oldName];
         delete groupCollapseStates[oldName];
+        delete folderOrder[oldName];
         
+        // 保存更新后的数据
         localStorage.setItem('folderGroups', JSON.stringify(folderGroups));
         localStorage.setItem('groupColors', JSON.stringify(groupColors));
         localStorage.setItem('groupCollapseStates', JSON.stringify(groupCollapseStates));
+        localStorage.setItem('folderOrder', JSON.stringify(folderOrder));
+        localStorage.setItem('groupOrder', JSON.stringify(groupOrder));
         
+        // 更新视图
         updateFolderGroups();
     }
 }
