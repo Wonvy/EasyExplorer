@@ -1281,6 +1281,125 @@ body.dark-theme .rename-dialog {
   transform: scale(1.1);
 }
 
+#color-tags {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0 10px;
+}
+#color-tags .color-tag-btn {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  position: relative;
+}
+#color-tags .color-tag-btn:hover {
+  transform: scale(1.1);
+}
+#color-tags .color-tag-btn.active {
+  box-shadow: 0 0 0 2px #FFC446;
+}
+#color-tags .color-tag-btn i {
+  font-size: 16px;
+  color: transparent;
+}
+#color-tags .color-tag-btn.none {
+  background: #e0e0e0;
+}
+#color-tags .color-tag-btn.none i {
+  color: #666;
+}
+#color-tags .color-tag-btn.red {
+  background: #e74c3c;
+}
+#color-tags .color-tag-btn.orange {
+  background: #e67e22;
+}
+#color-tags .color-tag-btn.yellow {
+  background: #f1c40f;
+}
+#color-tags .color-tag-btn.green {
+  background: #2ecc71;
+}
+#color-tags .color-tag-btn.blue {
+  background: #3498db;
+}
+#color-tags .color-tag-btn.purple {
+  background: #9b59b6;
+}
+
+.file-item {
+  position: relative;
+}
+.file-item .color-tag {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  z-index: 2;
+}
+.file-item .color-tag.red {
+  background: #e74c3c;
+}
+.file-item .color-tag.orange {
+  background: #e67e22;
+}
+.file-item .color-tag.yellow {
+  background: #f1c40f;
+}
+.file-item .color-tag.green {
+  background: #2ecc71;
+}
+.file-item .color-tag.blue {
+  background: #3498db;
+}
+.file-item .color-tag.purple {
+  background: #9b59b6;
+}
+.file-item .file-icon {
+  position: relative;
+}
+
+.tag-view {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+.tag-view .tag-folder-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 5px;
+  transition: background 0.2s;
+}
+.tag-view .tag-folder-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.tag-view .tag-folder-item .folder-icon {
+  margin-right: 10px;
+}
+.tag-view .tag-folder-item .folder-info {
+  flex: 1;
+}
+.tag-view .tag-folder-item .folder-info .folder-name {
+  font-weight: bold;
+  margin-bottom: 3px;
+}
+.tag-view .tag-folder-item .folder-info .folder-path {
+  font-size: 12px;
+  color: #666;
+}
+
 #resizer {
   position: relative;
   width: 6px;
@@ -1924,6 +2043,7 @@ html {
   display: flex;
   align-items: center;
   padding: 10px;
+  justify-content: space-between;
 }
 #app #main #toolbar button {
   text-align: center;
@@ -1932,7 +2052,6 @@ html {
   height: 30px;
 }
 #app #main #toolbar #view-options {
-  margin-left: auto;
   display: flex;
 }
 #app #main #path {

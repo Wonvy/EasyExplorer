@@ -278,7 +278,7 @@ function showCalendarView() {
     calendarControls.addEventListener('wheel', handleCalendarScroll);
   }
 
-  // 移除整个 fileListElement 的滚轮事件监听
+  // 除整个 fileListElement 的滚轮事件监听
   fileListElement.removeEventListener('wheel', handleCalendarScroll);
 }
 
@@ -483,7 +483,7 @@ function showAnnualReport() {
             </div>
             <div class="project-preview">
                 <div class="preview-header">
-                    <div class="preview-title">选择项目以查看内容</div>
+                    <div class="preview-title">择项目以查看内容</div>
                     <div class="preview-controls">
                         <button id="preview-refresh" title="刷新"><i class="fas fa-sync-alt"></i></button>
                         <button id="preview-open" title="在文件夹中打开"><i class="fas fa-external-link-alt"></i></button>
@@ -1005,7 +1005,7 @@ function toggleDateItems(e) {
     dateHeader.querySelector('i').className = isCollapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-down';
 }
 
-// 添加格式化日期的��数
+// 添加格式化日期的数
 function formatDate(date) {
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return date.toLocaleDateString('zh-CN', options);
@@ -1284,7 +1284,7 @@ function createTimelineItems(fileDetails) {
 
     let currentYear = null;
     let currentMonth = null;
-    const monthNames = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
+    const monthNames = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11", "12月"];
 
     fileDetails.forEach(file => {
         if (file.stats && file.stats.birthtime) {
@@ -1358,7 +1358,7 @@ function createTimelineItems(fileDetails) {
                 updatePreview(file);
             });
 
-            // 添加鼠标移出事件监听器
+            // 添加鼠移出事件监听器
             timelineItem.addEventListener('mouseout', () => {
                 updateStatusBar(currentPath);
                 updatePreview(null);
@@ -1963,6 +1963,15 @@ function createFileItem(file, dirPath) {
         }
     }
 
+    // 在创建文件项后添加标签显示
+    const filePath = path.join(dirPath, file.name);
+    const tagColor = folderTags[filePath];
+    if (tagColor) { // 移除文件夹判断条件
+        const tagElement = document.createElement('div');
+        tagElement.className = `color-tag ${tagColor}`;
+        fileItem.appendChild(tagElement);
+    }
+
     return fileItem;
 }
 
@@ -1980,7 +1989,7 @@ function getFileDetails(dirPath, file) {
                     error: err.code
                 });
             } else {
-                // 使用 birthtime 如果可用，否则使用 mtime
+                // 使用 birthtime 如果可用，否使用 mtime
                 const creationTime = stats.birthtime && stats.birthtime.getTime() > 0
                     ? stats.birthtime
                     : stats.mtime;
@@ -2500,7 +2509,7 @@ statusBarElement.addEventListener('contextmenu', (e) => {
     ipcRenderer.send('show-status-bar-menu', options);
 });
 
-// 状态栏右键菜单击事件
+// 状态栏右键菜单事件
 ipcRenderer.on('status-bar-menu-item-clicked', (event, label) => {
     switch (label) {
         case '显示路径':
@@ -2658,7 +2667,7 @@ function openWithSeer(filePath, seerPath) {
 function showDefaultPreview(filePath, fileExt) {
     isPreviewOpen = true;
     if (['.jpg', '.jpeg', '.png', '.gif', '.svg'].includes(fileExt)) {
-        review_content_fullscreen.innerHTML = `<img src="file://${filePath}" alt="预览" style="max-width: 100%; max-height: 100%; object-fit: contain;">`;
+        review_content_fullscreen.innerHTML = `<img src="file://${filePath}" alt="预��" style="max-width: 100%; max-height: 100%; object-fit: contain;">`;
     } else if (fileExt === '.pdf') {
         review_content_fullscreen.innerHTML = `<div class="preview-content"><iframe src="file://${filePath}" style="width: 100%; height: 100%; border: none;"></iframe></div>`;
     } else if (['.mp4', '.avi', '.mov'].includes(fileExt)) {
@@ -2694,7 +2703,7 @@ function showDefaultPreview(filePath, fileExt) {
         });
     } else if (['.ttf', '.otf'].includes(fileExt)) {
         // 处理字体文件
-        const fontName = path.basename(filePath, path.extname(filePath)); // 获取字体名称
+        const fontName = path.basename(filePath, path.extname(filePath)); // 获取字体称
         const encodedPath = encodeURIComponent(filePath).replace(/%5C/g, '/'); // 对路径进行编码并替换反斜杠为正斜杠
 
         // 调试信息：打印字体名称和编后的路径
@@ -3602,7 +3611,7 @@ function addToGroup(groupName, folder) {
             }
         }, 100);
     } else {
-        // 如果文件夹不存在，则添加到分组
+        // 如果文件夹不存在，则添��到分组
         folderGroups[groupName].push(folder);
         localStorage.setItem('folderGroups', JSON.stringify(folderGroups));
         updateFolderGroups();
@@ -3669,7 +3678,7 @@ function showGroupFolderContextMenu(e, groupName, folderPath) {
         groupName: groupName,
         template: [
             {
-                label: '在资源管理器中打开'
+                label: '在资源管理器打开'
             },
             {
                 label: '移出分组'
@@ -3915,7 +3924,7 @@ function renameGroup(oldName, newName) {
         localStorage.setItem('folderOrder', JSON.stringify(folderOrder));
         localStorage.setItem('groupOrder', JSON.stringify(groupOrder));
         
-        // 更新视图
+        // 新视图
         updateFolderGroups();
     }
 }
@@ -3999,3 +4008,126 @@ document.addEventListener('DOMContentLoaded', () => {
     validateAndInitData();//初始化数据  
     updateFolderGroups();//更新分组
 });
+
+// 在文件顶部添加新的变量
+let folderTags = JSON.parse(localStorage.getItem('folderTags')) || {};
+let lastViewPath = null;
+let isTagView = false;
+
+// 修改标签按钮事件处理
+document.querySelectorAll('.color-tag-btn').forEach(btn => {
+  // 移除双击事件
+  btn.addEventListener('click', (e) => handleTagClick(e));
+  // 添加右键事件
+  btn.addEventListener('contextmenu', (e) => {
+    e.preventDefault(); // 阻止默认右键菜单
+    handleTagRightClick(e);
+  });
+});
+
+// 处理标签点击
+function handleTagClick(e) {
+  const color = e.currentTarget.getAttribute('data-color');
+  const selectedItems = document.querySelectorAll('.file-item.selected');
+
+  if (color === 'none') {
+    // 移除所选项目的标签
+    selectedItems.forEach(item => {
+      const filePath = item.getAttribute('data-path');
+      delete folderTags[filePath];
+      updateFolderTag(item);
+    });
+  } else {
+    // 添加标签到所选项目(文件或文件夹)
+    selectedItems.forEach(item => {
+      const filePath = item.getAttribute('data-path');
+      folderTags[filePath] = color;
+      updateFolderTag(item);
+    });
+  }
+
+  // 保存标签数据
+  localStorage.setItem('folderTags', JSON.stringify(folderTags));
+}
+
+// 将原来的 handleTagDoubleClick 改名为 handleTagRightClick
+function handleTagRightClick(e) {
+  const color = e.currentTarget.getAttribute('data-color');
+  
+  if (color === 'none') {
+    if (isTagView && lastViewPath) {
+      isTagView = false;
+      navigateTo(lastViewPath);
+    }
+    return;
+  }
+
+  // 保存当前路径
+  if (!isTagView) {
+    lastViewPath = currentPath;
+  }
+
+  // 显示标签视图
+  isTagView = true;
+  showTagView(color);
+}
+
+// 更新文件夹标签显示
+function updateFolderTag(folderElement) {
+  const folderPath = folderElement.getAttribute('data-path');
+  const existingTag = folderElement.querySelector('.color-tag');
+  
+  if (existingTag) {
+    existingTag.remove();
+  }
+
+  const tagColor = folderTags[folderPath];
+  if (tagColor) {
+    const tagElement = document.createElement('div');
+    tagElement.className = `color-tag ${tagColor}`;
+    folderElement.appendChild(tagElement);
+  }
+}
+
+// 显示标签视图
+function showTagView(color) {
+  fileListElement.innerHTML = '';
+  fileListContainer.className = 'tag-view';
+
+  // 获取所有带有该颜色标签的项目
+  const taggedItems = Object.entries(folderTags)
+    .filter(([path, tagColor]) => tagColor === color)
+    .map(([filePath]) => {
+      const stats = fs.statSync(filePath);
+      return {
+        path: filePath,
+        name: path.basename(filePath),
+        isDirectory: stats.isDirectory()
+      };
+    });
+
+  // 创建项目列表
+  taggedItems.forEach(item => {
+    const itemElement = document.createElement('div');
+    itemElement.className = 'tag-folder-item';
+    itemElement.innerHTML = `
+      <span class="file-icon">${item.isDirectory ? folderIcon : getUnknownIcon(path.extname(item.name))}</span>
+      <div class="folder-info">
+        <div class="folder-name">${item.name}</div>
+        <div class="folder-path">${item.path}</div>
+      </div>
+    `;
+
+    // 添加点击事件
+    itemElement.addEventListener('click', () => {
+      isTagView = false;
+      if (item.isDirectory) {
+        navigateTo(item.path);
+      } else {
+        shell.openPath(item.path);
+      }
+    });
+
+    fileListElement.appendChild(itemElement);
+  });
+}

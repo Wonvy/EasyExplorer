@@ -1315,3 +1315,122 @@ body.dark-theme
     
     &:hover
         transform: scale(1.1)
+
+// 在文件中添加颜色标签按钮样式
+#color-tags
+  display: flex
+  align-items: center
+  gap: 5px
+  margin: 0 10px
+
+  .color-tag-btn
+    width: 24px
+    height: 24px
+    border: none
+    border-radius: 50%
+    cursor: pointer
+    padding: 0
+    display: flex
+    align-items: center
+    justify-content: center
+    transition: all 0.2s ease
+    position: relative
+
+    &:hover
+      transform: scale(1.1)
+
+    &.active
+      box-shadow: 0 0 0 2px #FFC446
+
+    i
+      font-size: 16px
+      color: transparent
+
+    &.none
+      background: #e0e0e0
+      i
+        color: #666
+
+    &.red
+      background: #e74c3c
+    
+    &.orange
+      background: #e67e22
+    
+    &.yellow
+      background: #f1c40f
+    
+    &.green
+      background: #2ecc71
+    
+    &.blue
+      background: #3498db
+    
+    &.purple
+      background: #9b59b6
+
+// 修改文件夹标签样式
+.file-item
+  position: relative // 确保父元素是相对定位
+  
+  .color-tag
+    position: absolute
+    bottom: 2px
+    right: 2px
+    width: 8px
+    height: 8px
+    border-radius: 50%
+    z-index: 2 // 确保标签在图标上层
+    
+    &.red
+      background: #e74c3c
+    
+    &.orange
+      background: #e67e22
+    
+    &.yellow
+      background: #f1c40f
+    
+    &.green
+      background: #2ecc71
+    
+    &.blue
+      background: #3498db
+    
+    &.purple
+      background: #9b59b6
+
+  // 调整图标容器样式
+  .file-icon
+    position: relative // 使图标容器也是相对定位
+
+// 添加标签视图样式
+.tag-view
+  display: flex
+  flex-direction: column
+  padding: 20px
+
+  .tag-folder-item
+    display: flex
+    align-items: center
+    padding: 10px
+    border-radius: 4px
+    margin-bottom: 5px
+    transition: background 0.2s
+
+    &:hover
+      background: rgba(255, 255, 255, 0.05)
+
+    .folder-icon
+      margin-right: 10px
+
+    .folder-info
+      flex: 1
+
+      .folder-name
+        font-weight: bold
+        margin-bottom: 3px
+
+      .folder-path
+        font-size: 12px
+        color: #666
