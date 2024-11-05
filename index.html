@@ -31,33 +31,35 @@
                     <button class="tab-button" data-tab="project-management">项目</button>
                     <button class="tab-button" data-tab="recent">最近</button>
                 </div>
-                <div class="tab-content" id="folders-tab">
-                    <div id="drives" class="sidebar-section"></div>
-                    <div id="favorites" class="sidebar-section"></div>
-                    <div id="quick-access" class="sidebar-section"></div>
-                </div>
-                <div class="tab-content" id="project-management-tab" style="display: none;">
-                    <div class="custom-item" id="custom-calendar">
-                        <span class="file-icon"><i class="fas fa-calendar-alt"></i></span>
-                        <span>日历</span>
+                <div class="tab-container">
+                    <div class="tab-content" id="folders-tab">
+                        <div id="drives" class="sidebar-section"></div>
+                        <div id="favorites" class="sidebar-section"></div>
+                        <div id="quick-access" class="sidebar-section"></div>
                     </div>
-                    <div class="custom-item" id="custom-annual-report">
-                        <span class="file-icon"><i class="fas fa-chart-line"></i></span>
-                        <span>年报</span>
-                    </div>
-                    <!-- 添加分组模块 -->
-                    <div id="folder-groups">
-                        <div class="folder-groups-header">
-                            <span>分组</span>
-                            <button id="add-group-btn" title="添加新分组">
-                                <i class="fas fa-plus"></i>
-                            </button>
+                    <div class="tab-content" id="project-management-tab" style="display: none;">
+                        <div class="custom-item" id="custom-calendar">
+                            <span class="file-icon"><i class="fas fa-calendar-alt"></i></span>
+                            <span>日历</span>
                         </div>
-                        <div id="folder-groups-list"></div>
+                        <div class="custom-item" id="custom-annual-report">
+                            <span class="file-icon"><i class="fas fa-chart-line"></i></span>
+                            <span>年报</span>
+                        </div>
+                        <!-- 添加分组模块 -->
+                        <div id="folder-groups">
+                            <div class="folder-groups-header">
+                                <span>分组</span>
+                                <button id="add-group-btn" title="添加新分组">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            <div id="folder-groups-list"></div>
+                        </div>
                     </div>
-                </div>
-                <div class="tab-content" id="recent-tab" style="display: none;">
-                    最近文件时间轴显示
+                    <div class="tab-content" id="recent-tab" style="display: none;">
+                        最近文件时间轴显示
+                    </div>
                 </div>
             </div>
 

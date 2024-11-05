@@ -2527,7 +2527,7 @@ statusBar.addEventListener('mousedown', (e) => {
 
     function onMouseMove(e) {
         const newHeight = startHeight - e.clientY + startY;
-        if (newHeight > 20 && newHeight < 40) {
+        if (newHeight > 20) {
             statusBar.style.height = `${newHeight}px`;
         }
     }

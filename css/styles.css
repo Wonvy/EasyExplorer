@@ -945,9 +945,6 @@ body.dark-theme .folder-dialog {
 #folder-groups .folder-group:hover .group-header-controls {
   opacity: 1;
 }
-#folder-groups .folder-group .group-name {
-  margin-right: 100px;
-}
 
 body.dark-theme #folder-groups .folder-group {
   background: #1d1d1d;
@@ -1312,8 +1309,6 @@ body.dark-theme .rename-dialog {
   position: absolute;
   left: 0px;
   top: 50%;
-  background-color: #f0f0f0;
-  border: 1px solid #ddd;
   border-left: none;
   padding: 5px;
   cursor: pointer;
@@ -1351,8 +1346,6 @@ body.dark-theme .rename-dialog {
   position: absolute;
   left: -40px;
   top: 50%;
-  background-color: #f0f0f0;
-  border: 1px solid #ddd;
   border-right: none;
   padding: 5px;
   cursor: pointer;
@@ -1469,8 +1462,11 @@ body #toolbar button:hover {
   background-color: #e5e5e5;
 }
 body #toolbar #view-options button.active {
-  background-color: #d0e8ff;
-  color: #000000;
+  background-color: #121212;
+  color: #e0e0e0;
+}
+body #toolbar #view-options button.active .fas, body #toolbar #view-options button.active .far, body #toolbar #view-options button.active .fab {
+  color: #e0e0e0;
 }
 body #path {
   background-color: #ffffff;
@@ -1652,7 +1648,10 @@ body .calendar-day .day-content .folder-icon {
   background-color: #3a3a3a;
 }
 .dark-theme #toolbar #view-options button.active {
-  background-color: #404040;
+  background-color: #121212;
+  color: #e0e0e0;
+}
+.dark-theme #toolbar #view-options button.active .fas, .dark-theme #toolbar #view-options button.active .far, .dark-theme #toolbar #view-options button.active .fab {
   color: #e0e0e0;
 }
 .dark-theme #path {
@@ -1851,8 +1850,7 @@ html {
 #app #sidebar .sidebar-content {
   width: 100%;
   height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   direction: rtl;
   pointer-events: auto;
 }
@@ -1958,14 +1956,11 @@ html {
   display: flex;
   justify-content: space-between;
   padding: 5px 10px;
-  background-color: #f0f0f0;
-  border-top: 1px solid #ddd;
   font-size: 12px;
   flex-shrink: 0;
   resize: vertical;
   overflow: auto;
   min-height: 20px;
-  max-height: 100px;
   height: 20px;
   cursor: ns-resize;
 }
@@ -2548,11 +2543,15 @@ html {
   border-bottom: 2px solid #007bff;
 }
 
-.tab-content {
+.tab-container {
+  height: 100%;
+  overflow-y: auto;
+}
+.tab-container .tab-content {
   display: none;
   padding: 10px;
 }
-.tab-content.active {
+.tab-container .tab-content.active {
   display: block;
 }
 
