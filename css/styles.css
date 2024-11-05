@@ -338,7 +338,8 @@ button:disabled {
   z-index: 10;
 }
 #file-list-container.annual-report-view .annual-report-container .annual-report-controls h2 {
-  font-size: 24px;
+  font-size: 5em;
+  font-family: cursive;
   margin: 0;
   min-width: 200px;
   text-align: center;
@@ -730,6 +731,9 @@ body.dark-theme .timeline-container .month-column .month-content .project-item .
   color: #fff;
   transition: all 0.2s ease;
 }
+.calendar-day .add-folder-icon i {
+  color: #fff;
+}
 .calendar-day .add-folder-icon:hover {
   background: #FFC446;
   transform: scale(1.1);
@@ -865,15 +869,13 @@ body.dark-theme .folder-dialog {
 
 #folder-groups {
   margin-top: 20px;
-  padding: 0 10px;
+  padding: 0 8px;
 }
 #folder-groups .folder-groups-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 15px;
-  margin-bottom: 15px;
-  background: rgba(255, 196, 70, 0.1);
+  margin-bottom: 10px;
   border-radius: 8px;
 }
 #folder-groups .folder-groups-header button {
@@ -894,16 +896,16 @@ body.dark-theme .folder-dialog {
   color: #FFC446;
 }
 #folder-groups .folder-group {
-  margin: 0 0 12px 0;
+  margin: 0px 0 12px 0;
   background: rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
+  border-radius: 4px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 #folder-groups .folder-group .group-header {
   display: flex;
   align-items: center;
-  padding: 2px 4px;
+  padding: 4px;
   cursor: pointer;
   background: none;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -926,73 +928,29 @@ body.dark-theme .folder-dialog {
 }
 #folder-groups .folder-group .group-header .group-name {
   flex-grow: 1;
-  font-size: 13px;
+  font-size: 15px;
   color: rgba(255, 255, 255, 0.9);
 }
 #folder-groups .folder-group .group-header .group-header-controls {
+  opacity: 0;
+  transition: opacity 0.2s ease;
   display: flex;
   align-items: center;
   gap: 8px;
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
 }
-#folder-groups .folder-group .group-header .group-header-controls .color-picker {
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.2s ease;
-}
-#folder-groups .folder-group .group-header .group-header-controls .color-picker:hover {
-  transform: scale(1.1);
-  border-color: rgba(255, 255, 255, 0.4);
-}
-#folder-groups .folder-group .group-header .add-to-group {
-  opacity: 0;
-  transition: all 0.2s ease;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-}
-#folder-groups .folder-group .group-header .add-to-group:hover {
-  background: rgba(255, 255, 255, 0.2);
-  color: #FFC446;
-}
-#folder-groups .folder-group .group-header:hover .add-to-group {
+#folder-groups .folder-group:hover .group-header-controls {
   opacity: 1;
 }
-#folder-groups .folder-group .group-content {
-  padding: 8px 0 8px 25px;
-}
-#folder-groups .folder-group .group-content .group-folder {
-  display: flex;
-  align-items: center;
-  padding: 2px 2px;
-  cursor: pointer;
-  border-radius: 4px;
-  margin: 2px 8px 2px 0;
-  transition: all 0.2s ease;
-}
-#folder-groups .folder-group .group-content .group-folder:hover {
-  background: rgba(255, 196, 70, 0.1);
-}
-#folder-groups .folder-group .group-content .group-folder .file-icon {
-  width: 18px;
-  margin-right: 8px;
-  opacity: 0.7;
-}
-#folder-groups .folder-group .group-content .group-folder .folder-name {
-  flex-grow: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 12px;
+#folder-groups .folder-group .group-name {
+  margin-right: 100px;
 }
 
 body.dark-theme #folder-groups .folder-group {
-  background: rgba(0, 0, 0, 0.2);
+  background: #1d1d1d;
   border-color: rgba(255, 255, 255, 0.05);
 }
 body.dark-theme #folder-groups .folder-group .group-header {
@@ -1000,6 +958,330 @@ body.dark-theme #folder-groups .folder-group .group-header {
 }
 body.dark-theme #folder-groups .folder-group .group-header:hover {
   background: rgba(255, 255, 255, 0.01);
+}
+
+.color-picker-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--bg-color, #2e2e2e);
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  min-width: 300px;
+}
+.color-picker-dialog .dialog-header {
+  font-size: 18px;
+  margin-bottom: 20px;
+  color: #FFC446;
+  font-weight: bold;
+}
+.color-picker-dialog .default-colors {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin: 15px 0;
+}
+.color-picker-dialog .default-colors .color-option {
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+.color-picker-dialog .default-colors .color-option:hover {
+  transform: scale(1.1);
+}
+.color-picker-dialog .default-colors .color-option.selected {
+  border-color: #FFC446;
+}
+.color-picker-dialog .custom-color {
+  margin: 15px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.color-picker-dialog .custom-color label {
+  color: var(--text-color, #e0e0e0);
+}
+.color-picker-dialog .custom-color input[type=color] {
+  width: 50px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.color-picker-dialog .dialog-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+.color-picker-dialog .dialog-buttons button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: bold;
+}
+.color-picker-dialog .dialog-buttons button.confirm {
+  background: #FFC446;
+  color: #000;
+}
+.color-picker-dialog .dialog-buttons button.cancel {
+  background: var(--bg-secondary, #1e1e1e);
+  color: var(--text-color, #e0e0e0);
+}
+.color-picker-dialog .dialog-buttons button.cancel:hover {
+  background: var(--bg-hover, #3a3a3a);
+}
+
+.rename-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--bg-color, #2e2e2e);
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  min-width: 300px;
+}
+.rename-dialog .dialog-header {
+  font-size: 18px;
+  margin-bottom: 20px;
+  color: #FFC446;
+  font-weight: bold;
+}
+.rename-dialog .dialog-content {
+  margin: 15px 0;
+}
+.rename-dialog .dialog-content .rename-input {
+  width: 100%;
+  padding: 8px;
+  border: none;
+  border-radius: 4px;
+  background: var(--bg-secondary, #1e1e1e);
+  color: var(--text-color, #e0e0e0);
+  font-size: 14px;
+}
+.rename-dialog .dialog-content .rename-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 196, 70, 0.3);
+}
+.rename-dialog .dialog-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+.rename-dialog .dialog-buttons button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: bold;
+}
+.rename-dialog .dialog-buttons button.confirm {
+  background: #FFC446;
+  color: #000;
+}
+.rename-dialog .dialog-buttons button.cancel {
+  background: var(--bg-secondary, #1e1e1e);
+  color: var(--text-color, #e0e0e0);
+}
+.rename-dialog .dialog-buttons button.cancel:hover {
+  background: var(--bg-hover, #3a3a3a);
+}
+
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  z-index: 999;
+}
+
+body.dark-theme .color-picker-dialog,
+body.dark-theme .rename-dialog {
+  --bg-color: #2e2e2e;
+  --text-color: #e0e0e0;
+  --bg-secondary: #1e1e1e;
+  --bg-hover: #3a3a3a;
+}
+
+.group-name {
+  flex-grow: 1;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.9);
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+.group-name[contenteditable=true] {
+  cursor: text;
+  outline: none;
+}
+.group-name[contenteditable=true]:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.group-name[contenteditable=true]:focus {
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 0 2px rgba(255, 196, 70, 0.3);
+}
+
+.group-folder.highlighted {
+  background: rgba(255, 196, 70, 0.2);
+  border-left: 3px solid #FFC446;
+  animation: highlight-pulse 3s ease-in-out;
+}
+
+@keyframes highlight-pulse {
+  0% {
+    background: rgba(255, 196, 70, 0.2);
+  }
+  50% {
+    background: rgba(255, 196, 70, 0.3);
+  }
+  100% {
+    background: rgba(255, 196, 70, 0.2);
+  }
+}
+.group-folders-container .group-folder {
+  display: flex;
+  align-items: center;
+  margin: 2px 0;
+  border-radius: 4px;
+  cursor: move;
+  transition: all 0.2s ease;
+}
+.group-folders-container .group-folder:hover .folder-name {
+  color: #fff;
+}
+.group-folders-container .group-folder .file-icon {
+  margin-right: 8px;
+}
+.group-folders-container .group-folder .file-icon svg {
+  height: 14px;
+}
+.group-folders-container .group-folder .folder-name {
+  color: #ccc;
+  font-size: 14px;
+  flex-grow: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.group-folders-container .group-folder:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.group-folders-container .group-folder.folder-ghost {
+  opacity: 0.5;
+  background: rgba(255, 196, 70, 0.1);
+  border: none;
+  box-shadow: none;
+}
+.group-folders-container .group-folder.folder-chosen {
+  background: rgba(255, 196, 70, 0.2);
+}
+.group-folders-container .group-folder.folder-drag {
+  background: rgba(255, 196, 70, 0.3);
+  transform: scale(1.02);
+  z-index: 1000;
+}
+
+.drag-indicator {
+  position: fixed;
+  height: 2px;
+  background-color: #4a90e2;
+  box-shadow: 0 0 4px rgba(74, 144, 226, 0.5);
+  pointer-events: none;
+  z-index: 1000;
+  transition: top 0.1s ease;
+}
+.drag-indicator::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: -3px;
+  width: 8px;
+  height: 8px;
+  background-color: #4a90e2;
+  border-radius: 50%;
+}
+.drag-indicator::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: -3px;
+  width: 8px;
+  height: 8px;
+  background-color: #4a90e2;
+  border-radius: 50%;
+}
+
+.group-folders-container .group-folder.folder-ghost {
+  opacity: 0.5;
+  background: rgba(255, 196, 70, 0.1);
+  border: none;
+  box-shadow: none;
+}
+.group-folders-container .group-folder.folder-chosen {
+  background: rgba(255, 196, 70, 0.2);
+}
+.group-folders-container .group-folder.folder-drag {
+  background: rgba(255, 196, 70, 0.3);
+  transform: scale(1.02);
+  z-index: 1000;
+}
+
+.color-dropdown {
+  background: #2e2e2e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 8px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  z-index: 1000;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+.color-dropdown .color-option {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+.color-dropdown .color-option:hover {
+  transform: scale(1.1);
+}
+.color-dropdown .color-option.selected {
+  border-color: #FFC446;
+}
+
+.color-picker {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 0 4px;
+}
+.color-picker:hover {
+  transform: scale(1.1);
 }
 
 #resizer {
@@ -1144,7 +1426,7 @@ body #sidebar .sidebar-tabs .tab-button.active {
 }
 body #sidebar .tab-content {
   display: none;
-  padding: 20px;
+  padding: 0px;
 }
 body #sidebar .tab-content.active {
   display: block;
@@ -1301,7 +1583,7 @@ body .calendar-day .day-content .folder-icon {
   background-color: #121212;
 }
 .dark-theme #sidebar {
-  background-color: #1e1e1e;
+  background-color: #181818;
   border-right: 1px solid #3a3a3a;
   border-right-color: #3a3a3a;
 }
@@ -1327,7 +1609,7 @@ body .calendar-day .day-content .folder-icon {
 }
 .dark-theme #sidebar .tab-content {
   display: none;
-  padding: 20px;
+  padding: 0px;
 }
 .dark-theme #sidebar .tab-content.active {
   display: block;
@@ -1357,7 +1639,7 @@ body .calendar-day .day-content .folder-icon {
   background-color: #3a3a3a;
 }
 .dark-theme .sidebar-section-content {
-  background-color: #1e1e1e;
+  background-color: #181818;
 }
 .dark-theme #toolbar {
   background-color: #2e2e2e;
@@ -1383,7 +1665,7 @@ body .calendar-day .day-content .folder-icon {
   background-color: #2e2e2e;
 }
 .dark-theme ::-webkit-scrollbar-track {
-  background: #1e1e1e;
+  background: #181818;
 }
 .dark-theme ::-webkit-scrollbar-thumb {
   background: #3a3a3a;
@@ -1392,7 +1674,7 @@ body .calendar-day .day-content .folder-icon {
   background: #404040;
 }
 .dark-theme #preview-panel {
-  background-color: #1e1e1e;
+  background-color: #181818;
   border-left-color: #3a3a3a;
 }
 .dark-theme #fullscreen-preview {
@@ -2089,6 +2371,8 @@ html {
 }
 #recent-tab .timeline-item .timeline-item-content .file-name {
   flex-grow: 1;
+  color: #d7d7d7;
+  font-size: 12px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2133,9 +2417,9 @@ html {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  position: relative;
 }
 .calendar-controls button {
+  position: relative;
   background: none;
   border: none;
   font-size: 16px;
@@ -2145,11 +2429,14 @@ html {
   border-radius: 4px;
 }
 .calendar-controls button#today-button {
-  background-color: #007bff;
+  background-color: transparent;
+  border: 1px solid #fff;
   color: white;
+  transition: all 0.3s ease;
 }
 .calendar-controls button#today-button:hover {
-  background-color: #0056b3;
+  color: #ffc446;
+  background-color: #ffc446;
 }
 .calendar-controls::after {
   content: "";
@@ -2187,6 +2474,7 @@ html {
   border-radius: 8px;
   min-height: 100px;
   position: relative;
+  overflow: hidden;
   transition: background-color 0.3s ease;
 }
 .calendar-view #file-list .calendar-day:hover {
@@ -2200,8 +2488,10 @@ html {
 }
 .calendar-view #file-list .calendar-day .day-number {
   position: absolute;
-  top: 5px;
-  left: 5px;
+  opacity: 0.03;
+  font-size: 99px;
+  bottom: -41px;
+  right: 5px;
   font-weight: bold;
 }
 .calendar-view #file-list .calendar-day .day-content {
@@ -2211,9 +2501,11 @@ html {
   flex-direction: column;
   align-items: flex-start;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 .calendar-view #file-list .calendar-day .day-content .folder-item {
   font-size: 14px;
+  font-family: cursiv;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2272,7 +2564,7 @@ html {
   transition: background-color 0.2s;
 }
 #project-management-tab .custom-item:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: rgb(0, 0, 0);
 }
 #project-management-tab .custom-item .file-icon {
   margin-right: 10px;

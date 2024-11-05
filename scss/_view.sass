@@ -924,16 +924,16 @@ body.dark-theme
         color: #FFC446
 
   .folder-group
-    margin: 0px 0 8px 0
+    margin: 0px 0 12px 0
     background: rgba(255, 255, 255, 0.03)
-    border-radius: 8px
+    border-radius: 4px
     overflow: hidden
     border: 1px solid rgba(255, 255, 255, 0.05)
     
     .group-header
       display: flex
       align-items: center
-      padding: 2px 4px
+      padding: 4px
       cursor: pointer
       background: none  // 因为现在使用动态背景色
       border-bottom: 1px solid rgba(255, 255, 255, 0.05)
@@ -955,7 +955,7 @@ body.dark-theme
       
       .group-name
         flex-grow: 1
-        font-size: 13px
+        font-size: 15px
         color: rgba(255, 255, 255, 0.9)  // 调整文字颜色以适应不同背景色
       
       .group-header-controls
@@ -968,28 +968,7 @@ body.dark-theme
         right: 8px         // 固定在右侧
         top: 50%
         transform: translateY(-50%)
-        
-        .move-up,
-        .move-down
-            width: 20px
-            height: 20px
-            display: flex
-            align-items: center
-            justify-content: center
-            border-radius: 3px
-            background: none
-            border: none
-            cursor: pointer
-            color: rgba(255, 255, 255, 0.5)  // 降低默认颜色的透明度
-            padding: 0
-            
-            i
-                font-size: 12px  // 减小图标尺寸
-            
-            &:hover
-                background: rgba(255, 255, 255, 0.1)
-                color: #FFC446
-
+    
     // 鼠标悬停时显示控制按钮
     &:hover
         .group-header-controls
@@ -1003,7 +982,7 @@ body.dark-theme
 body.dark-theme
   #folder-groups
     .folder-group
-      background: rgba(0, 0, 0, 0.8)
+      background: #1d1d1d
       border-color: rgba(255, 255, 255, 0.05)
       
       .group-header
@@ -1087,7 +1066,7 @@ body.dark-theme
         color: #000
         
         &:hover
-          background: darken(#FFC446, 10%)
+          // background: darken(#FFC446, 10%)
       
       &.cancel
         background: var(--bg-secondary, #1e1e1e)
@@ -1149,7 +1128,7 @@ body.dark-theme
         color: #000
         
         &:hover
-          background: darken(#FFC446, 10%)
+          // background: darken(#FFC446, 10%)
       
       &.cancel
         background: var(--bg-secondary, #1e1e1e)
@@ -1214,41 +1193,49 @@ body.dark-theme
     100%
         background: rgba(255, 196, 70, 0.2)
 
+
 .group-folders-container
     .group-folder
-        display: flex
-        align-items: center
-        padding: 8px
-        margin: 2px 0
-        border-radius: 4px
-        cursor: move
-        transition: all 0.2s ease
-        
-        .file-icon
-            margin-right: 8px
-            
+      display: flex
+      align-items: center
+      // padding: 8px
+      margin: 2px 0
+      border-radius: 4px
+      cursor: move
+      transition: all 0.2s ease
+      &:hover
         .folder-name
-            flex-grow: 1
-            white-space: nowrap
-            overflow: hidden
-            text-overflow: ellipsis
+          color: #fff
         
-        &:hover
-            background: rgba(255, 255, 255, 0.05)
-        
-        &.folder-ghost
-            opacity: 0.5
-            background: rgba(255, 196, 70, 0.1)
-            border: none
-            box-shadow: none
-            
-        &.folder-chosen
-            background: rgba(255, 196, 70, 0.2)
-            
-        &.folder-drag
-            background: rgba(255, 196, 70, 0.3)
-            transform: scale(1.02)
-            z-index: 1000
+      .file-icon
+        margin-right: 8px
+        svg
+          height: 14px  
+
+      .folder-name
+        color: #ccc
+        font-size: 14px
+        flex-grow: 1
+        white-space: nowrap
+        overflow: hidden
+        text-overflow: ellipsis
+      
+      &:hover
+        background: rgba(255, 255, 255, 0.05)
+      
+      &.folder-ghost
+        opacity: 0.5
+        background: rgba(255, 196, 70, 0.1)
+        border: none
+        box-shadow: none
+          
+      &.folder-chosen
+        background: rgba(255, 196, 70, 0.2)
+          
+      &.folder-drag
+        background: rgba(255, 196, 70, 0.3)
+        transform: scale(1.02)
+        z-index: 1000
 
 // 修改拖拽指示线样式
 .drag-indicator

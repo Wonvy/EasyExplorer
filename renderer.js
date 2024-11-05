@@ -425,11 +425,6 @@ document.addEventListener('DOMContentLoaded', () => {
         activeTabButton.click();
     }
 
-    // 项目理标签页的件监听器
-    document.getElementById('custom-projects').addEventListener('click', () => {
-        console.log('项目按钮被点击');
-    });
-
     document.getElementById('custom-calendar').addEventListener('click', toggleCalendarView);
 
     // 添加年报按钮点击事件监听
@@ -1234,6 +1229,19 @@ ipcRenderer.on('menu-item-clicked', (event, action, data) => {
         case '设置颜色':
             if (data && data.groupName) {
                 showColorPicker(data.groupName);
+            }
+            break;
+
+
+        case '向上移动':
+            if (data && data.groupName) {
+                moveGroup(data.groupName, 'up');
+            }
+            break;
+
+        case '向下移动':
+            if (data && data.groupName) {
+                moveGroup(data.groupName, 'down');
             }
             break;
 
@@ -3304,6 +3312,7 @@ function updateFolderGroups() {
         });
     }
 
+    // 遍历每个分组
     groupEntries.forEach(([groupName, folders]) => {
         const groupElement = document.createElement('div');
         groupElement.className = 'folder-group';
@@ -3330,12 +3339,6 @@ function updateFolderGroups() {
                 <i class="fas fa-chevron-down"></i>
                 <span class="group-name" contenteditable="true">${groupName}</span>
                 <div class="group-header-controls">
-                    <button class="move-up" title="向上移动">
-                        <i class="fas fa-chevron-up"></i>
-                    </button>
-                    <button class="move-down" title="向下移动">
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
                     <div class="color-picker" title="设置颜色" style="background: ${backgroundColor}"></div>
                     <button class="add-to-group" title="添加当前文件夹到分组">
                         <i class="fas fa-plus"></i>
@@ -3453,8 +3456,8 @@ function updateFolderGroups() {
 
         // 添加分组名称编辑功能
         groupNameElement.addEventListener('dblclick', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
+            e.preventDefault();//阻止默认事件
+            e.stopPropagation();//阻止冒泡
             groupNameElement.contentEditable = 'true';
             groupNameElement.focus();
             // 选中全部文本
@@ -3488,10 +3491,11 @@ function updateFolderGroups() {
         });
 
         // 修改折叠/展开功能
-        let clickTimer = null;
-        let isEditing = false;
+        let clickTimer = null;//点击计时器
+        let isEditing = false;//是否正在编辑
 
         headerElement.addEventListener('click', (e) => {
+            console.log('headerElement',e.target);
             // 如果点击的是控制按钮或正在编辑，不处理折叠/展开
             if (e.target.closest('.group-header-controls') || 
                 e.target === groupNameElement || 
@@ -3499,8 +3503,10 @@ function updateFolderGroups() {
                 return;
             }
 
+            console.log('headerElement2');
             // 单击处理折叠/展开
             const isCollapsed = headerElement.classList.toggle('collapsed');
+            console.log('isCollapsed', isCollapsed);
             content.style.display = isCollapsed ? 'none' : 'block';
             groupCollapseStates[groupName] = isCollapsed;
             localStorage.setItem('groupCollapseStates', JSON.stringify(groupCollapseStates));
@@ -3511,6 +3517,7 @@ function updateFolderGroups() {
             isEditing = true;
         });
 
+        // 失去焦点时更新编辑状态标记
         groupNameElement.addEventListener('blur', () => {
             isEditing = false;
         });
@@ -3537,19 +3544,6 @@ function updateFolderGroups() {
             });
         });
 
-        // 添加移动按钮事件监听器
-        const moveUpBtn = groupElement.querySelector('.move-up');
-        const moveDownBtn = groupElement.querySelector('.move-down');
-
-        moveUpBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            moveGroup(groupName, 'up');
-        });
-
-        moveDownBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            moveGroup(groupName, 'down');
-        });
 
         // 添加折叠/展开功能
         headerElement.addEventListener('click', (e) => {
@@ -3679,9 +3673,6 @@ function showGroupFolderContextMenu(e, groupName, folderPath) {
             },
             {
                 label: '移出分组'
-            },
-            {
-                label: '添加到收藏夹'
             }
         ]
     };
@@ -3731,23 +3722,6 @@ window.addEventListener('beforeunload', () => {
     localStorage.setItem('groupCollapseStates', JSON.stringify(groupCollapseStates));
 });
 
-// 添加分组标题右键菜单
-function showGroupHeaderContextMenu(e, groupName) {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const colorPicker = document.createElement('input');
-    colorPicker.type = 'color';
-    colorPicker.value = groupColors[groupName] || '#2c2c2c';
-    
-    colorPicker.addEventListener('change', (event) => {
-        groupColors[groupName] = event.target.value;
-        localStorage.setItem('groupColors', JSON.stringify(groupColors));
-        updateFolderGroups();
-    });
-    
-    colorPicker.click();
-}
 
 // 添加分组标题的右键菜单函数
 function showGroupContextMenu(e, groupName) {
@@ -3757,6 +3731,15 @@ function showGroupContextMenu(e, groupName) {
         template: [
             {
                 label: '删除分组'
+            },
+            {
+                label: '向上移动'
+            },
+            {
+                label: '向下移动'
+            },
+            {
+                label: '设置颜色'
             }
         ]
     };
@@ -3898,7 +3881,7 @@ function showRenameDialog(groupName) {
     });
 }
 
-// 添加重命名分组���数
+// 重命名分组函数
 function renameGroup(oldName, newName) {
     if (folderGroups[oldName]) {
         // 保存旧数据
@@ -3939,22 +3922,24 @@ function renameGroup(oldName, newName) {
 
 // 添加删除分组函数
 function deleteGroup(groupName) {
-    delete folderGroups[groupName];
-    delete groupColors[groupName];
-    delete groupCollapseStates[groupName];
-    
-    // 从 groupOrder 中移除
-    const index = groupOrder.indexOf(groupName);
-    if (index > -1) {
-        groupOrder.splice(index, 1);
+    if (confirm(`确认删除分组 "${groupName}"？`)) {
+        delete folderGroups[groupName];
+        delete groupColors[groupName];
+        delete groupCollapseStates[groupName];
+        
+        // 从 groupOrder 中移除
+        const index = groupOrder.indexOf(groupName);
+        if (index > -1) {
+            groupOrder.splice(index, 1);
+        }
+        
+        localStorage.setItem('folderGroups', JSON.stringify(folderGroups));
+        localStorage.setItem('groupColors', JSON.stringify(groupColors));
+        localStorage.setItem('groupCollapseStates', JSON.stringify(groupCollapseStates));
+        localStorage.setItem('groupOrder', JSON.stringify(groupOrder));
+        
+        updateFolderGroups();
     }
-    
-    localStorage.setItem('folderGroups', JSON.stringify(folderGroups));
-    localStorage.setItem('groupColors', JSON.stringify(groupColors));
-    localStorage.setItem('groupCollapseStates', JSON.stringify(groupCollapseStates));
-    localStorage.setItem('groupOrder', JSON.stringify(groupOrder));
-    
-    updateFolderGroups();
 }
 
 // 修改 moveGroup 函数，立即保存分组顺序
@@ -4011,6 +3996,6 @@ function validateAndInitData() {
 
 // 在应用启动时初始化数据
 document.addEventListener('DOMContentLoaded', () => {
-    validateAndInitData();
-    updateFolderGroups();
+    validateAndInitData();//初始化数据  
+    updateFolderGroups();//更新分组
 });
