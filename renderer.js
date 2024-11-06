@@ -969,7 +969,8 @@ function updateRecentTab() {
 
                     // 添加事件监听器
                     timelineItem.addEventListener('click', () => {
-                        navigateTo(item.path);
+                        const currentView = getCurrentViewDataAttribute();
+                        navigateTo(item.path, currentView);
                     });
 
                     timelineItem.addEventListener('mouseover', () => {
@@ -1345,7 +1346,8 @@ function createTimelineItems(fileDetails) {
                 e.stopPropagation();
                 const filePath = path.join(currentPath, file.name);
                 if (file.isDirectory) {
-                    navigateTo(filePath);
+                    const currentView = getCurrentViewDataAttribute();
+                    navigateTo(filePath, currentView);
                 } else {
                     shell.openPath(filePath);
                 }
@@ -1610,7 +1612,8 @@ function updateFavorites() {
 
         item.addEventListener('click', () => {
             const favPath = item.getAttribute('data-path');
-            navigateTo(favPath);
+            const currentView = getCurrentViewDataAttribute();
+            navigateTo(favPath, currentView);
         });
     });
 
@@ -1912,7 +1915,8 @@ function createFileItem(file, dirPath) {
             e.stopPropagation();
             const filePath = path.join(dirPath, file.name);
             if (typeof file.isDirectory === 'function' ? file.isDirectory() : file.isDirectory) {
-                navigateTo(filePath);
+                const currentView = getCurrentViewDataAttribute();
+                navigateTo(filePath, currentView);
             } else {
                 shell.openPath(filePath);
                 debouncedUpdateRecentTab();
@@ -2072,7 +2076,8 @@ fileListContainer.ondblclick = (e) => {
             // 正常的向上导航逻辑
             const parentPath = path.dirname(currentPath);
             if (parentPath !== currentPath) {
-                navigateTo(parentPath);
+                const currentView = getCurrentViewDataAttribute();
+                navigateTo(parentPath, currentView);
             }
         }
     }
@@ -2220,7 +2225,8 @@ function updateQuickAccess() {
                 quickAccessElements.forEach(item => {
                     item.addEventListener('click', () => {
                         let filePath = decodeURIComponent(item.getAttribute('data-path'));
-                        navigateTo(filePath);
+                        const currentView = getCurrentViewDataAttribute();
+                        navigateTo(filePath, currentView);
                     });
                 });
             });
@@ -2875,10 +2881,15 @@ pathElement.addEventListener('focus', handlePathFocus)
 pathElement.addEventListener('blur', handlePathBlur)
 
 // 导航到新路径
-function navigateTo(newPath) {
+function navigateTo(newPath, additionalClass="") {
     if (!newPath) {
         console.error('无效的路径');
         return;
+    }
+
+    // 更新 file-list-container 的 class
+    if (additionalClass) {
+        fileListContainer.className = additionalClass; // 修改 class
     }
 
     console.log('尝试导航到:', newPath); // 添加调试日志
@@ -2942,7 +2953,8 @@ function navigateTo(newPath) {
 // 添加地址栏输入跳转功能
 pathElement.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
-        navigateTo(pathElement.value)
+        const currentView = getCurrentViewDataAttribute();
+        navigateTo(pathElement.value, currentView);
     }
 })
 
@@ -3057,7 +3069,8 @@ function showDrives() {
     document.querySelectorAll('.drive-item').forEach(item => {
         item.addEventListener('click', () => {
             const drivePath = item.getAttribute('data-path');
-            navigateTo(drivePath);
+            const currentView = getCurrentViewDataAttribute();
+            navigateTo(drivePath, currentView);
         });
     });
 }
@@ -3542,7 +3555,8 @@ function updateFolderGroups() {
         groupElement.querySelectorAll('.group-folder').forEach(folder => {
             folder.addEventListener('click', () => {
                 const folderPath = folder.getAttribute('data-path');
-                navigateTo(folderPath);
+                const currentView = getCurrentViewDataAttribute();
+                navigateTo(folderPath, currentView);
             });
 
             folder.addEventListener('contextmenu', (e) => {
@@ -4030,8 +4044,14 @@ function handleTagClick(e) {
   const color = e.currentTarget.getAttribute('data-color');
   const selectedItems = document.querySelectorAll('.file-item.selected');
 
-  if (color === 'none') {
+    // 如果没有选中项目，执行右键点击处理
+    if (selectedItems.length === 0) {
+        handleTagRightClick(e);
+        return; // 退出函数
+    }
+
     // 移除所选项目的标签
+  if (color === 'none') {
     selectedItems.forEach(item => {
       const filePath = item.getAttribute('data-path');
       delete folderTags[filePath];
@@ -4050,14 +4070,15 @@ function handleTagClick(e) {
   localStorage.setItem('folderTags', JSON.stringify(folderTags));
 }
 
-// 将原来的 handleTagDoubleClick 改名为 handleTagRightClick
+// 右键单击颜色标签
 function handleTagRightClick(e) {
   const color = e.currentTarget.getAttribute('data-color');
   
   if (color === 'none') {
     if (isTagView && lastViewPath) {
       isTagView = false;
-      navigateTo(lastViewPath);
+      const currentView = getCurrentViewDataAttribute();
+      navigateTo(lastViewPath, currentView);
     }
     return;
   }
@@ -4122,7 +4143,8 @@ function showTagView(color) {
     itemElement.addEventListener('click', () => {
       isTagView = false;
       if (item.isDirectory) {
-        navigateTo(item.path);
+        const currentView = getCurrentViewDataAttribute();
+        navigateTo(item.path, currentView);
       } else {
         shell.openPath(item.path);
       }
@@ -4130,4 +4152,16 @@ function showTagView(color) {
 
     fileListElement.appendChild(itemElement);
   });
+}
+
+
+// 获取当前所选的视图的 data-view 属性值
+function getCurrentViewDataAttribute() {
+    const viewButtons = document.querySelectorAll('#view-options button');
+    for (const button of viewButtons) {
+        if (button.classList.contains('active')) {
+            return button.getAttribute('data-view'); // 返回所选视图的 data-view 属性值
+        }
+    }
+    return ''; // 如果没有选中的视图，返回空字符串
 }

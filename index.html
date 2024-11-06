@@ -15,19 +15,10 @@
         <!-- 侧边栏 -->
         <div id="sidebar">
 
-            <!-- 设置 -->
-            <div id="settings">
-                <i class="fas fa-cog" title="设置"></i>
-                <div id="settings-menu" class="hidden">
-                    <button id="theme-toggle">切换主题</button>
-                    <button id="open-settings">设置</button>
-                </div>
-            </div>
-
             <!-- 侧边栏内容 -->
             <div class="sidebar-content">
                 <div class="sidebar-tabs">
-                    <button class="tab-button active" data-tab="folders">文件夹</button>
+                    <button class="tab-button active" data-tab="folders">主页</button>
                     <button class="tab-button" data-tab="project-management">项目</button>
                     <button class="tab-button" data-tab="recent">最近</button>
                 </div>
@@ -38,13 +29,15 @@
                         <div id="quick-access" class="sidebar-section"></div>
                     </div>
                     <div class="tab-content" id="project-management-tab" style="display: none;">
-                        <div class="custom-item" id="custom-calendar">
-                            <span class="file-icon"><i class="fas fa-calendar-alt"></i></span>
-                            <span>日历</span>
-                        </div>
-                        <div class="custom-item" id="custom-annual-report">
-                            <span class="file-icon"><i class="fas fa-chart-line"></i></span>
-                            <span>年报</span>
+                        <div id="custom-items-container">
+                            <div class="custom-item" id="custom-calendar">
+                                <span class="file-icon"><i class="fas fa-calendar-alt"></i></span>
+                                <span>日历</span>
+                            </div>
+                            <div class="custom-item" id="custom-annual-report">
+                                <span class="file-icon"><i class="fas fa-chart-line"></i></span>
+                                <span>年报</span>
+                            </div>
                         </div>
                         <!-- 添加分组模块 -->
                         <div id="folder-groups">
@@ -60,6 +53,15 @@
                     <div class="tab-content" id="recent-tab" style="display: none;">
                         最近文件时间轴显示
                     </div>
+                </div>
+            </div>
+
+            <!-- 设置 -->
+            <div id="settings">
+                <i class="fas fa-cog" title="设置"></i>
+                <div id="settings-menu" class="hidden">
+                    <button id="theme-toggle">切换主题</button>
+                    <button id="open-settings">设置</button>
                 </div>
             </div>
 
@@ -116,10 +118,10 @@
     
                 <!-- 视图 -->
                 <div id="view-options">
-                    <button id="list-view-btn" title="列表视图"><i class="fas fa-list"></i></button>
-                    <button id="icon-view-btn" title="图标视图"><i class="fas fa-th-large"></i></button>
-                    <button id="group-view-btn" title="分组视图"><i class="fas fa-object-group"></i></button>
-                    <button id="timeline-view-btn" title="时间轴视图"><i class="fas fa-stream"></i></button>
+                    <button id="list-view-btn" data-view="list-view" title="列表视图"><i class="fas fa-list"></i></button>
+                    <button id="icon-view-btn" data-view="icon-view" title="图标视图"><i class="fas fa-th-large"></i></button>
+                    <button id="group-view-btn" data-view="group-view" title="分组视图"><i class="fas fa-object-group"></i></button>
+                    <button id="timeline-view-btn" data-view="timeline-view" title="时间轴视图"><i class="fas fa-stream"></i></button>
                 </div>
 
             </div>

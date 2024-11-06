@@ -69,12 +69,17 @@ $header-hover-bg-dark: rgba(172, 172, 172, 0.2)
         display: block
 
 
-
-    #settings-menu
-      border: 1px solid $border
-      button
+    #settings
+      background-color: $sidebar-bg
+      i
         &:hover
-            background-color: $hover-bg
+          background-color: $hover-bg
+      #settings-menu
+        background-color: $sidebar-bg
+        border: 1px solid $border
+        button
+          &:hover
+              background-color: $hover-bg
   #main 
     background-color: $main-bg
 
