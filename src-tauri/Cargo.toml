@@ -23,7 +23,8 @@ windows = { version = "0.56", features = [
   "Win32_UI_Shell_Common",
   "Win32_Graphics_Gdi",
   "Win32_UI_WindowsAndMessaging",
-  "Win32_Storage_FileSystem"
+  "Win32_Storage_FileSystem",
+  "Win32_System_Com"
 ] }
 image = "0.25"
 encoding_rs = "0.8"

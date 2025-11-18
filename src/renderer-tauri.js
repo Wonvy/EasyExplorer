@@ -723,7 +723,7 @@ function createFileItem(file) {
     const ext = path.extname(file.name).toLowerCase();
     const extLabel = (ext || '').replace('.', '').toUpperCase();
     let icon = getFileIcon(file.name, file.is_directory);
-    
+
     // 如果是图片文件，显示缩略图，并在左上角叠加一个小类型图标
     const isImage = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg', '.ico'].includes(ext);
     if (isImage && !file.is_directory) {
@@ -735,31 +735,6 @@ function createFileItem(file) {
                 <span class="file-ext-badge">${extLabel}</span>
             </div>
         `;
-    }
-    
-    // 如果是 PPTX 文件：尝试加载内置缩略图
-    if (!file.is_directory && ext && ext.toLowerCase() === '.pptx') {
-        const fileIconEl = fileItem.querySelector('.file-icon');
-        if (fileIconEl) {
-            (async () => {
-                try {
-                    console.log('尝试加载 PPT 缩略图:', normalizedPath);
-                    const thumbPath = await invoke('get_ppt_thumbnail', { path: normalizedPath });
-                    if (!thumbPath) return;
-                    const { convertFileSrc } = window.__TAURI__.tauri;
-                    const thumbUrl = convertFileSrc(thumbPath);
-                    icon = `
-                        <div class="file-thumbnail-wrapper no-overlay">
-                            <img src="${thumbUrl}" class="file-thumbnail" alt="${file.name}">
-                            <span class="file-ext-badge">${extLabel}</span>
-                        </div>
-                    `;
-                } catch (e) {
-                    // 没有缩略图或解析失败时保持默认图标
-                    console.warn('获取 PPT 缩略图失败，使用默认图标:', e);
-                }
-            })();
-        }
     }
     
     const tag = fileTags[file.path];
@@ -808,6 +783,53 @@ function createFileItem(file) {
             <div class="file-date">${formatDate(file.modified)}</div>
             <div class="file-type">${file.is_directory ? '文件夹' : (ext || '文件')}</div>
         `;
+    }
+
+    // 需要优先尝试系统缩略图的文件类型（如 PSD / AI / PDF / PPTX）
+    const needShellThumb = ['.psd', '.ai', '.pdf', '.pptx'].includes(ext);
+    if (!file.is_directory && needShellThumb) {
+        const fileIconEl = fileItem.querySelector('.file-icon');
+        if (fileIconEl) {
+            (async () => {
+                try {
+                    console.log('尝试获取系统缩略图:', normalizedPath);
+                    const thumbPath = await invoke('get_system_thumbnail', {
+                        path: normalizedPath,
+                        width: 256,
+                        height: 256
+                    });
+                    if (!thumbPath) return;
+                    const { convertFileSrc } = window.__TAURI__.tauri;
+                    const thumbUrl = convertFileSrc(thumbPath);
+                    fileIconEl.innerHTML = `
+                        <div class="file-thumbnail-wrapper no-overlay">
+                            <img src="${thumbUrl}" class="file-thumbnail" alt="${file.name}">
+                            <span class="file-ext-badge">${extLabel}</span>
+                        </div>
+                    `;
+                } catch (e) {
+                    console.warn('获取系统缩略图失败:', e);
+                    // 对 PPTX 再尝试内置缩略图
+                    if (ext === '.pptx') {
+                        try {
+                            console.log('回退到 PPTX 内置缩略图:', normalizedPath);
+                            const thumbPath = await invoke('get_ppt_thumbnail', { path: normalizedPath });
+                            if (!thumbPath) return;
+                            const { convertFileSrc } = window.__TAURI__.tauri;
+                            const thumbUrl = convertFileSrc(thumbPath);
+                            fileIconEl.innerHTML = `
+                                <div class="file-thumbnail-wrapper no-overlay">
+                                    <img src="${thumbUrl}" class="file-thumbnail" alt="${file.name}">
+                                    <span class="file-ext-badge">${extLabel}</span>
+                                </div>
+                            `;
+                        } catch (err) {
+                            console.warn('获取 PPTX 内置缩略图失败，使用默认图标:', err);
+                        }
+                    }
+                }
+            })();
+        }
     }
     
     // 如果是 exe，可执行文件：仅在 Windows 下尝试加载真实图标
@@ -1053,10 +1075,21 @@ async function openFile(file) {
 function selectFile(file, multiSelect) {
     const filePath = normalizePath(file.path);
     console.log('selectFile 被调用，文件:', file.name, '路径:', filePath, 'isDirectory:', file.is_directory);
-    const fileItem = document.querySelector(`[data-path="${filePath}"]`);
-    
+
+    // 不能直接用 querySelector 携带原始路径（包含反斜杠、# 等特殊字符），否则会被当成 CSS 转义
+    // 这里通过遍历所有带 data-path 的 file-item，用 JS 比较规范化后的路径，避免选择器转义问题
+    let fileItem = null;
+    const allItems = document.querySelectorAll('.file-item[data-path]');
+    for (const el of allItems) {
+        const elPath = normalizePath(el.dataset.path || '');
+        if (elPath === filePath) {
+            fileItem = el;
+            break;
+        }
+    }
+
     if (!fileItem) {
-        console.error('找不到文件元素，路径:', file.path);
+        console.error('找不到文件元素，路径:', filePath);
         return;
     }
     

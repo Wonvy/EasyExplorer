@@ -2,6 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use serde::{Deserialize, Serialize};
+use windows::core::Interface;
 use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -38,6 +39,184 @@ struct FileInfo {
     size: u64,
     modified: Option<u64>,
     created: Option<u64>,
+}
+
+// 使用 Windows Shell 获取文件缩略图并缓存为 PNG，返回 PNG 路径
+#[tauri::command]
+async fn get_system_thumbnail(path: String, width: u32, height: u32) -> Result<String, String> {
+    #[cfg(not(target_os = "windows"))]
+    {
+        return Err("仅在 Windows 上支持系统缩略图提取".to_string());
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        use std::fs::create_dir_all;
+        use windows::Win32::UI::Shell::{IShellItem, IShellItemImageFactory, SHCreateItemFromParsingName, SIIGBF_THUMBNAILONLY, SIIGBF_BIGGERSIZEOK};
+        use windows::Win32::Graphics::Gdi::{GetObjectW, BITMAP, SelectObject, BitBlt, SRCCOPY};
+
+        let file_path = PathBuf::from(&path);
+        if !file_path.exists() {
+            return Err(format!("文件不存在: {}", path));
+        }
+
+        // 缓存目录: %APPDATA%/easyexplorer/system-thumbs
+        let mut cache_dir = tauri::api::path::data_dir().ok_or_else(|| "无法获取应用数据目录".to_string())?;
+        cache_dir.push("easyexplorer");
+        cache_dir.push("system-thumbs");
+        create_dir_all(&cache_dir).map_err(|e| e.to_string())?;
+
+        let file_name = file_path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .ok_or_else(|| "无法获取文件名".to_string())?;
+
+        let mut png_path = cache_dir.clone();
+        // 简单用文件名+尺寸作为缓存键
+        png_path.push(format!("{file_name}_{width}x{height}.png"));
+
+        if png_path.exists() {
+            return Ok(png_path.to_string_lossy().to_string());
+        }
+
+        unsafe {
+            // 创建 ShellItem
+            let wide: Vec<u16> = file_path
+                .as_os_str()
+                .encode_wide()
+                .chain(std::iter::once(0))
+                .collect();
+
+            let shell_item: IShellItem = SHCreateItemFromParsingName(PCWSTR(wide.as_ptr()), None)
+                .map_err(|e| format!("创建 ShellItem 失败: {e}"))?;
+
+            let factory: IShellItemImageFactory = shell_item
+                .cast()
+                .map_err(|e| format!("获取 IShellItemImageFactory 失败: {e}"))?;
+
+            let size = windows::Win32::Foundation::SIZE {
+                cx: width as i32,
+                cy: height as i32,
+            };
+
+            let flags = SIIGBF_THUMBNAILONLY | SIIGBF_BIGGERSIZEOK;
+            let hbitmap = factory
+                .GetImage(size, flags)
+                .map_err(|e| format!("获取缩略图位图失败: {e}"))?;
+
+            if hbitmap.0 == 0 {
+                return Err("Shell 未返回有效缩略图".to_string());
+            }
+
+            // 查询位图信息
+            let mut bmp: BITMAP = std::mem::zeroed();
+            let res = GetObjectW(hbitmap, std::mem::size_of::<BITMAP>() as i32, Some(&mut bmp as *mut _ as *mut _));
+            if res == 0 {
+                let _ = DeleteObject(hbitmap);
+                return Err("获取位图信息失败".to_string());
+            }
+
+            let bmp_width = bmp.bmWidth;
+            let bmp_height = bmp.bmHeight;
+
+            // 创建内存 DC 和 DIB，用于读取像素
+            use windows::Win32::Graphics::Gdi::{GetDC, ReleaseDC};
+            let hwnd = GetDesktopWindow();
+            let hdc_screen = GetDC(hwnd);
+            if hdc_screen.0 == 0 {
+                let _ = DeleteObject(hbitmap);
+                return Err("获取屏幕 DC 失败".into());
+            }
+
+            let hdc_mem = CreateCompatibleDC(hdc_screen);
+            if hdc_mem.0 == 0 {
+                let _ = ReleaseDC(hwnd, hdc_screen);
+                let _ = DeleteObject(hbitmap);
+                return Err("创建内存 DC 失败".into());
+            }
+
+            let mut bmi = BITMAPINFO::default();
+            bmi.bmiHeader = BITMAPINFOHEADER {
+                biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
+                biWidth: bmp_width,
+                biHeight: -bmp_height, // top-down
+                biPlanes: 1,
+                biBitCount: 32,
+                biCompression: BI_RGB.0,
+                ..Default::default()
+            };
+
+            let mut bits_ptr: *mut c_void = std::ptr::null_mut();
+            let hbitmap_dib: HBITMAP = CreateDIBSection(
+                hdc_screen,
+                &bmi,
+                DIB_RGB_COLORS,
+                &mut bits_ptr,
+                None,
+                0,
+            )
+            .map_err(|e| e.to_string())?;
+
+            if hbitmap_dib.0 == 0 || bits_ptr.is_null() {
+                let _ = DeleteDC(hdc_mem);
+                let _ = ReleaseDC(hwnd, hdc_screen);
+                let _ = DeleteObject(hbitmap);
+                return Err("创建 DIB 失败".into());
+            }
+
+            let old = SelectObject(hdc_mem, hbitmap_dib);
+
+            // 将 Shell 返回的 hbitmap 拷贝到我们的 DIB 中
+            let hdc_src = CreateCompatibleDC(hdc_screen);
+            if hdc_src.0 == 0 {
+                let _ = SelectObject(hdc_mem, old);
+                let _ = DeleteObject(hbitmap_dib);
+                let _ = DeleteDC(hdc_mem);
+                let _ = ReleaseDC(hwnd, hdc_screen);
+                let _ = DeleteObject(hbitmap);
+                return Err("创建源 DC 失败".into());
+            }
+
+            let old_src = SelectObject(hdc_src, hbitmap);
+
+            let _ = BitBlt(
+                hdc_mem,
+                0,
+                0,
+                bmp_width,
+                bmp_height,
+                hdc_src,
+                0,
+                0,
+                SRCCOPY,
+            );
+
+            // 构造 RGBA 像素缓冲区
+            let row_bytes = bmp_width as usize * 4;
+            let total_bytes = row_bytes * bmp_height as usize;
+            let mut rgba = vec![0u8; total_bytes];
+            std::ptr::copy_nonoverlapping(bits_ptr as *const u8, rgba.as_mut_ptr(), total_bytes);
+
+            // 清理 GDI 资源
+            let _ = SelectObject(hdc_src, old_src);
+            let _ = DeleteDC(hdc_src);
+            let _ = SelectObject(hdc_mem, old);
+            let _ = DeleteDC(hdc_mem);
+            let _ = ReleaseDC(hwnd, hdc_screen);
+            let _ = DeleteObject(hbitmap);
+
+            // 使用 image crate 编码 PNG
+            let img_buf = image::RgbaImage::from_raw(bmp_width as u32, bmp_height as u32, rgba)
+                .ok_or_else(|| "创建图像缓冲区失败".to_string())?;
+
+            let dyn_img = image::DynamicImage::ImageRgba8(img_buf);
+            dyn_img
+                .save(&png_path)
+                .map_err(|e| format!("保存缩略图失败: {e}"))?;
+
+            Ok(png_path.to_string_lossy().to_string())
+        }
+    }
 }
 
 // 提取 PPTX 缩略图并缓存为图片，返回图片路径
@@ -741,6 +920,7 @@ fn main() {
             remove_file,
             open_in_explorer,
             get_exe_icon,
+            get_system_thumbnail,
             get_ppt_thumbnail,
             read_text_flexible,
         ])
