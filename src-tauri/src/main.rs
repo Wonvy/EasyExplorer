@@ -72,8 +72,8 @@ async fn get_system_thumbnail(path: String, width: u32, height: u32) -> Result<S
             .ok_or_else(|| "无法获取文件名".to_string())?;
 
         let mut png_path = cache_dir.clone();
-        // 简单用文件名+尺寸作为缓存键
-        png_path.push(format!("{file_name}_{width}x{height}.png"));
+        // 简单用文件名+尺寸+版本作为缓存键，避免旧缩略图颜色错误的缓存
+        png_path.push(format!("{file_name}_{width}x{height}.v2.png"));
 
         if png_path.exists() {
             return Ok(png_path.to_string_lossy().to_string());
@@ -192,10 +192,18 @@ async fn get_system_thumbnail(path: String, width: u32, height: u32) -> Result<S
             );
 
             // 构造 RGBA 像素缓冲区
+            // 注意：DIB 返回的是 BGRA，需要转换为 RGBA，否则 R/B 会颠倒
             let row_bytes = bmp_width as usize * 4;
             let total_bytes = row_bytes * bmp_height as usize;
-            let mut rgba = vec![0u8; total_bytes];
-            std::ptr::copy_nonoverlapping(bits_ptr as *const u8, rgba.as_mut_ptr(), total_bytes);
+            let mut bgra = vec![0u8; total_bytes];
+            std::ptr::copy_nonoverlapping(bits_ptr as *const u8, bgra.as_mut_ptr(), total_bytes);
+
+            // BGRA -> RGBA
+            for chunk in bgra.chunks_mut(4) {
+                if chunk.len() == 4 {
+                    chunk.swap(0, 2); // B <-> R
+                }
+            }
 
             // 清理 GDI 资源
             let _ = SelectObject(hdc_src, old_src);
@@ -206,7 +214,7 @@ async fn get_system_thumbnail(path: String, width: u32, height: u32) -> Result<S
             let _ = DeleteObject(hbitmap);
 
             // 使用 image crate 编码 PNG
-            let img_buf = image::RgbaImage::from_raw(bmp_width as u32, bmp_height as u32, rgba)
+            let img_buf = image::RgbaImage::from_raw(bmp_width as u32, bmp_height as u32, bgra)
                 .ok_or_else(|| "创建图像缓冲区失败".to_string())?;
 
             let dyn_img = image::DynamicImage::ImageRgba8(img_buf);
@@ -537,6 +545,11 @@ async fn get_drives() -> Result<Vec<DriveInfo>, String> {
             };
             
             let used_space = total_space.saturating_sub(available_space);
+
+            // 如果可用空间为 0，则不在列表中显示该驱动器
+            if available_space == 0 {
+                continue;
+            }
             let usage_percent = if total_space > 0 {
                 (used_space as f64 / total_space as f64 * 100.0) as f32
             } else {
@@ -775,7 +788,8 @@ async fn get_exe_icon(path: String) -> Result<String, String> {
             .and_then(|n| n.to_str())
             .ok_or_else(|| "无法获取 exe 文件名".to_string())?;
         let mut icon_path = cache_dir.clone();
-        icon_path.push(format!("{exe_name}.png"));
+        // 加上版本后缀，避免旧缓存颜色错误
+        icon_path.push(format!("{exe_name}.v2.png"));
 
         if icon_path.exists() {
             return Ok(icon_path.to_string_lossy().to_string());
@@ -875,11 +889,18 @@ async fn get_exe_icon(path: String) -> Result<String, String> {
                 DI_NORMAL,
             );
 
-            // 从 DIB section 中直接读取像素（BGRA 排列，32 位）
+            // 从 DIB section 中直接读取像素（BGRA 排列，32 位），并转换为 RGBA
             let pixel_count = (ICON_SIZE * ICON_SIZE * 4) as usize;
             let pixels_slice = std::slice::from_raw_parts(bits_ptr as *const u8, pixel_count);
             let mut pixels = Vec::with_capacity(pixel_count);
             pixels.extend_from_slice(pixels_slice);
+
+            // BGRA -> RGBA（交换 R/B 通道）
+            for chunk in pixels.chunks_mut(4) {
+                if chunk.len() == 4 {
+                    chunk.swap(0, 2);
+                }
+            }
 
             // 清理 GDI 资源
             let _ = SelectObject(hdc_mem, old);

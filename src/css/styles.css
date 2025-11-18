@@ -159,6 +159,12 @@ button:disabled {
   text-align: center;
   color: #666;
 }
+#file-list-container.list-view #file-list .file-item .file-path {
+  flex: 1;
+  min-width: 200px;
+  text-align: left;
+  color: #666;
+}
 #file-list-container.icon-view #file-list {
   display: flex;
   flex-wrap: wrap;
@@ -203,6 +209,19 @@ button:disabled {
   font-size: 48px;
   margin-bottom: 8px;
 }
+#file-list-container.icon-view #file-list .file-item .file-icon.file-icon-with-tag {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  column-gap: 6px;
+}
+#file-list-container.icon-view #file-list .file-item .file-icon.file-icon-with-tag .color-tag {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
 #file-list-container.icon-view #file-list .file-item .file-icon .folder-icon-wrapper {
   position: relative;
   width: 100%;
@@ -239,6 +258,40 @@ button:disabled {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   user-select: none;
+}
+#file-list-container.icon-view #file-list .file-item .file-name-with-tag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  column-gap: 6px;
+}
+#file-list-container.icon-view #file-list .file-item .file-name-with-tag .color-tag {
+  position: static;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+#file-list-container.icon-view #file-list .file-item .file-name-with-tag .file-name-text {
+  display: inline-block;
+}
+#file-list-container.icon-view #file-list .file-item[data-is-directory=true].tag-red .file-icon i {
+  color: #e74c3c !important;
+}
+#file-list-container.icon-view #file-list .file-item[data-is-directory=true].tag-orange .file-icon i {
+  color: #e67e22 !important;
+}
+#file-list-container.icon-view #file-list .file-item[data-is-directory=true].tag-yellow .file-icon i {
+  color: #f1c40f !important;
+}
+#file-list-container.icon-view #file-list .file-item[data-is-directory=true].tag-green .file-icon i {
+  color: #2ecc71 !important;
+}
+#file-list-container.icon-view #file-list .file-item[data-is-directory=true].tag-blue .file-icon i {
+  color: #3498db !important;
+}
+#file-list-container.icon-view #file-list .file-item[data-is-directory=true].tag-purple .file-icon i {
+  color: #9b59b6 !important;
 }
 #file-list-container.group-view #file-list {
   display: grid;
@@ -1594,12 +1647,31 @@ body.dark-theme #file-list-container.list-view #file-list .file-item > *, [data-
 body.dark-theme #file-list-container.list-view #file-list .file-item .file-size, body.dark-theme #file-list-container.list-view #file-list .file-item .file-date, body.dark-theme #file-list-container.list-view #file-list .file-item .file-type, [data-theme=dark] #file-list-container.list-view #file-list .file-item .file-size, [data-theme=dark] #file-list-container.list-view #file-list .file-item .file-date, [data-theme=dark] #file-list-container.list-view #file-list .file-item .file-type {
   color: #999;
 }
-body.dark-theme #file-list-container.icon-view #file-list .file-item:hover, [data-theme=dark] #file-list-container.icon-view #file-list .file-item:hover {
+body.dark-theme #file-list-container.icon-view #file-list .file-item, [data-theme=dark] #file-list-container.icon-view #file-list .file-item {
+  width: 120px;
   background-color: rgba(255, 255, 255, 0.08);
 }
 body.dark-theme #file-list-container.icon-view #file-list .file-item.selected, [data-theme=dark] #file-list-container.icon-view #file-list .file-item.selected {
   background-color: rgba(74, 144, 226, 0.25);
   border-color: rgba(74, 144, 226, 0.5);
+}
+body.dark-theme #file-list-container.icon-view #file-list .file-item[data-is-directory=true].tag-red .file-icon i, [data-theme=dark] #file-list-container.icon-view #file-list .file-item[data-is-directory=true].tag-red .file-icon i {
+  color: #e74c3c !important;
+}
+body.dark-theme #file-list-container.icon-view #file-list .file-item[data-is-directory=true].tag-orange .file-icon i, [data-theme=dark] #file-list-container.icon-view #file-list .file-item[data-is-directory=true].tag-orange .file-icon i {
+  color: #e67e22 !important;
+}
+body.dark-theme #file-list-container.icon-view #file-list .file-item[data-is-directory=true].tag-yellow .file-icon i, [data-theme=dark] #file-list-container.icon-view #file-list .file-item[data-is-directory=true].tag-yellow .file-icon i {
+  color: #f1c40f !important;
+}
+body.dark-theme #file-list-container.icon-view #file-list .file-item[data-is-directory=true].tag-green .file-icon i, [data-theme=dark] #file-list-container.icon-view #file-list .file-item[data-is-directory=true].tag-green .file-icon i {
+  color: #2ecc71 !important;
+}
+body.dark-theme #file-list-container.icon-view #file-list .file-item[data-is-directory=true].tag-blue .file-icon i, [data-theme=dark] #file-list-container.icon-view #file-list .file-item[data-is-directory=true].tag-blue .file-icon i {
+  color: #3498db !important;
+}
+body.dark-theme #file-list-container.icon-view #file-list .file-item[data-is-directory=true].tag-purple .file-icon i, [data-theme=dark] #file-list-container.icon-view #file-list .file-item[data-is-directory=true].tag-purple .file-icon i {
+  color: #9b59b6 !important;
 }
 body.dark-theme #file-list-container.group-view #file-list .file-list-group, body.dark-theme #file-list-container.timeline-view #file-list .file-list-group, [data-theme=dark] #file-list-container.group-view #file-list .file-list-group, [data-theme=dark] #file-list-container.timeline-view #file-list .file-list-group {
   border-color: rgba(100, 100, 100, 0.5);
@@ -1697,14 +1769,14 @@ body.dark-theme #file-list-container.group-view #file-list .file-list-group .fil
 #resizer {
   position: relative;
   width: 1px;
-  background-color: #3a3a3a;
+  background-color: rgba(255, 255, 255, 0.04);
   cursor: col-resize;
-  transition: background-color 0.01s;
+  transition: background-color 0.3s;
   touch-action: none;
   z-index: 999;
 }
 #resizer:hover {
-  background-color: #555;
+  background-color: rgba(255, 255, 255, 0.08);
 }
 #resizer::after {
   content: "";
@@ -1713,7 +1785,7 @@ body.dark-theme #file-list-container.group-view #file-list .file-list-group .fil
   bottom: 0;
   left: -3px;
   width: 1px;
-  background-color: #666;
+  background-color: rgba(255, 255, 255, 0.16);
   opacity: 0;
   transition: opacity 0.01s;
 }
@@ -1735,13 +1807,13 @@ body.dark-theme #file-list-container.group-view #file-list .file-list-group .fil
 #preview-resizer {
   position: relative;
   width: 1px;
-  background-color: #3a3a3a;
+  background-color: rgba(255, 255, 255, 0.04);
   cursor: col-resize;
   transition: background-color 0.3s;
   z-index: 999;
 }
 #preview-resizer:hover {
-  background-color: #555;
+  background-color: rgba(255, 255, 255, 0.08);
 }
 #preview-resizer::after {
   content: "";
@@ -1750,7 +1822,7 @@ body.dark-theme #file-list-container.group-view #file-list .file-list-group .fil
   bottom: 0;
   left: 0;
   width: 1px;
-  background-color: #666;
+  background-color: rgba(255, 255, 255, 0.16);
   opacity: 0;
   transition: opacity 0.3s;
 }
@@ -1856,13 +1928,9 @@ body.dark-theme #file-list-container.group-view #file-list .file-list-group .fil
   --hover-bg: #3a3a3a;
 }
 
-#sidebar .sidebar-content {
-  padding: 10px;
-}
 #sidebar .sidebar-tabs {
   display: flex;
-  gap: 5px;
-  padding: 5px;
+  gap: 0px;
   margin-bottom: 10px;
   border-bottom: 1px solid rgba(200, 200, 200, 0.3);
 }
@@ -1873,7 +1941,6 @@ body.dark-theme #file-list-container.group-view #file-list .file-list-group .fil
   background: transparent;
   cursor: pointer;
   font-size: 14px;
-  border-radius: 4px;
   transition: all 0.2s;
   color: inherit;
 }
@@ -2429,7 +2496,7 @@ body.dark-theme #path-container .path-separator, [data-theme=dark] #path-contain
 }
 #preview-panel #preview-content .preview-header {
   flex-shrink: 0;
-  padding: 10px 14px;
+  padding: 13px 14px;
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
@@ -3068,10 +3135,10 @@ body .calendar-day .day-content .folder-icon {
   background-color: #3a3a3a;
 }
 .dark-theme #resizer, .dark-theme #preview-resizer {
-  background-color: #2e2e2e;
+  background-color: rgba(255, 255, 255, 0.04);
 }
 .dark-theme #resizer::after, .dark-theme #preview-resizer::after {
-  background-color: #4a4a4a;
+  background-color: rgba(255, 255, 255, 0.16);
 }
 .dark-theme .fas, .dark-theme .far, .dark-theme .fab {
   color: #b0b0b0;
@@ -3422,6 +3489,9 @@ html {
   color: #262626;
   width: 30px;
   height: 30px;
+  display: flex;
+  align-content: center;
+  justify-content: center;
 }
 #app #main #toolbar #view-options {
   display: flex;

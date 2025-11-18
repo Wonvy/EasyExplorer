@@ -138,6 +138,13 @@
           width: 100px
           text-align: center
           color: #666
+
+        // 全局颜色视图下的路径列：尽可能占用剩余宽度
+        .file-path
+          flex: 1
+          min-width: 200px
+          text-align: left
+          color: #666
         
   // 图标视图样式
   &.icon-view
@@ -183,6 +190,19 @@
           font-size: 48px
           margin-bottom: 8px
 
+          &.file-icon-with-tag
+            display: flex
+            flex-direction: row
+            align-items: center
+            justify-content: center
+            column-gap: 6px
+
+            .color-tag
+              width: 8px
+              height: 8px
+              border-radius: 50%
+              flex-shrink: 0
+
           .folder-icon-wrapper
             position: relative
             width: 100%
@@ -219,6 +239,48 @@
           -webkit-line-clamp: 2
           -webkit-box-orient: vertical
           user-select: none
+
+        // 带颜色标签的文件名：在文本左侧显示一个小圆点
+        .file-name-with-tag
+          display: flex
+          align-items: center
+          justify-content: center
+          column-gap: 6px
+
+          .color-tag
+            position: static // 覆盖默认的右下角绝对定位
+            width: 8px
+            height: 8px
+            border-radius: 50%
+            flex-shrink: 0
+
+          .file-name-text
+            display: inline-block
+
+        // 根据颜色标签改变“目录”图标颜色（仅 data-is-directory="true" 时生效，使用 !important 覆盖内联样式）
+        &[data-is-directory="true"].tag-red
+          .file-icon i
+            color: #e74c3c !important
+
+        &[data-is-directory="true"].tag-orange
+          .file-icon i
+            color: #e67e22 !important
+
+        &[data-is-directory="true"].tag-yellow
+          .file-icon i
+            color: #f1c40f !important
+
+        &[data-is-directory="true"].tag-green
+          .file-icon i
+            color: #2ecc71 !important
+
+        &[data-is-directory="true"].tag-blue
+          .file-icon i
+            color: #3498db !important
+
+        &[data-is-directory="true"].tag-purple
+          .file-icon i
+            color: #9b59b6 !important
 
   // 分组视图样式
   &.group-view
@@ -1644,13 +1706,31 @@ body.dark-theme, [data-theme="dark"]
 
     &.icon-view
       #file-list
-        .file-item
-          &:hover
-            background-color: rgba(255, 255, 255, 0.08)
+        .file-item 
+          width: 120px
+          background-color: rgba(255, 255, 255, 0.08)
 
           &.selected
             background-color: rgba(74, 144, 226, 0.25)
             border-color: rgba(74, 144, 226, 0.5)
+
+          &[data-is-directory="true"].tag-red .file-icon i
+            color: #e74c3c !important
+
+          &[data-is-directory="true"].tag-orange .file-icon i
+            color: #e67e22 !important
+
+          &[data-is-directory="true"].tag-yellow .file-icon i
+            color: #f1c40f !important
+
+          &[data-is-directory="true"].tag-green .file-icon i
+            color: #2ecc71 !important
+
+          &[data-is-directory="true"].tag-blue .file-icon i
+            color: #3498db !important
+
+          &[data-is-directory="true"].tag-purple .file-icon i
+            color: #9b59b6 !important
 
     &.group-view, &.timeline-view
       #file-list

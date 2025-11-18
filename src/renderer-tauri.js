@@ -27,10 +27,24 @@ let clipboardFiles = [];
 let clipboardOperation = '';
 let folderGroups = JSON.parse(localStorage.getItem('folderGroups')) || {};
 let fileTags = JSON.parse(localStorage.getItem('fileTags')) || {};
+// 当前颜色筛选（当未选中文件/文件夹时点击颜色按钮时使用），none/null 表示不过滤
+let currentColorFilter = null;
+// 是否处于“全局颜色视图”：展示所有带某颜色标签的项目（跨目录聚合）
+let isGlobalColorView = false;
 let statusBarVisible = JSON.parse(localStorage.getItem('statusBarVisible')) !== false;
 let previewPanelVisible = JSON.parse(localStorage.getItem('previewPanelVisible')) !== false;
 let folderChildrenCountCache = {}; // 缓存文件夹子项数量
 let lastDirectoryStats = null; // 最近一次目录统计信息（用于状态栏）
+
+// 颜色标签对应的实际颜色值（用于文件夹图标重绘）
+const TAG_COLORS = {
+    red: '#e74c3c',
+    orange: '#e67e22',
+    yellow: '#f1c40f',
+    green: '#2ecc71',
+    blue: '#3498db',
+    purple: '#9b59b6',
+};
 
 // 日历和年报相关变量
 let currentCalendarYear = new Date().getFullYear();
@@ -215,6 +229,26 @@ const os = {
         return 'linux';
     }
 };
+
+// 根据路径简单推测是否是目录：没有扩展名时视为目录
+function guessIsDirectoryFromPath(p) {
+    const name = path.basename(p);
+    const idx = name.lastIndexOf('.');
+    return idx <= 0; // 没有后缀或以点开头，视为目录
+}
+
+// 构建指定颜色标签的全局文件列表（跨目录聚合）
+function buildGlobalColorFileList(color) {
+    const entries = Object.entries(fileTags || {}).filter(([fullPath, tag]) => tag === color);
+    return entries.map(([fullPath]) => ({
+        name: path.basename(fullPath),
+        path: fullPath,
+        is_directory: guessIsDirectoryFromPath(fullPath),
+        size: 0,
+        modified: null,
+        created: null,
+    }));
+}
 
 // ==================== 初始化函数 ====================
 
@@ -451,6 +485,10 @@ async function navigateTo(newPath) {
         updateStatusBar(files);
         updateNavigationButtons();
         
+        // 退出全局颜色视图
+        isGlobalColorView = false;
+        currentColorFilter = null;
+        
     } catch (error) {
         console.error('导航失败:', error);
         const { dialog } = window.__TAURI__;
@@ -548,7 +586,17 @@ function updateFileList(files) {
     const fileListContainer = document.getElementById('file-list-container');
     if (!fileList) return;
     
-    const sortedFiles = sortFiles(files);
+    // 如果处于“当前目录颜色筛选”模式，只展示打了对应颜色标签的项目
+    // 全局颜色视图下（isGlobalColorView）不再在这里二次筛选
+    let displayFiles = files;
+    if (!isGlobalColorView && currentColorFilter && currentColorFilter !== 'none') {
+        displayFiles = files.filter(file => {
+            const tag = fileTags[file.path];
+            return tag === currentColorFilter;
+        });
+    }
+
+    const sortedFiles = sortFiles(displayFiles);
     fileList.innerHTML = '';
     
     // 根据当前视图渲染文件列表
@@ -565,13 +613,26 @@ function updateFileList(files) {
         // 添加表头
         const headerRow = document.createElement('div');
         headerRow.className = 'file-item file-list-header';
-        headerRow.innerHTML = `
-            <div class="file-icon"></div>
-            <div class="file-name">名称</div>
-            <div class="file-size">大小</div>
-            <div class="file-date">修改日期</div>
-            <div class="file-type">类型</div>
-        `;
+
+        if (isGlobalColorView) {
+            // 全局颜色视图：名称 + 路径 + 创建时间 + 修改时间
+            headerRow.innerHTML = `
+                <div class="file-icon"></div>
+                <div class="file-name">名称</div>
+                <div class="file-path">路径</div>
+                <div class="file-date">创建日期</div>
+                <div class="file-date">修改日期</div>
+            `;
+        } else {
+            // 普通列表视图：名称 + 大小 + 修改日期 + 类型
+            headerRow.innerHTML = `
+                <div class="file-icon"></div>
+                <div class="file-name">名称</div>
+                <div class="file-size">大小</div>
+                <div class="file-date">修改日期</div>
+                <div class="file-type">类型</div>
+            `;
+        }
         fileList.appendChild(headerRow);
         
         // 添加文件项
@@ -741,6 +802,12 @@ function createFileItem(file) {
     if (tag && tag !== 'none') {
         fileItem.classList.add(`tag-${tag}`);
     }
+
+    // 如果是目录且打了颜色标签，则直接重写图标的内联颜色
+    if (file.is_directory && tag && tag !== 'none') {
+        const color = TAG_COLORS[tag] || '#ffd700';
+        icon = icon.replace('style="color: #ffd700;"', `style="color: ${color};"`);
+    }
     
     // 格式化日期
     const formatDate = (timestamp) => {
@@ -757,10 +824,14 @@ function createFileItem(file) {
     
     // 根据当前视图类型设置不同的 HTML 结构
     if (currentView === 'icon-view') {
-        // 图标视图：文件夹图标中间增加数量徽标
+        const hasTag = tag && tag !== 'none';
+        const tagDot = hasTag ? `<span class="color-tag ${tag}"></span>` : '';
+
+        // 图标视图：文件夹图标中间增加数量徽标，颜色仍由 tag-* 控制
         if (file.is_directory) {
             fileItem.innerHTML = `
-                <div class="file-icon">
+                <div class="file-icon file-icon-with-tag">
+                    ${tagDot}
                     <div class="folder-icon-wrapper">
                         ${icon}
                         <span class="folder-count-badge"></span>
@@ -769,20 +840,41 @@ function createFileItem(file) {
                 <div class="file-name">${file.name}</div>
             `;
         } else {
+            // 普通文件：颜色小圆点在图标左边，名称保持纯文本
             fileItem.innerHTML = `
-                <div class="file-icon">${icon}</div>
+                <div class="file-icon file-icon-with-tag">
+                    ${tagDot}
+                    ${icon}
+                </div>
                 <div class="file-name">${file.name}</div>
             `;
         }
     } else {
         // 列表视图、分组视图、时间轴视图：显示完整信息
-        fileItem.innerHTML = `
-            <div class="file-icon">${icon}</div>
-            <div class="file-name">${file.name}</div>
-            <div class="file-size">${file.is_directory ? '-' : formatFileSize(file.size)}</div>
-            <div class="file-date">${formatDate(file.modified)}</div>
-            <div class="file-type">${file.is_directory ? '文件夹' : (ext || '文件')}</div>
-        `;
+        const hasTag = tag && tag !== 'none';
+        const nameHtml = hasTag && !file.is_directory
+            ? `<div class="file-name file-name-with-tag"><span class="color-tag ${tag}"></span><span class="file-name-text">${file.name}</span></div>`
+            : `<div class="file-name">${file.name}</div>`;
+
+        if (isGlobalColorView) {
+            // 全局颜色视图：名称 + 路径 + 创建时间 + 修改时间
+            fileItem.innerHTML = `
+                <div class="file-icon">${icon}</div>
+                ${nameHtml}
+                <div class="file-path">${file.path}</div>
+                <div class="file-date">${formatDate(file.created)}</div>
+                <div class="file-date">${formatDate(file.modified)}</div>
+            `;
+        } else {
+            // 普通列表视图：名称 + 大小 + 修改日期 + 类型
+            fileItem.innerHTML = `
+                <div class="file-icon">${icon}</div>
+                ${nameHtml}
+                <div class="file-size">${file.is_directory ? '-' : formatFileSize(file.size)}</div>
+                <div class="file-date">${formatDate(file.modified)}</div>
+                <div class="file-type">${file.is_directory ? '文件夹' : (ext || '文件')}</div>
+            `;
+        }
     }
 
     // 需要优先尝试系统缩略图的文件类型（如 PSD / AI / PDF / PPTX）
@@ -1202,7 +1294,7 @@ async function updatePreview(filePath) {
                 previewContent.innerHTML = `
                     <div class="preview-header">
                         <div class="preview-header-main">
-                            <i class="fas fa-folder" style="color: #ffd700; font-size: 28px;"></i>
+                            <i class="fas fa-folder" style="color: #ffd700;"></i>
                             <h3>${fileName}</h3>
                         </div>
                         <button class="preview-open-btn" title="在资源管理器中打开此文件夹" onclick="window.__TAURI__.shell.open('${filePath.replace(/\\/g, "\\\\")}')">
@@ -1229,19 +1321,19 @@ async function updatePreview(filePath) {
             }
             return;
         }
-        // 图片文件
+        // 图片文件（直接可预览的位图格式）
         if (['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg', '.ico'].includes(ext)) {
             const { convertFileSrc } = window.__TAURI__.tauri;
             const assetUrl = convertFileSrc(filePath);
-            
+
             // 设置样式以最大化显示
             previewContent.style.padding = '0';
             previewContent.style.display = 'flex';
             previewContent.style.flexDirection = 'column';
-            
+
             previewContent.innerHTML = `
                 <div class="preview-header" style="flex-shrink: 0; padding: 15px;">
-                    <i class="fas fa-image" style="color: #e74c3c; font-size: 48px;"></i>
+                    <i class="fas fa-image" style="color: #e74c3c; "></i>
                     <h3>${fileName}</h3>
                 </div>
                 <div class="preview-image-container" style="flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; padding: 10px; overflow: auto;">
@@ -1254,6 +1346,46 @@ async function updatePreview(filePath) {
                 </div>
             `;
             return;
+        }
+
+        // 依赖系统缩略图的设计类文件（PSD / AI 等）在预览区域也显示大图
+        if (['.psd', '.ai'].includes(ext)) {
+            try {
+                console.log('尝试获取系统缩略图用于预览:', filePath);
+                const thumbPath = await invoke('get_system_thumbnail', {
+                    path: filePath,
+                    width: 512,
+                    height: 512,
+                });
+
+                if (thumbPath) {
+                    const { convertFileSrc } = window.__TAURI__.tauri;
+                    const assetUrl = convertFileSrc(thumbPath);
+
+                    previewContent.style.padding = '0';
+                    previewContent.style.display = 'flex';
+                    previewContent.style.flexDirection = 'column';
+
+                    previewContent.innerHTML = `
+                        <div class="preview-header" style="flex-shrink: 0; padding: 15px;">
+                            <i class="fas fa-image" style="color: #e74c3c; "></i>
+                            <h3>${fileName}</h3>
+                        </div>
+                        <div class="preview-image-container" style="flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; padding: 10px; overflow: auto;">
+                            <img src="${assetUrl}" alt="${fileName}" class="preview-image" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                        </div>
+                        <div class="preview-info" style="flex-shrink: 0; padding: 15px; border-top: 1px solid var(--border-color);">
+                            ${fileInfo ? `<p><i class=\"fas fa-hdd\"></i> 大小: ${formatBytes(fileInfo.size || 0)}</p>` : ''}
+                            ${fileInfo && fileInfo.created ? `<p><i class=\"fas fa-calendar-plus\"></i> 创建时间: ${formatDate(fileInfo.created)}</p>` : ''}
+                            ${fileInfo && fileInfo.modified ? `<p><i class=\"fas fa-calendar-alt\"></i> 修改时间: ${formatDate(fileInfo.modified)}</p>` : ''}
+                        </div>
+                    `;
+                    return;
+                }
+            } catch (e) {
+                console.warn('获取 PSD/AI 系统缩略图用于预览失败，回退到默认预览:', e);
+            }
+            // 如果获取系统缩略图失败，继续往下走，用默认预览逻辑
         }
         
         // 视频文件
@@ -1268,7 +1400,7 @@ async function updatePreview(filePath) {
             
             previewContent.innerHTML = `
                 <div class="preview-header" style="flex-shrink: 0; padding: 15px;">
-                    <i class="fas fa-film" style="color: #9b59b6; font-size: 48px;"></i>
+                    <i class="fas fa-film" style="color: #9b59b6; "></i>
                     <h3>${fileName}</h3>
                 </div>
                 <div class="preview-video-container" style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 10px; min-height: 0;">
@@ -1302,7 +1434,7 @@ async function updatePreview(filePath) {
             
             previewContent.innerHTML = `
                 <div class="preview-header">
-                    <i class="fas fa-music" style="color: #3498db; font-size: 48px;"></i>
+                    <i class="fas fa-music" style="color: #3498db; "></i>
                     <h3>${fileName}</h3>
                 </div>
                 <div class="preview-audio-container" style="padding: 20px; display: flex; align-items: center; justify-content: center;">
@@ -1361,7 +1493,7 @@ async function updatePreview(filePath) {
                 
                 previewContent.innerHTML = `
                     <div class="preview-header" style="flex-shrink: 0; padding: 15px;">
-                        <i class="fas fa-file-code" style="color: #2ecc71; font-size: 48px;"></i>
+                        <i class="fas fa-file-code" style="color: #2ecc71; "></i>
                         <h3>${fileName}</h3>
                     </div>
                     <div class="preview-code-container" style="flex: 1; overflow: auto; padding: 15px; min-height: 0; background: transparent;">
@@ -1398,7 +1530,7 @@ async function updatePreview(filePath) {
                 console.error('PDF 预览失败:', error);
                 previewContent.innerHTML = `
                     <div class="preview-header">
-                        <i class="fas fa-file-pdf" style="color: #c0392b; font-size: 48px;"></i>
+                        <i class="fas fa-file-pdf" style="color: #c0392b; "></i>
                         <h3>${fileName}</h3>
                     </div>
                     <div class="preview-info">
@@ -1414,29 +1546,59 @@ async function updatePreview(filePath) {
             }
             return;
         }
-        
-        // 默认预览（显示文件信息）
+        // 默认预览（显示文件信息），文件信息固定在预览面板底部
         const icon = getFileIcon(fileName, false);
+
+        // 采用垂直布局：头部在上，中间预留可扩展区域，信息栏固定在最底部
+        previewContent.style.padding = '0';
+        previewContent.style.display = 'flex';
+        previewContent.style.flexDirection = 'column';
+
         previewContent.innerHTML = `
-            <div class="preview-header">
-                <div style="font-size: 48px;">${icon}</div>
+            <div class="preview-header" style="flex-shrink: 0; padding: 15px; display: flex; align-items: center; gap: 10px;">
+                <div class="preview-icon" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                    ${icon}
+                </div>
                 <h3>${fileName}</h3>
             </div>
-            <div class="preview-info">
+            <div class="preview-spacer" style="flex: 1; min-height: 0;"></div>
+            <div class="preview-info" style="flex-shrink: 0; padding: 15px; border-top: 1px solid var(--border-color);">
                 <p><i class="fas fa-tag"></i> 类型: ${ext || '未知'}</p>
                 ${fileInfo ? `<p><i class=\"fas fa-hdd\"></i> 大小: ${formatBytes(fileInfo.size || 0)}</p>` : ''}
                 ${fileInfo && fileInfo.created ? `<p><i class=\"fas fa-calendar-plus\"></i> 创建时间: ${formatDate(fileInfo.created)}</p>` : ''}
                 ${fileInfo && fileInfo.modified ? `<p><i class=\"fas fa-calendar-alt\"></i> 修改时间: ${formatDate(fileInfo.modified)}</p>` : ''}
-                <button class="preview-open-btn" onclick="window.__TAURI__.shell.open('${filePath.replace(/\\/g, '\\\\')}')">
+                <button class="preview-open-btn" onclick="window.__TAURI__.shell.open('${filePath.replace(/\\/g, "\\\\")}')">
                     <i class="fas fa-external-link-alt"></i> 使用默认程序打开
                 </button>
             </div>
         `;
+
+        // 如果是 exe，尝试在预览头部显示真实 exe 图标（统一使用 32x32 尺寸）
+        if (ext === '.exe') {
+            const fileIconEl = previewContent.querySelector('.preview-icon');
+            const isWindows = navigator.platform.toLowerCase().includes('win');
+            if (fileIconEl && isWindows) {
+                (async () => {
+                    try {
+                        const iconPath = await invoke('get_exe_icon', { path: filePath });
+                        if (!iconPath) return;
+                        const { convertFileSrc } = window.__TAURI__.tauri;
+                        const iconUrl = convertFileSrc(iconPath);
+                        fileIconEl.innerHTML = `
+                            <img src="${iconUrl}" alt="${fileName}" style="width: 32px; height: 32px; border-radius: 6px;">
+                        `;
+                    } catch (e) {
+                        console.warn('获取 exe 预览图标失败，使用默认图标:', e);
+                    }
+                })();
+            }
+        }
         
     } catch (error) {
         console.error('预览文件失败:', error);
         previewContent.innerHTML = `<p class="preview-error">预览失败: ${error}</p>`;
     }
+// ...
 }
 
 // 获取文件详细信息的辅助函数
@@ -1488,7 +1650,7 @@ async function renderPDFPreview(filePath, fileName, fileInfo) {
         // 降级方案
         previewContent.innerHTML = `
             <div class="preview-header">
-                <i class="fas fa-file-pdf" style="color: #c0392b; font-size: 48px;"></i>
+                <i class="fas fa-file-pdf" style="color: #c0392b; "></i>
                 <h3>${fileName}</h3>
             </div>
             <div class="preview-info" style="text-align: center; padding: 20px;">
@@ -1509,28 +1671,97 @@ async function renderPDFPreview(filePath, fileName, fileInfo) {
 // ==================== 颜色标签功能 ====================
 
 function applyColorTag(color) {
-    if (selectedFiles.length === 0) {
-        console.log('没有选中的文件');
+    // 如果有选中的文件/文件夹：为这些路径打标签或清除标签
+    if (selectedFiles.length > 0) {
+        selectedFiles.forEach(filePath => {
+            if (color === 'none') {
+                delete fileTags[filePath];
+            } else {
+                fileTags[filePath] = color;
+            }
+
+            // 直接更新当前 DOM 中对应项目的标签样式，避免刷新导致选中状态丢失
+            const selector = `.file-item[data-path="${CSS.escape(normalizePath(filePath))}"]`;
+            const fileItemEl = document.querySelector(selector);
+            if (fileItemEl) {
+                // 移除旧的 tag-* class
+                fileItemEl.classList.forEach(cls => {
+                    if (cls.startsWith('tag-')) {
+                        fileItemEl.classList.remove(cls);
+                    }
+                });
+                if (color !== 'none') {
+                    fileItemEl.classList.add(`tag-${color}`);
+                }
+
+                // 如果是文件（data-is-directory="false"），同步更新文件名左侧的小圆点
+                const isDirectory = fileItemEl.dataset.isDirectory === 'true';
+                if (!isDirectory) {
+                    let nameEl = fileItemEl.querySelector('.file-name');
+                    if (nameEl) {
+                        // 如果当前已经是带标签结构，先还原为纯文本，再按需要重建
+                        const baseName = nameEl.querySelector('.file-name-text')?.textContent || nameEl.textContent || '';
+
+                        if (color === 'none') {
+                            // 清除标签：恢复为普通 file-name
+                            nameEl.classList.remove('file-name-with-tag');
+                            nameEl.innerHTML = baseName;
+                        } else {
+                            // 添加或更新标签：确保结构为 [dot] + 文本
+                            nameEl.classList.add('file-name-with-tag');
+                            nameEl.innerHTML = `
+                                <span class="color-tag ${color}"></span>
+                                <span class="file-name-text">${baseName}</span>
+                            `;
+                        }
+                    }
+                }
+            }
+        });
+
+        // 保存到 localStorage
+        localStorage.setItem('fileTags', JSON.stringify(fileTags));
+
+        console.log(`已为 ${selectedFiles.length} 个项目应用 ${color} 标签`);
         return;
     }
-    
-    selectedFiles.forEach(filePath => {
-        if (color === 'none') {
-            delete fileTags[filePath];
+
+    // 没有选中任何文件/文件夹：将颜色按钮视为“全局颜色视图”切换
+    if (color === 'none') {
+        // 灰色表示退出全局颜色视图，恢复当前目录
+        currentColorFilter = null;
+        isGlobalColorView = false;
+
+        if (currentPath) {
+            navigateTo(currentPath);
+        }
+    } else {
+        // 进入全局颜色视图：展示所有带该颜色标签的项目（跨目录聚合）
+        currentColorFilter = color;
+        isGlobalColorView = true;
+
+        // 强制使用列表视图展示聚合结果
+        setView('list-view');
+
+        const globalFiles = buildGlobalColorFileList(color);
+        updateFileList(globalFiles);
+
+        // 在路径栏上显示当前是“颜色视图”，避免误解为真实文件夹
+        updatePathBar(`标签: ${color.toUpperCase()}`);
+    }
+
+    // 更新颜色按钮的高亮状态（无论是进入还是退出全局视图）
+    const colorTagButtons = document.querySelectorAll('.color-tag-btn');
+    colorTagButtons.forEach(btn => {
+        const btnColor = btn.getAttribute('data-color');
+        if (currentColorFilter && btnColor === currentColorFilter) {
+            btn.classList.add('active');
         } else {
-            fileTags[filePath] = color;
+            btn.classList.remove('active');
         }
     });
-    
-    // 保存到 localStorage
-    localStorage.setItem('fileTags', JSON.stringify(fileTags));
-    
-    // 重新渲染文件列表以显示新的标签
-    if (currentPath) {
-        navigateTo(currentPath);
-    }
-    
-    console.log(`已为 ${selectedFiles.length} 个文件应用${color}标签`);
+
+    console.log('已应用颜色筛选:', currentColorFilter || '无');
 }
 
 // ==================== 收藏夹 ====================
@@ -1732,7 +1963,7 @@ function bindEvents() {
     const fileList = document.getElementById('file-list');
     
     if (fileListContainer) {
-        // 单击文件时显示预览
+        // 单击文件时显示预览；单击空白区域时清除选中状态
         fileListContainer.addEventListener('click', (e) => {
             const fileItem = e.target.closest('.file-item');
             if (fileItem) {
@@ -1740,6 +1971,12 @@ function bindEvents() {
                 if (filePath) {
                     updatePreview(filePath);
                 }
+            } else {
+                // 点击列表空白区域：取消所有选中
+                document.querySelectorAll('.file-item.selected').forEach(item => {
+                    item.classList.remove('selected');
+                });
+                selectedFiles = [];
             }
         });
         
@@ -1776,8 +2013,25 @@ function bindEvents() {
         });
         
         fileListContainer.addEventListener('dblclick', (e) => {
-            if (e.target === fileListContainer || e.target === fileList) {
-                // 双击空白区域：执行后退操作，相当于返回上一次打开的文件夹
+            // 只要双击的位置不在任何 .file-item 上，就视为双击空白区域
+            const fileItem = e.target.closest('.file-item');
+            if (!fileItem) {
+                // 1. 如果当前是全局颜色视图，则退出颜色视图，回到上一次打开的文件夹
+                if (isGlobalColorView) {
+                    currentColorFilter = null;
+                    isGlobalColorView = false;
+
+                    // 取消颜色按钮高亮
+                    const colorTagButtons = document.querySelectorAll('.color-tag-btn');
+                    colorTagButtons.forEach(btn => btn.classList.remove('active'));
+
+                    if (currentPath) {
+                        navigateTo(currentPath);
+                    }
+                    return;
+                }
+
+                // 2. 普通情况：执行“后退”操作，相当于点击后退按钮
                 navigateBack();
             }
         });
