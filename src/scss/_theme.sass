@@ -71,16 +71,25 @@ $header-hover-bg-dark: rgba(172, 172, 172, 0.2)
 
 
     #settings
-      background-color: $sidebar-bg
-      i
+      position: relative
+      display: flex
+      align-items: center
+      padding: 0 10px
+      button#open-settings-btn
+        background: transparent
+        border: none
+        cursor: pointer
+        display: flex
+        align-items: center
+        justify-content: center
+        padding: 4px
+        border-radius: 4px
+        i
+          font-size: 16px
+          color: $icon
         &:hover
           background-color: $hover-bg
-      #settings-menu
-        background-color: $sidebar-bg
-        border: 1px solid $border
-        button
-          &:hover
-              background-color: $hover-bg
+
   #main 
     background-color: $main-bg
 

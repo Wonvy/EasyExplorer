@@ -2863,16 +2863,26 @@ body #sidebar .tab-content.active {
   display: block;
 }
 body #sidebar #settings {
-  background-color: #f0f0f0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
 }
-body #sidebar #settings i:hover {
-  background-color: #e5e5e5;
+body #sidebar #settings button#open-settings-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
 }
-body #sidebar #settings #settings-menu {
-  background-color: #f0f0f0;
-  border: 1px solid #ddd;
+body #sidebar #settings button#open-settings-btn i {
+  font-size: 16px;
+  color: #262626;
 }
-body #sidebar #settings #settings-menu button:hover {
+body #sidebar #settings button#open-settings-btn:hover {
   background-color: #e5e5e5;
 }
 body #main {
@@ -3056,16 +3066,26 @@ body .calendar-day .day-content .folder-icon {
   display: block;
 }
 .dark-theme #sidebar #settings {
-  background-color: #181818;
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
 }
-.dark-theme #sidebar #settings i:hover {
-  background-color: #3a3a3a;
+.dark-theme #sidebar #settings button#open-settings-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
 }
-.dark-theme #sidebar #settings #settings-menu {
-  background-color: #181818;
-  border: 1px solid #3a3a3a;
+.dark-theme #sidebar #settings button#open-settings-btn i {
+  font-size: 16px;
+  color: #b0b0b0;
 }
-.dark-theme #sidebar #settings #settings-menu button:hover {
+.dark-theme #sidebar #settings button#open-settings-btn:hover {
   background-color: #3a3a3a;
 }
 .dark-theme #main {

@@ -4,7 +4,7 @@
  */
 
 let projectYears = [2023, 2024, 2025]; // 初始年份列表
-let invoke, openDialog;
+let invoke, openDialog, emit;
 
 // 等待 Tauri API 加载
 async function initTauriAPIs() {
@@ -21,6 +21,7 @@ async function initTauriAPIs() {
     
     ({ invoke } = window.__TAURI__.tauri);
     ({ open: openDialog } = window.__TAURI__.dialog);
+    ({ emit } = window.__TAURI__.event || {});
     
     console.log('✅ Tauri API 已在设置页面加载');
     return true;
@@ -72,6 +73,36 @@ document.addEventListener('DOMContentLoaded', async () => {
             setActiveTab(activeTabId);
         }
     });
+
+    // 主题设置
+    const themeRadios = document.getElementsByName('theme');
+
+    const loadThemeSettings = () => {
+        const theme = localStorage.getItem('theme') || 'light';
+        const radio = document.querySelector(`input[name="theme"][value="${theme}"]`);
+        if (radio) {
+            radio.checked = true;
+        }
+    };
+
+    const saveThemeSettings = (theme) => {
+        localStorage.setItem('theme', theme);
+        if (emit) {
+            emit('theme-changed', { theme }).catch(err => {
+                console.error('发送主题变更事件失败:', err);
+            });
+        }
+    };
+
+    themeRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                saveThemeSettings(e.target.value);
+            }
+        });
+    });
+
+    loadThemeSettings();
 
     // 初始化项目年份列表
     initProjectYears();

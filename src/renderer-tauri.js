@@ -6,9 +6,7 @@
  */
 
 // 全局变量声明
-let invoke, openDialog, saveDialog, message, ask, confirm;
-let writeText, readText;
-let shellOpen;
+let invoke, openDialog, saveDialog, message, ask, confirm, writeText, readText, shellOpen, listen;
 let readTextFile, writeTextFile, readBinaryFile, writeBinaryFile, readDir, removeFile, removeDir, createDir, renameFile, exists;
 let appDir, homeDir, documentDir, downloadDir, pictureDir;
 
@@ -269,6 +267,7 @@ async function initTauriAPIs() {
     ({ open: openDialog, save: saveDialog, message, ask, confirm } = window.__TAURI__.dialog);
     ({ writeText, readText } = window.__TAURI__.clipboard);
     ({ open: shellOpen } = window.__TAURI__.shell);
+    ({ listen } = window.__TAURI__.event || {});
     
     console.log('✅ Tauri API 已加载');
 }
@@ -276,16 +275,20 @@ async function initTauriAPIs() {
 // 不再需要初始化 PDF.js
 // 使用系统原生 PDF 查看器
 
-async function initUI() {
-    const theme = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', theme);
-    
-    // 如果主题是暗色，添加 dark-theme 类到 body
-    if (theme === 'dark') {
+function applyTheme(theme) {
+    const normalized = theme === 'dark' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', normalized);
+    if (normalized === 'dark') {
         document.body.classList.add('dark-theme');
     } else {
         document.body.classList.remove('dark-theme');
     }
+    localStorage.setItem('theme', normalized);
+}
+
+async function initUI() {
+    const theme = localStorage.getItem('theme') || 'light';
+    applyTheme(theme);
     
     const savedView = localStorage.getItem('currentView') || 'icon-view';
     setView(savedView);
@@ -1927,8 +1930,8 @@ function bindEvents() {
         });
     }
     
-    document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
-    document.getElementById('open-settings')?.addEventListener('click', openSettings);
+    // 设置：点击右上角齿轮按钮直接打开设置窗口
+    document.getElementById('open-settings-btn')?.addEventListener('click', openSettings);
     
     // 自定义项目点击事件
     const calendarBtn = document.getElementById('custom-calendar');
@@ -1981,7 +1984,13 @@ function bindEvents() {
         });
         
         // 在空白区域悬停一段时间后，恢复为当前文件夹的预览
+        // ⚠ 日历视图使用同一个容器，为避免覆盖日历悬停预览，这里在日历视图下直接跳过
         fileListContainer.addEventListener('mousemove', (e) => {
+            // 日历视图下不启用“空白区域重置预览”逻辑
+            if (fileListContainer.classList.contains('calendar-view')) {
+                return;
+            }
+
             const fileItem = e.target.closest('.file-item');
 
             // 如果在文件/文件夹上移动，则不触发空白预览，并清理定时器
@@ -2128,11 +2137,9 @@ function setView(view) {
 
 function toggleTheme() {
     console.log('切换主题按钮被点击');
-    document.body.classList.toggle('dark-theme');
-    const isDarkTheme = document.body.classList.contains('dark-theme');
-    const newTheme = isDarkTheme ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
+    const current = localStorage.getItem('theme') || 'light';
+    const newTheme = current === 'dark' ? 'light' : 'dark';
+    applyTheme(newTheme);
     console.log('当前主题：', newTheme);
 }
 
@@ -2747,25 +2754,42 @@ async function showCalendarView() {
             const files = await invoke('read_directory', { path: monthFolderPath });
             
             monthFolders = files.map(file => {
-                // 尝试从文件夹名称获取日期
-                const dateMatch = file.name.match(/^(\d{4})/);
+                const name = file.name;
                 let day;
-                
-                if (dateMatch && !isNaN(parseInt(dateMatch[1]))) {
-                    // 如果文件夹名称符合格式，使用名称中的日期
-                    day = parseInt(dateMatch[1].substring(2));
-                } else {
-                    // 如果不符合格式，使用创建时间
-                    if (file.created) {
-                        const createDate = new Date(file.created * 1000);
-                        // 只有当创建时间在当前月份时才使用
-                        if (createDate.getMonth() === currentCalendarMonth && 
-                            createDate.getFullYear() === currentCalendarYear) {
-                            day = createDate.getDate();
+
+                // 1. 优先匹配完整日期前缀：YYYY-MM-DD 或 YYYY_MM_DD
+                let m = name.match(/^(\d{4})[-_](\d{2})[-_](\d{2})/);
+                if (m) {
+                    const year = parseInt(m[1], 10);
+                    const month = parseInt(m[2], 10);
+                    const d = parseInt(m[3], 10);
+                    if (year === currentCalendarYear && month === currentCalendarMonth + 1) {
+                        day = d;
+                    }
+                }
+
+                // 2) 兼容旧格式：MMDD-标题（如 0614-项目名）
+                if (day === undefined) {
+                    const shortMatch = file.name.match(/^(\d{4})/);
+                    if (shortMatch) {
+                        const mmdd = shortMatch[1];
+                        const month = parseInt(mmdd.substring(0, 2));
+                        const d = parseInt(mmdd.substring(2));
+                        if (!isNaN(month) && !isNaN(d) && month - 1 === currentCalendarMonth) {
+                            day = d;
                         }
                     }
                 }
-                
+
+                // 3) 如果名称里没法可靠提取日期，则退回到创建时间
+                if (day === undefined && file.created) {
+                    const createDate = new Date(file.created * 1000);
+                    // 只有当创建时间在当前月份时才使用
+                    if (createDate.getMonth() === currentCalendarMonth && 
+                        createDate.getFullYear() === currentCalendarYear) {
+                        day = createDate.getDate();
+                    }
+                }
                 return {
                     name: file.name,
                     day: day,
@@ -2798,10 +2822,19 @@ async function showCalendarView() {
                 <div class="day-content">
                     ${dayFolders.map(folder => {
                         const folderIcon = getFileIcon(folder.name, true);
+                        // 根据不同前缀格式裁剪显示名称
+                        let displayName = folder.name;
+                        if (/^\d{4}-\d{2}-\d{2}/.test(folder.name)) {
+                            // YYYY-MM-DD 后面通常有一个空格
+                            displayName = folder.name.substring(11).trimStart();
+                        } else if (/^\d{4}-/.test(folder.name)) {
+                            // MMDD-标题（例如 0614-项目名）
+                            displayName = folder.name.substring(5);
+                        }
                         return `
                             <div class="folder-item" data-path="${folder.path}" title="${folder.name}">
                                 <span class="folder-icon">${folderIcon}</span>
-                                <span class="folder-name">${folder.name.match(/^(\d{4})/) ? folder.name.substring(5) : folder.name}</span>
+                                <span class="folder-name">${displayName}</span>
                             </div>
                         `;
                     }).join('')}
@@ -3594,11 +3627,25 @@ async function showFavoriteContextMenu(favPath, x, y) {
 
 // ==================== 主初始化 ====================
 
-async function init() {
+async function initApp() {
     try {
         console.log('🚀 EasyExplorer Tauri 版本启动中...');
         
         await initTauriAPIs();
+        // 监听来自设置窗口的主题切换事件
+        if (listen) {
+            listen('theme-changed', (event) => {
+                const payload = event && event.payload;
+                const theme = payload && payload.theme;
+                if (theme === 'light' || theme === 'dark') {
+                    console.log('收到主题切换事件:', theme);
+                    applyTheme(theme);
+                }
+            }).catch(err => {
+                console.error('监听主题切换事件失败:', err);
+            });
+        }
+
         await initUI();
         await loadDrives();
         
@@ -3994,9 +4041,9 @@ function initResizers() {
 
 // DOM 加载完成后启动
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', initApp);
 } else {
-    init();
+    initApp();
 }
 
 // 导出给全局使用
