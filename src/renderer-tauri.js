@@ -29,6 +29,8 @@ let folderGroups = JSON.parse(localStorage.getItem('folderGroups')) || {};
 let fileTags = JSON.parse(localStorage.getItem('fileTags')) || {};
 let statusBarVisible = JSON.parse(localStorage.getItem('statusBarVisible')) !== false;
 let previewPanelVisible = JSON.parse(localStorage.getItem('previewPanelVisible')) !== false;
+let folderChildrenCountCache = {}; // 缓存文件夹子项数量
+let lastDirectoryStats = null; // 最近一次目录统计信息（用于状态栏）
 
 // 日历和年报相关变量
 let currentCalendarYear = new Date().getFullYear();
@@ -40,8 +42,11 @@ let recentAccess = JSON.parse(localStorage.getItem('recentAccess')) || [];
 let isFromCalendar = false; // 标记是否从日历视图跳转
 
 // 悬停预览相关变量
-let hoverPreviewTimer = null;
-const HOVER_PREVIEW_DELAY = 600; // 悬停多少毫秒后触发预览
+let hoverPreviewTimer = null;           // 主文件列表悬停预览（文件/文件夹）
+let emptyHoverTimer = null;             // 主文件列表空白区域悬停预览
+let calendarHoverTimer = null;          // 日历视图悬停预览
+let annualHoverTimer = null;            // 年报视图悬停预览
+const HOVER_PREVIEW_DELAY = 300; // 悬停多少毫秒后触发预览
 
 // 添加到最近访问记录
 function addToRecentAccess(filePath, isDirectory) {
@@ -256,7 +261,6 @@ async function initUI() {
     
     const statusBar = document.getElementById('status-bar');
     const previewPanel = document.getElementById('preview-panel');
-    const openFolderBtn = document.getElementById('open-folder-btn');
     
     if (statusBar) {
         statusBar.style.display = statusBarVisible ? 'flex' : 'none';
@@ -266,24 +270,57 @@ async function initUI() {
         previewPanel.style.display = previewPanelVisible ? 'flex' : 'none';
     }
 
-    if (openFolderBtn) {
-        openFolderBtn.disabled = true;
-        openFolderBtn.addEventListener('click', async () => {
-            const previewInfo = document.querySelector('#preview-content .preview-info[data-folder-path]');
-            const folderPath = previewInfo?.getAttribute('data-folder-path');
-            if (!folderPath) {
-                return;
-            }
-            try {
-                const { shell } = window.__TAURI__;
-                if (shell && typeof shell.open === 'function') {
-                    await shell.open(folderPath);
-                } else if (window.__TAURI__.shell && typeof window.__TAURI__.shell.open === 'function') {
-                    await window.__TAURI__.shell.open(folderPath);
+    // 地址栏：点击进入可编辑模式，失焦/回车后恢复为面包屑
+    const pathContainer = document.getElementById('path-container');
+    if (pathContainer) {
+        pathContainer.addEventListener('click', (e) => {
+            // 如果点击的是已有的 input，直接返回
+            if (e.target.tagName === 'INPUT') return;
+
+            // 创建输入框，填入当前路径
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentPath || '';
+            input.className = 'path-edit-input';
+            input.style.width = '100%';
+
+            // 清空原来的面包屑，并插入输入框
+            pathContainer.innerHTML = '';
+            pathContainer.appendChild(input);
+
+            // 选中文本，方便复制/粘贴
+            input.focus();
+            input.select();
+
+            const finishEdit = async (commit) => {
+                const newPath = input.value.trim();
+                // 恢复为当前路径的面包屑
+                if (!commit || !newPath) {
+                    updatePathBar(currentPath || '');
+                    return;
                 }
-            } catch (error) {
-                console.error('打开文件夹失败:', error);
-            }
+                try {
+                    await navigateTo(newPath);
+                } catch (error) {
+                    console.error('路径导航失败:', error);
+                    // 导航失败时恢复原路径面包屑
+                    updatePathBar(currentPath || '');
+                }
+            };
+
+            input.addEventListener('keydown', (evt) => {
+                if (evt.key === 'Enter') {
+                    evt.preventDefault();
+                    finishEdit(true);
+                } else if (evt.key === 'Escape') {
+                    evt.preventDefault();
+                    finishEdit(false);
+                }
+            });
+
+            input.addEventListener('blur', () => {
+                finishEdit(true);
+            });
         });
     }
 }
@@ -685,13 +722,18 @@ function createFileItem(file) {
     const ext = path.extname(file.name).toLowerCase();
     let icon = getFileIcon(file.name, file.is_directory);
     
-    // 如果是图片文件，显示缩略图
+    // 如果是图片文件，显示缩略图，并在左上角叠加一个小类型图标
     const isImage = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg', '.ico'].includes(ext);
     if (isImage && !file.is_directory) {
         const { convertFileSrc } = window.__TAURI__.tauri;
         const imageUrl = convertFileSrc(file.path);
-        icon = `<img src="${imageUrl}" class="file-thumbnail" alt="${file.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
-                <i class="fas fa-image file-thumbnail-fallback" style="display: none; color: #e74c3c;"></i>`;
+        const extLabel = (ext || '').replace('.', '').toUpperCase();
+        icon = `
+            <div class="file-thumbnail-wrapper no-overlay">
+                <img src="${imageUrl}" class="file-thumbnail" alt="${file.name}">
+                <span class="file-ext-badge">${extLabel}</span>
+            </div>
+        `;
     }
     
     const tag = fileTags[file.path];
@@ -714,11 +756,23 @@ function createFileItem(file) {
     
     // 根据当前视图类型设置不同的 HTML 结构
     if (currentView === 'icon-view') {
-        // 图标视图：只显示图标和文件名
-    fileItem.innerHTML = `
-        <div class="file-icon">${icon}</div>
-        <div class="file-name">${file.name}</div>
-        `;
+        // 图标视图：文件夹图标中间增加数量徽标
+        if (file.is_directory) {
+            fileItem.innerHTML = `
+                <div class="file-icon">
+                    <div class="folder-icon-wrapper">
+                        ${icon}
+                        <span class="folder-count-badge"></span>
+                    </div>
+                </div>
+                <div class="file-name">${file.name}</div>
+            `;
+        } else {
+            fileItem.innerHTML = `
+                <div class="file-icon">${icon}</div>
+                <div class="file-name">${file.name}</div>
+            `;
+        }
     } else {
         // 列表视图、分组视图、时间轴视图：显示完整信息
         fileItem.innerHTML = `
@@ -730,6 +784,53 @@ function createFileItem(file) {
         `;
     }
     
+    // 如果是 exe，可执行文件：仅在 Windows 下尝试加载真实图标
+    if (!file.is_directory && ext && ext.toLowerCase() === '.exe') {
+        const isWindows = navigator.platform.toLowerCase().includes('win');
+        const fileIconEl = fileItem.querySelector('.file-icon');
+        if (isWindows && fileIconEl) {
+            (async () => {
+                try {
+                    const iconPath = await invoke('get_exe_icon', { path: file.path });
+                    if (!iconPath) return;
+                    const { convertFileSrc } = window.__TAURI__.tauri;
+                    const iconUrl = convertFileSrc(iconPath);
+                    fileIconEl.innerHTML = `
+                        <div class="file-thumbnail-wrapper">
+                            <img src="${iconUrl}" class="file-thumbnail" alt="${file.name}">
+                        </div>
+                    `;
+                } catch (e) {
+                    console.warn('获取 exe 图标失败，使用默认图标:', e);
+                }
+            })();
+        }
+    }
+
+    // 为文件夹异步加载子项数量（仅加载一次并缓存）
+    if (file.is_directory && currentView === 'icon-view') {
+        const folderPath = normalizePath(file.path);
+        const cached = folderChildrenCountCache[folderPath];
+        const badge = fileItem.querySelector('.folder-count-badge');
+        if (badge) {
+            if (typeof cached === 'number') {
+                badge.textContent = cached;
+            } else {
+                // 异步统计子项数量
+                (async () => {
+                    try {
+                        const children = await invoke('read_directory', { path: folderPath });
+                        const count = Array.isArray(children) ? children.length : 0;
+                        folderChildrenCountCache[folderPath] = count;
+                        badge.textContent = count;
+                    } catch (err) {
+                        console.warn('统计文件夹子项数量失败:', folderPath, err);
+                    }
+                })();
+            }
+        }
+    }
+
     fileItem.addEventListener('dblclick', () => openFile(file));
     fileItem.addEventListener('click', (e) => selectFile(file, e.ctrlKey));
 
@@ -763,15 +864,57 @@ function createFileItem(file) {
     return fileItem;
 }
 
-function updateStatusBar(files) {
+function setStatusBarColumns(left, center, right) {
     const statusBar = document.getElementById('status-bar');
     if (!statusBar) return;
-    
+    statusBar.innerHTML = `
+        <div class="status-col status-left">${left || ''}</div>
+        <div class="status-col status-center">${center || ''}</div>
+        <div class="status-col status-right">${right || ''}</div>
+    `;
+}
+
+function updateStatusBar(files) {
     const fileCount = files.filter(f => !f.is_directory).length;
     const folderCount = files.filter(f => f.is_directory).length;
-    const totalSize = files.reduce((sum, f) => sum + f.size, 0);
-    
-    statusBar.textContent = `${folderCount} 个文件夹, ${fileCount} 个文件, 总大小: ${formatFileSize(totalSize)}`;
+    const totalSize = files.reduce((sum, f) => sum + (f.size || 0), 0);
+
+    lastDirectoryStats = { fileCount, folderCount, totalSize };
+
+    // 目录级状态栏：当前路径 + 统计信息
+    const pathText = currentPath || '';
+    const centerText = `${folderCount} 个文件夹, ${fileCount} 个文件`;
+    const rightText = `总大小: ${formatFileSize(totalSize)}`;
+    setStatusBarColumns(pathText, centerText, rightText);
+}
+
+function updateStatusBarForEntry(fileInfo) {
+    if (!fileInfo) return;
+
+    const pathText = fileInfo.path || currentPath || '';
+    const isDir = fileInfo.isDirectory;
+    const typeText = isDir ? '文件夹' : (path.extname(fileInfo.name) || '文件');
+    const sizeText = isDir ? '-' : formatFileSize(fileInfo.size || 0);
+    const centerParts = [
+        `类型: ${typeText}`,
+        `大小: ${sizeText}`
+    ];
+
+    if (lastDirectoryStats) {
+        centerParts.push(`所在目录: ${lastDirectoryStats.folderCount} 个文件夹, ${lastDirectoryStats.fileCount} 个文件`);
+    }
+
+    const centerText = centerParts.join(' | ');
+    const rightParts = [];
+    if (fileInfo.created) {
+        rightParts.push(`创建: ${formatDate(fileInfo.created, 'short')}`);
+    }
+    if (fileInfo.modified) {
+        rightParts.push(`修改: ${formatDate(fileInfo.modified, 'short')}`);
+    }
+    const rightText = rightParts.join(' | ');
+
+    setStatusBarColumns(pathText, centerText, rightText);
 }
 
 function updateNavigationButtons() {
@@ -788,6 +931,19 @@ function updateNavigationButtons() {
 }
 
 // ==================== 工具函数 ====================
+
+// 规范化 Windows 路径（处理像 "W:下载" 这样的情况）
+function normalizePath(p) {
+    if (!p || typeof p !== 'string') return p;
+    // 将正斜杠统一为反斜杠
+    let pathStr = p.replace(/\//g, '\\');
+    // 处理形如 "W:文件夹" 的路径，补上反斜杠
+    const driveMatch = /^([A-Za-z]:)([^\\].*)$/.exec(pathStr);
+    if (driveMatch) {
+        pathStr = `${driveMatch[1]}\\${driveMatch[2]}`;
+    }
+    return pathStr;
+}
 
 function formatFileSize(bytes) {
     if (bytes === 0) return '0 B';
@@ -831,7 +987,7 @@ function sortFiles(files) {
 
 async function openFile(file) {
     if (file.is_directory) {
-        await navigateTo(file.path);
+        await navigateTo(normalizePath(file.path));
     } else {
         try {
             // 记录文件访问
@@ -844,8 +1000,9 @@ async function openFile(file) {
 }
 
 function selectFile(file, multiSelect) {
-    console.log('selectFile 被调用，文件:', file.name, '路径:', file.path, 'isDirectory:', file.is_directory);
-    const fileItem = document.querySelector(`[data-path="${file.path}"]`);
+    const filePath = normalizePath(file.path);
+    console.log('selectFile 被调用，文件:', file.name, '路径:', filePath, 'isDirectory:', file.is_directory);
+    const fileItem = document.querySelector(`[data-path="${filePath}"]`);
     
     if (!fileItem) {
         console.error('找不到文件元素，路径:', file.path);
@@ -864,8 +1021,8 @@ function selectFile(file, multiSelect) {
         
         // 单击模式：直接选中当前项
         fileItem.classList.add('selected');
-        selectedFiles.push(file.path);
-        console.log('已选中:', file.path);
+        selectedFiles.push(filePath);
+        console.log('已选中:', filePath);
         
         // 更新预览面板
         updatePreview(file.path);
@@ -874,18 +1031,18 @@ function selectFile(file, multiSelect) {
         if (isCurrentlySelected) {
             // 取消选中
             fileItem.classList.remove('selected');
-            selectedFiles = selectedFiles.filter(f => f !== file.path);
+            selectedFiles = selectedFiles.filter(f => f !== filePath);
             console.log('取消选中，剩余:', selectedFiles);
         } else {
             // 选中
             fileItem.classList.add('selected');
-            selectedFiles.push(file.path);
+            selectedFiles.push(filePath);
             console.log('已选中，当前选中:', selectedFiles);
         }
         
         // 多选时预览最后一个选中的文件
         if (selectedFiles.length > 0) {
-            updatePreview(selectedFiles[selectedFiles.length - 1]);
+            updatePreview(normalizePath(selectedFiles[selectedFiles.length - 1]));
         }
     }
 }
@@ -896,6 +1053,12 @@ async function updatePreview(filePath) {
     const previewContent = document.getElementById('preview-content');
     if (!previewContent) return;
     
+    // 在切换预览前暂停已有的音频/视频
+    const oldMedia = previewContent.querySelectorAll('audio, video');
+    oldMedia.forEach(m => {
+        try { m.pause(); } catch (e) {}
+    });
+
     // 恢复默认样式（可能被 PDF 预览修改过）
     previewContent.style.padding = '';
     previewContent.style.display = '';
@@ -918,6 +1081,16 @@ async function updatePreview(filePath) {
         // 获取文件信息
         const fileInfo = await getFileDetails(filePath);
         console.log('📁 fileInfo:', fileInfo);
+
+        // 如果无法获取文件信息，给出提示并退出
+        if (!fileInfo) {
+            previewContent.innerHTML = '<p class="preview-error">无法获取文件信息，可能路径不存在。</p>';
+            return;
+        }
+
+        // 根据当前预览对象更新状态栏
+        updateStatusBarForEntry(fileInfo);
+
         const ext = path.extname(filePath).toLowerCase();
         const fileName = path.basename(filePath);
         
@@ -969,23 +1142,11 @@ async function updatePreview(filePath) {
                         ${fileInfo.modified ? `<p><i class="fas fa-calendar-alt"></i> 修改: ${formatDate(fileInfo.modified)}</p>` : ''}
                     </div>
                 `;
-
-                const openFolderBtn = document.getElementById('open-folder-btn');
-                if (openFolderBtn) {
-                    openFolderBtn.disabled = false;
-                }
             } catch (error) {
                 previewContent.innerHTML = `<p class="preview-error">无法读取文件夹内容: ${error}</p>`;
             }
             return;
         }
-        
-        // 非目录类型的预览时，禁用右上角打开文件夹按钮
-        const openFolderBtn = document.getElementById('open-folder-btn');
-        if (openFolderBtn) {
-            openFolderBtn.disabled = true;
-        }
-
         // 图片文件
         if (['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg', '.ico'].includes(ext)) {
             const { convertFileSrc } = window.__TAURI__.tauri;
@@ -1029,7 +1190,7 @@ async function updatePreview(filePath) {
                     <h3>${fileName}</h3>
                 </div>
                 <div class="preview-video-container" style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 10px; min-height: 0;">
-                    <video controls class="preview-video" style="max-width: 100%; max-height: 100%;">
+                    <video controls autoplay muted class="preview-video" style="max-width: 100%; max-height: 100%;">
                         <source src="${assetUrl}" type="video/${ext.slice(1)}">
                         您的浏览器不支持视频播放。
                     </video>
@@ -1040,6 +1201,15 @@ async function updatePreview(filePath) {
                     ${fileInfo.modified ? `<p><i class="fas fa-calendar-alt"></i> 修改时间: ${formatDate(fileInfo.modified)}</p>` : ''}
                 </div>
             `;
+
+            // 自动播放视频（在某些环境下可能仍需用户交互）
+            const videoEl = previewContent.querySelector('.preview-video');
+            if (videoEl) {
+                try {
+                    videoEl.currentTime = 0;
+                    videoEl.play().catch(() => {});
+                } catch (e) {}
+            }
             return;
         }
         
@@ -1054,7 +1224,7 @@ async function updatePreview(filePath) {
                     <h3>${fileName}</h3>
                 </div>
                 <div class="preview-audio-container" style="padding: 20px; display: flex; align-items: center; justify-content: center;">
-                    <audio controls class="preview-audio" style="width: 100%;">
+                    <audio controls autoplay class="preview-audio" style="width: 100%;">
                         <source src="${assetUrl}" type="audio/${ext.slice(1)}">
                         您的浏览器不支持音频播放。
                     </audio>
@@ -1065,6 +1235,14 @@ async function updatePreview(filePath) {
                     ${fileInfo.modified ? `<p><i class="fas fa-calendar-alt"></i> 修改时间: ${formatDate(fileInfo.modified)}</p>` : ''}
                 </div>
             `;
+
+            const audioEl = previewContent.querySelector('.preview-audio');
+            if (audioEl) {
+                try {
+                    audioEl.currentTime = 0;
+                    audioEl.play().catch(() => {});
+                } catch (e) {}
+            }
             return;
         }
         
@@ -1471,19 +1649,42 @@ function bindEvents() {
             }
         });
         
+        // 在空白区域悬停一段时间后，恢复为当前文件夹的预览
+        fileListContainer.addEventListener('mousemove', (e) => {
+            const fileItem = e.target.closest('.file-item');
+
+            // 如果在文件/文件夹上移动，则不触发空白预览，并清理定时器
+            if (fileItem) {
+                if (emptyHoverTimer) {
+                    clearTimeout(emptyHoverTimer);
+                    emptyHoverTimer = null;
+                }
+                return;
+            }
+
+            // 鼠标在容器空白区域移动，启动（或重置）空白预览定时器
+            if (emptyHoverTimer) {
+                clearTimeout(emptyHoverTimer);
+                emptyHoverTimer = null;
+            }
+            emptyHoverTimer = setTimeout(() => {
+                if (currentPath) {
+                    updatePreview(currentPath);
+                }
+            }, HOVER_PREVIEW_DELAY);
+        });
+
+        fileListContainer.addEventListener('mouseleave', () => {
+            if (emptyHoverTimer) {
+                clearTimeout(emptyHoverTimer);
+                emptyHoverTimer = null;
+            }
+        });
+        
         fileListContainer.addEventListener('dblclick', (e) => {
             if (e.target === fileListContainer || e.target === fileList) {
-                if (isFromCalendar) {
-                    // 如果是从日历视图跳转来的，返回日历视图
-                    isFromCalendar = false; // 重置标记
-                    showCalendarView();
-                } else {
-                    // 正常的向上导航逻辑
-                    const parentPath = path.dirname(currentPath);
-                    if (parentPath !== currentPath) {
-                        navigateTo(parentPath);
-                    }
-                }
+                // 双击空白区域：执行后退操作，相当于返回上一次打开的文件夹
+                navigateBack();
             }
         });
     }
@@ -2271,7 +2472,7 @@ async function showCalendarView() {
         calendarControls.addEventListener('wheel', handleCalendarScroll);
     }
     
-    // 为文件夹添加双击事件
+    // 为文件夹添加双击和悬停预览事件
     document.querySelectorAll('.folder-item').forEach(item => {
         item.addEventListener('dblclick', (e) => {
             e.stopPropagation();
@@ -2279,6 +2480,26 @@ async function showCalendarView() {
             if (folderPath) {
                 isFromCalendar = true; // 设置标记，表示从日历跳转
                 navigateTo(folderPath);
+            }
+        });
+
+        // 悬停一定时间后在右侧预览区预览该文件夹
+        item.addEventListener('mouseenter', () => {
+            if (calendarHoverTimer) {
+                clearTimeout(calendarHoverTimer);
+                calendarHoverTimer = null;
+            }
+            const folderPath = item.getAttribute('data-path');
+            if (!folderPath) return;
+            calendarHoverTimer = setTimeout(() => {
+                updatePreview(folderPath);
+            }, HOVER_PREVIEW_DELAY);
+        });
+
+        item.addEventListener('mouseleave', () => {
+            if (calendarHoverTimer) {
+                clearTimeout(calendarHoverTimer);
+                calendarHoverTimer = null;
             }
         });
     });
@@ -2558,7 +2779,7 @@ async function loadAnnualData(yearPath) {
                         shellOpen(filePath);
                     });
                     
-                    // 单击事件 - 显示预览
+                    // 单击事件 - 显示预览并设置为活动项目
                     item.addEventListener('click', () => {
                         document.querySelectorAll('.project-item.active').forEach(p => {
                             p.classList.remove('active');
@@ -2566,6 +2787,25 @@ async function loadAnnualData(yearPath) {
                         
                         item.classList.add('active');
                         updateProjectPreview(filePath);
+                    });
+
+                    // 悬停一定时间后，自动更新底部预览
+                    item.addEventListener('mouseenter', () => {
+                        if (annualHoverTimer) {
+                            clearTimeout(annualHoverTimer);
+                            annualHoverTimer = null;
+                        }
+                        if (!filePath) return;
+                        annualHoverTimer = setTimeout(() => {
+                            updateProjectPreview(filePath);
+                        }, HOVER_PREVIEW_DELAY);
+                    });
+
+                    item.addEventListener('mouseleave', () => {
+                        if (annualHoverTimer) {
+                            clearTimeout(annualHoverTimer);
+                            annualHoverTimer = null;
+                        }
                     });
                 });
             } else {
@@ -2730,8 +2970,9 @@ function getCurrentViewDataAttribute() {
  */
 async function getFileDetails(filePath) {
     try {
-        const files = await invoke('read_directory', { path: path.dirname(filePath) });
-        const fileName = path.basename(filePath);
+        const normalized = normalizePath(filePath);
+        const files = await invoke('read_directory', { path: path.dirname(normalized) });
+        const fileName = path.basename(normalized);
         const file = files.find(f => f.name === fileName);
         
         if (!file) {

@@ -6,6 +6,27 @@ use std::fs;
 use std::path::Path;
 use sysinfo::Disks;
 
+#[cfg(target_os = "windows")]
+use std::os::windows::ffi::OsStrExt;
+
+#[cfg(target_os = "windows")]
+use windows::{
+    core::PCWSTR,
+    Win32::{
+        Graphics::Gdi::{
+            CreateCompatibleDC, CreateDIBSection, DeleteDC, DeleteObject, SelectObject,
+            BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, HBITMAP,
+        },
+        UI::{
+            Shell::ExtractIconExW,
+            WindowsAndMessaging::{DestroyIcon, DrawIconEx, GetDesktopWindow, HICON, DI_NORMAL},
+        },
+    },
+};
+
+#[cfg(target_os = "windows")]
+use std::ffi::c_void;
+
 #[derive(Debug, Serialize, Deserialize)]
 struct FileInfo {
     name: String,
@@ -432,6 +453,161 @@ async fn open_in_explorer(path: String) -> Result<(), String> {
     show_in_explorer(path).await
 }
 
+// 提取 exe 图标并缓存为 PNG，返回 PNG 路径
+#[tauri::command]
+async fn get_exe_icon(path: String) -> Result<String, String> {
+    #[cfg(not(target_os = "windows"))]
+    {
+        return Err("仅在 Windows 上支持 exe 图标提取".to_string());
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        use std::fs::create_dir_all;
+
+        let exe_path = Path::new(&path);
+        if !exe_path.exists() {
+            return Err(format!("exe 不存在: {}", path));
+        }
+
+        // 缓存目录: %APPDATA%/easyexplorer/exe-icons
+        let mut cache_dir = tauri::api::path::data_dir().ok_or_else(|| "无法获取应用数据目录".to_string())?;
+        cache_dir.push("easyexplorer");
+        cache_dir.push("exe-icons");
+        create_dir_all(&cache_dir).map_err(|e| e.to_string())?;
+
+        let exe_name = exe_path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .ok_or_else(|| "无法获取 exe 文件名".to_string())?;
+        let mut icon_path = cache_dir.clone();
+        icon_path.push(format!("{exe_name}.png"));
+
+        if icon_path.exists() {
+            return Ok(icon_path.to_string_lossy().to_string());
+        }
+
+        // 直接从 exe 自身提取图标：使用 ExtractIconExW 获取 HICON
+        let wide: Vec<u16> = exe_path
+            .as_os_str()
+            .encode_wide()
+            .chain(std::iter::once(0))
+            .collect();
+
+        let mut hicon_large: HICON = HICON(0);
+        let mut hicon_small: HICON = HICON(0);
+        unsafe {
+            // 这里先尝试获取大图标，如果失败则退回小图标
+            let count = ExtractIconExW(
+                PCWSTR(wide.as_ptr()),
+                0,
+                Some(&mut hicon_large),
+                Some(&mut hicon_small),
+                1,
+            );
+
+            if count == 0 {
+                return Err("无法从 exe 提取图标".into());
+            }
+        }
+
+        // 优先使用大图标，其次小图标
+        let hicon: HICON = if hicon_large.0 != 0 { hicon_large } else { hicon_small };
+
+        if hicon.0 == 0 {
+            return Err("无法提取 exe 图标".into());
+        }
+
+        // 使用更大的位图尺寸，让导出的 PNG 更清晰（后续可以在 UI 中按需缩放）
+        const ICON_SIZE: i32 = 128;
+
+        unsafe {
+            use windows::Win32::Graphics::Gdi::{GetDC, ReleaseDC};
+
+            let hwnd = GetDesktopWindow();
+            let hdc_screen = GetDC(hwnd);
+            if hdc_screen.0 == 0 {
+                let _ = DestroyIcon(hicon);
+                return Err("获取屏幕 DC 失败".into());
+            }
+
+            let hdc_mem = CreateCompatibleDC(hdc_screen);
+            if hdc_mem.0 == 0 {
+                let _ = ReleaseDC(hwnd, hdc_screen);
+                let _ = DestroyIcon(hicon);
+                return Err("创建内存 DC 失败".into());
+            }
+
+            // 创建 32 位带 alpha 的 DIB section，直接获取像素指针以保留透明度
+            let mut bmi = BITMAPINFO::default();
+            bmi.bmiHeader = BITMAPINFOHEADER {
+                biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
+                biWidth: ICON_SIZE,
+                biHeight: -ICON_SIZE, // top-down
+                biPlanes: 1,
+                biBitCount: 32,
+                biCompression: BI_RGB.0,
+                ..Default::default()
+            };
+
+            let mut bits_ptr: *mut c_void = std::ptr::null_mut();
+            let hbitmap: HBITMAP = CreateDIBSection(
+                hdc_screen,
+                &bmi,
+                DIB_RGB_COLORS,
+                &mut bits_ptr,
+                None,
+                0,
+            )
+            .map_err(|e| e.to_string())?;
+            if hbitmap.0 == 0 || bits_ptr.is_null() {
+                let _ = DeleteDC(hdc_mem);
+                let _ = ReleaseDC(hwnd, hdc_screen);
+                let _ = DestroyIcon(hicon);
+                return Err("创建 DIB 位图失败".into());
+            }
+
+            // 将 DIB 选入内存 DC，绘制图标
+            let old = SelectObject(hdc_mem, hbitmap);
+            let _ = DrawIconEx(
+                hdc_mem,
+                0,
+                0,
+                hicon,
+                ICON_SIZE,
+                ICON_SIZE,
+                0,
+                None,
+                DI_NORMAL,
+            );
+
+            // 从 DIB section 中直接读取像素（BGRA 排列，32 位）
+            let pixel_count = (ICON_SIZE * ICON_SIZE * 4) as usize;
+            let pixels_slice = std::slice::from_raw_parts(bits_ptr as *const u8, pixel_count);
+            let mut pixels = Vec::with_capacity(pixel_count);
+            pixels.extend_from_slice(pixels_slice);
+
+            // 清理 GDI 资源
+            let _ = SelectObject(hdc_mem, old);
+            let _ = DeleteObject(hbitmap);
+            let _ = DeleteDC(hdc_mem);
+            let _ = ReleaseDC(hwnd, hdc_screen);
+            let _ = DestroyIcon(hicon);
+
+            let img_buffer =
+                image::RgbaImage::from_raw(ICON_SIZE as u32, ICON_SIZE as u32, pixels)
+                    .ok_or_else(|| "创建图像缓冲失败".to_string())?;
+
+            let mut file = std::fs::File::create(&icon_path).map_err(|e| e.to_string())?;
+            image::DynamicImage::ImageRgba8(img_buffer)
+                .write_to(&mut file, image::ImageFormat::Png)
+                .map_err(|e| e.to_string())?;
+        }
+
+        Ok(icon_path.to_string_lossy().to_string())
+    }
+}
+
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
@@ -449,6 +625,7 @@ fn main() {
             remove_directory,
             remove_file,
             open_in_explorer,
+            get_exe_icon,
         ])
         .run(tauri::generate_context!())
         .expect("启动 Tauri 应用时出错");
