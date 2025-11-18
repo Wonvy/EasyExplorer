@@ -1,0 +1,58 @@
+// 右键菜单样式
+.context-menu
+  position: fixed
+  background: var(--bg-primary)
+  border: 1px solid var(--border-color)
+  border-radius: 4px
+  padding: 4px 0
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15)
+  z-index: 10000
+  min-width: 180px
+  max-width: 300px
+
+  .context-menu-item
+    padding: 8px 12px
+    cursor: pointer
+    display: flex
+    justify-content: space-between
+    align-items: center
+    color: var(--text-primary)
+    font-size: 14px
+    transition: background-color 0.2s
+
+    &:hover:not(.disabled)
+      background: var(--hover-bg)
+
+    &.disabled
+      color: var(--text-disabled)
+      cursor: not-allowed
+      opacity: 0.5
+
+    .context-menu-shortcut
+      margin-left: 20px
+      color: var(--text-secondary)
+      font-size: 12px
+
+  .context-menu-separator
+    height: 1px
+    background: var(--border-color)
+    margin: 4px 0
+
+// 暗色主题变量（如果还没有定义）
+:root
+  --bg-primary: #ffffff
+  --border-color: #d0d0d0
+  --text-primary: #333333
+  --text-secondary: #666666
+  --text-disabled: #999999
+  --hover-bg: #f0f0f0
+
+.dark-theme,
+[data-theme="dark"]
+  --bg-primary: #2b2b2b
+  --border-color: #404040
+  --text-primary: #e0e0e0
+  --text-secondary: #a0a0a0
+  --text-disabled: #606060
+  --hover-bg: #3a3a3a
+

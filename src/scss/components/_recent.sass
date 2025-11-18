@@ -1,0 +1,132 @@
+// 最近访问样式
+#recent-tab
+  padding: 10px
+  height: 100%
+  overflow-y: auto
+
+  .recent-empty
+    display: flex
+    flex-direction: column
+    align-items: center
+    justify-content: center
+    height: 100%
+    text-align: center
+    padding: 40px 20px
+
+  .recent-container
+    .recent-group
+      margin-bottom: 20px
+
+      .recent-group-header
+        display: flex
+        align-items: center
+        padding: 8px 10px
+        cursor: pointer
+        border-radius: 4px
+        transition: background-color 0.2s
+        font-weight: 500
+        font-size: 13px
+        user-select: none
+
+        &:hover
+          background-color: rgba(0, 0, 0, 0.05)
+
+        i
+          margin-right: 8px
+          font-size: 10px
+          transition: transform 0.2s
+          color: #666
+
+        span
+          flex: 1
+
+        .recent-group-count
+          color: #999
+          font-size: 11px
+          font-weight: normal
+
+      .recent-group-content
+        padding: 5px 0
+
+        .recent-item
+          display: flex
+          align-items: center
+          padding: 10px 12px
+          margin: 2px 0
+          cursor: pointer
+          border-radius: 6px
+          transition: all 0.2s
+          gap: 10px
+
+          &:hover
+            background-color: rgba(74, 144, 226, 0.08)
+            transform: translateX(2px)
+
+          .recent-item-icon
+            flex-shrink: 0
+            width: 24px
+            height: 24px
+            display: flex
+            align-items: center
+            justify-content: center
+            font-size: 18px
+
+          .recent-item-info
+            flex: 1
+            min-width: 0
+            display: flex
+            flex-direction: column
+            gap: 4px
+
+            .recent-item-name
+              font-size: 13px
+              font-weight: 500
+              color: #333
+              white-space: nowrap
+              overflow: hidden
+              text-overflow: ellipsis
+
+            .recent-item-path
+              font-size: 11px
+              color: #999
+              white-space: nowrap
+              overflow: hidden
+              text-overflow: ellipsis
+
+          .recent-item-time
+            flex-shrink: 0
+            font-size: 11px
+            color: #999
+
+// 暗色主题
+body.dark-theme, [data-theme="dark"]
+  #recent-tab
+    .recent-container
+      .recent-group
+        .recent-group-header
+          &:hover
+            background-color: rgba(255, 255, 255, 0.08)
+
+          i
+            color: #999
+
+          .recent-group-count
+            color: #666
+
+        .recent-group-content
+          .recent-item
+            &:hover
+              background-color: rgba(74, 144, 226, 0.15)
+
+            .recent-item-info
+              .recent-item-name
+                color: #e0e0e0
+
+              .recent-item-path
+                color: #888
+
+            .recent-item-time
+              color: #888
+
+
+

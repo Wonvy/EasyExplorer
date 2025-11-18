@@ -1,0 +1,86 @@
+// 路径栏样式
+#path-container
+  display: flex
+  align-items: center
+  padding: 8px 15px
+  background: rgba(255, 255, 255, 0.8)
+  border-bottom: 1px solid rgba(200, 200, 200, 0.3)
+  min-height: 36px
+  flex-wrap: wrap
+  gap: 4px
+  font-size: 14px
+  overflow-x: auto
+  overflow-y: hidden
+  white-space: nowrap
+
+  &::-webkit-scrollbar
+    height: 4px
+
+  &::-webkit-scrollbar-track
+    background: rgba(0, 0, 0, 0.05)
+
+  &::-webkit-scrollbar-thumb
+    background: rgba(0, 0, 0, 0.2)
+    border-radius: 2px
+
+    &:hover
+      background: rgba(0, 0, 0, 0.3)
+
+  .path-part
+    padding: 4px 8px
+    border-radius: 4px
+    cursor: pointer
+    transition: all 0.2s
+    color: #555
+    font-weight: 500
+    user-select: none
+    white-space: nowrap
+
+    &:hover
+      background: rgba(74, 144, 226, 0.1)
+      color: #4a90e2
+
+    &:active
+      background: rgba(74, 144, 226, 0.2)
+
+    // 最后一个路径部分（当前目录）
+    &:last-of-type
+      color: #333
+      font-weight: 600
+      background: rgba(74, 144, 226, 0.05)
+
+      &:hover
+        background: rgba(74, 144, 226, 0.15)
+
+  .path-separator
+    color: #999
+    font-size: 12px
+    margin: 0 2px
+    user-select: none
+    flex-shrink: 0
+
+// 暗色主题
+body.dark-theme, [data-theme="dark"]
+  #path-container
+    background: rgba(40, 40, 40, 0.8)
+    border-bottom-color: rgba(100, 100, 100, 0.3)
+
+    .path-part
+      color: #ccc
+
+      &:hover
+        background: rgba(74, 144, 226, 0.2)
+        color: #5ba3ef
+
+      &:last-of-type
+        color: #e0e0e0
+        background: rgba(74, 144, 226, 0.15)
+
+        &:hover
+          background: rgba(74, 144, 226, 0.25)
+
+    .path-separator
+      color: #777
+
+
+

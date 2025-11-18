@@ -1,2 +1,32 @@
+# Node
 node_modules/
+package-lock.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Rust
+src-tauri/target/
+Cargo.lock
+
+# Build outputs
 dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Temporary files
+tempCodeRunnerFile.js
