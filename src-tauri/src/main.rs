@@ -3,8 +3,11 @@
 
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::path::Path;
+use std::io::Read;
+use std::path::{Path, PathBuf};
 use sysinfo::Disks;
+use chardetng::EncodingDetector;
+use zip::ZipArchive;
 
 #[cfg(target_os = "windows")]
 use std::os::windows::ffi::OsStrExt;
@@ -35,6 +38,85 @@ struct FileInfo {
     size: u64,
     modified: Option<u64>,
     created: Option<u64>,
+}
+
+// 提取 PPTX 缩略图并缓存为图片，返回图片路径
+#[tauri::command]
+async fn get_ppt_thumbnail(path: String) -> Result<String, String> {
+    let ppt_path = PathBuf::from(&path);
+    if !ppt_path.exists() {
+        return Err(format!("PPT 文件不存在: {}", path));
+    }
+
+    // 只对 .pptx 尝试缩略图提取，其他扩展名直接报错，让前端回退到默认图标
+    if ppt_path
+        .extension()
+        .and_then(|s| s.to_str())
+        .map(|s| s.eq_ignore_ascii_case("pptx"))
+        != Some(true)
+    {
+        return Err("仅支持从 .pptx 中提取缩略图".to_string());
+    }
+
+    // 缓存目录: %APPDATA%/easyexplorer/ppt-thumbs
+    let mut cache_dir = tauri::api::path::data_dir().ok_or_else(|| "无法获取应用数据目录".to_string())?;
+    cache_dir.push("easyexplorer");
+    cache_dir.push("ppt-thumbs");
+    fs::create_dir_all(&cache_dir).map_err(|e| e.to_string())?;
+
+    let file_name = ppt_path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .ok_or_else(|| "无法获取 PPT 文件名".to_string())?;
+
+    // 使用原始缩略图扩展名，如果找不到则返回错误
+    let mut thumb_path = cache_dir.clone();
+    thumb_path.push(format!("{file_name}.thumb"));
+
+    // 如果已存在缓存文件，直接返回
+    if thumb_path.exists() {
+        return Ok(thumb_path.to_string_lossy().to_string());
+    }
+
+    // 从 pptx (zip) 中提取缩略图
+    let file = std::fs::File::open(&ppt_path).map_err(|e| format!("打开 PPTX 失败: {}", e))?;
+    let mut archive = ZipArchive::new(file).map_err(|e| format!("解析 PPTX 失败: {}", e))?;
+
+    let candidates = [
+        "docProps/thumbnail.jpeg",
+        "docProps/thumbnail.jpg",
+        "docProps/thumbnail.png",
+    ];
+
+    let mut found = false;
+    for name in &candidates {
+        if let Ok(mut thumb_file) = archive.by_name(name) {
+            let mut buf = Vec::new();
+            thumb_file
+                .read_to_end(&mut buf)
+                .map_err(|e| format!("读取 PPTX 缩略图失败: {}", e))?;
+
+            // 根据原始扩展名设置缓存文件后缀
+            let ext = if name.ends_with(".png") {
+                "png"
+            } else if name.ends_with(".jpeg") || name.ends_with(".jpg") {
+                "jpg"
+            } else {
+                "bin"
+            };
+
+            thumb_path.set_extension(ext);
+            fs::write(&thumb_path, &buf).map_err(|e| format!("写入缩略图缓存失败: {}", e))?;
+            found = true;
+            break;
+        }
+    }
+
+    if !found {
+        return Err("PPTX 中未找到缩略图".to_string());
+    }
+
+    Ok(thumb_path.to_string_lossy().to_string())
 }
 
 // 右键菜单相关结构（预留，后续实现）
@@ -427,6 +509,39 @@ async fn path_exists(path: String) -> Result<bool, String> {
     Ok(Path::new(&path).exists())
 }
 
+// 智能读取文本：优先 UTF-8，失败则自动检测编码（支持 GBK/ANSI 等）
+#[tauri::command]
+async fn read_text_flexible(path: String, max_len: Option<usize>) -> Result<String, String> {
+    let max_len = max_len.unwrap_or(200_000); // 防止一次读取超大文件
+
+    let path_buf = PathBuf::from(&path);
+    if !path_buf.exists() {
+        return Err(format!("路径不存在: {}", path));
+    }
+
+    let file = std::fs::File::open(&path_buf)
+        .map_err(|e| format!("无法打开文件 {}: {}", path, e))?;
+
+    let mut buf = Vec::new();
+    file
+        .take(max_len as u64)
+        .read_to_end(&mut buf)
+        .map_err(|e| format!("读取文件 {} 失败: {}", path, e))?;
+
+    // 1. 尝试按 UTF-8 解码
+    if let Ok(s) = String::from_utf8(buf.clone()) {
+        return Ok(s);
+    }
+
+    // 2. 自动探测编码并解码为 UTF-8
+    let mut detector = EncodingDetector::new();
+    detector.feed(&buf, true);
+    let enc = detector.guess(None, true);
+    let (cow, _, _) = enc.decode(&buf);
+
+    Ok(cow.into_owned())
+}
+
 // 连接路径
 #[tauri::command]
 async fn join_path(base: String, path: String) -> Result<String, String> {
@@ -626,6 +741,8 @@ fn main() {
             remove_file,
             open_in_explorer,
             get_exe_icon,
+            get_ppt_thumbnail,
+            read_text_flexible,
         ])
         .run(tauri::generate_context!())
         .expect("启动 Tauri 应用时出错");

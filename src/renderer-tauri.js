@@ -716,10 +716,12 @@ function groupFilesByType(files) {
 function createFileItem(file) {
     const fileItem = document.createElement('div');
     fileItem.className = 'file-item';
-    fileItem.dataset.path = file.path;
+    const normalizedPath = normalizePath(file.path);
+    fileItem.dataset.path = normalizedPath;
     fileItem.dataset.isDirectory = file.is_directory;
     
     const ext = path.extname(file.name).toLowerCase();
+    const extLabel = (ext || '').replace('.', '').toUpperCase();
     let icon = getFileIcon(file.name, file.is_directory);
     
     // 如果是图片文件，显示缩略图，并在左上角叠加一个小类型图标
@@ -727,13 +729,37 @@ function createFileItem(file) {
     if (isImage && !file.is_directory) {
         const { convertFileSrc } = window.__TAURI__.tauri;
         const imageUrl = convertFileSrc(file.path);
-        const extLabel = (ext || '').replace('.', '').toUpperCase();
         icon = `
             <div class="file-thumbnail-wrapper no-overlay">
                 <img src="${imageUrl}" class="file-thumbnail" alt="${file.name}">
                 <span class="file-ext-badge">${extLabel}</span>
             </div>
         `;
+    }
+    
+    // 如果是 PPTX 文件：尝试加载内置缩略图
+    if (!file.is_directory && ext && ext.toLowerCase() === '.pptx') {
+        const fileIconEl = fileItem.querySelector('.file-icon');
+        if (fileIconEl) {
+            (async () => {
+                try {
+                    console.log('尝试加载 PPT 缩略图:', normalizedPath);
+                    const thumbPath = await invoke('get_ppt_thumbnail', { path: normalizedPath });
+                    if (!thumbPath) return;
+                    const { convertFileSrc } = window.__TAURI__.tauri;
+                    const thumbUrl = convertFileSrc(thumbPath);
+                    icon = `
+                        <div class="file-thumbnail-wrapper no-overlay">
+                            <img src="${thumbUrl}" class="file-thumbnail" alt="${file.name}">
+                            <span class="file-ext-badge">${extLabel}</span>
+                        </div>
+                    `;
+                } catch (e) {
+                    // 没有缩略图或解析失败时保持默认图标
+                    console.warn('获取 PPT 缩略图失败，使用默认图标:', e);
+                }
+            })();
+        }
     }
     
     const tag = fileTags[file.path];
@@ -802,6 +828,31 @@ function createFileItem(file) {
                     `;
                 } catch (e) {
                     console.warn('获取 exe 图标失败，使用默认图标:', e);
+                }
+            })();
+        }
+    }
+
+    // 如果是 PPTX 文件：尝试加载内置缩略图
+    if (!file.is_directory && ext && ext.toLowerCase() === '.pptx') {
+        const fileIconEl = fileItem.querySelector('.file-icon');
+        if (fileIconEl) {
+            (async () => {
+                try {
+                    console.log('尝试加载 PPT 缩略图:', normalizedPath);
+                    const thumbPath = await invoke('get_ppt_thumbnail', { path: normalizedPath });
+                    if (!thumbPath) return;
+                    const { convertFileSrc } = window.__TAURI__.tauri;
+                    const thumbUrl = convertFileSrc(thumbPath);
+                    fileIconEl.innerHTML = `
+                        <div class="file-thumbnail-wrapper no-overlay">
+                            <img src="${thumbUrl}" class="file-thumbnail" alt="${file.name}">
+                            <span class="file-ext-badge">${extLabel}</span>
+                        </div>
+                    `;
+                } catch (e) {
+                    // 没有缩略图或解析失败时保持默认图标
+                    console.warn('获取 PPT 缩略图失败，使用默认图标:', e);
                 }
             })();
         }
@@ -1078,18 +1129,16 @@ async function updatePreview(filePath) {
             return;
         }
         
-        // 获取文件信息
+        // 获取文件信息（用于状态栏和附加信息，不强制要求）
         const fileInfo = await getFileDetails(filePath);
         console.log('📁 fileInfo:', fileInfo);
 
-        // 如果无法获取文件信息，给出提示并退出
         if (!fileInfo) {
-            previewContent.innerHTML = '<p class="preview-error">无法获取文件信息，可能路径不存在。</p>';
-            return;
+            console.warn('getFileDetails 失败，将仅根据路径进行预览:', filePath);
+        } else {
+            // 根据当前预览对象更新状态栏
+            updateStatusBarForEntry(fileInfo);
         }
-
-        // 根据当前预览对象更新状态栏
-        updateStatusBarForEntry(fileInfo);
 
         const ext = path.extname(filePath).toLowerCase();
         const fileName = path.basename(filePath);
@@ -1166,9 +1215,9 @@ async function updatePreview(filePath) {
                     <img src="${assetUrl}" alt="${fileName}" class="preview-image" style="max-width: 100%; max-height: 100%; object-fit: contain;">
                 </div>
                 <div class="preview-info" style="flex-shrink: 0; padding: 15px; border-top: 1px solid var(--border-color);">
-                    <p><i class="fas fa-hdd"></i> 大小: ${formatBytes(fileInfo.size || 0)}</p>
-                    ${fileInfo.created ? `<p><i class="fas fa-calendar-plus"></i> 创建时间: ${formatDate(fileInfo.created)}</p>` : ''}
-                    ${fileInfo.modified ? `<p><i class="fas fa-calendar-alt"></i> 修改时间: ${formatDate(fileInfo.modified)}</p>` : ''}
+                    ${fileInfo ? `<p><i class=\"fas fa-hdd\"></i> 大小: ${formatBytes(fileInfo.size || 0)}</p>` : ''}
+                    ${fileInfo && fileInfo.created ? `<p><i class=\"fas fa-calendar-plus\"></i> 创建时间: ${formatDate(fileInfo.created)}</p>` : ''}
+                    ${fileInfo && fileInfo.modified ? `<p><i class=\"fas fa-calendar-alt\"></i> 修改时间: ${formatDate(fileInfo.modified)}</p>` : ''}
                 </div>
             `;
             return;
@@ -1230,9 +1279,9 @@ async function updatePreview(filePath) {
                     </audio>
                 </div>
                 <div class="preview-info">
-                    <p><i class="fas fa-hdd"></i> 大小: ${formatBytes(fileInfo.size || 0)}</p>
-                    ${fileInfo.created ? `<p><i class="fas fa-calendar-plus"></i> 创建时间: ${formatDate(fileInfo.created)}</p>` : ''}
-                    ${fileInfo.modified ? `<p><i class="fas fa-calendar-alt"></i> 修改时间: ${formatDate(fileInfo.modified)}</p>` : ''}
+                    ${fileInfo ? `<p><i class=\"fas fa-hdd\"></i> 大小: ${formatBytes(fileInfo.size || 0)}</p>` : ''}
+                    ${fileInfo && fileInfo.created ? `<p><i class=\"fas fa-calendar-plus\"></i> 创建时间: ${formatDate(fileInfo.created)}</p>` : ''}
+                    ${fileInfo && fileInfo.modified ? `<p><i class=\"fas fa-calendar-alt\"></i> 修改时间: ${formatDate(fileInfo.modified)}</p>` : ''}
                 </div>
             `;
 
@@ -1247,16 +1296,18 @@ async function updatePreview(filePath) {
         }
         
         // 文本文件
-        if (['.txt', '.md', '.log', '.js', '.ts', '.jsx', '.tsx', '.html', '.css', '.scss', '.sass', 
+        if (['.txt', '.tap', '.md', '.log', '.js', '.ts', '.jsx', '.tsx', '.html', '.css', '.scss', '.sass', 
              '.json', '.xml', '.yaml', '.yml', '.toml', '.ini', '.conf', '.py', '.java', '.c', '.cpp', 
              '.h', '.hpp', '.rs', '.go', '.php', '.rb', '.sh', '.bat', '.ps1'].includes(ext)) {
             try {
-                // 读取文件内容 (限制大小)
-                const { readTextFile } = window.__TAURI__.fs;
-                let content = await readTextFile(filePath);
-                
-                // 限制预览长度
+                // 通过后端命令智能读取文本（支持 UTF-8 / GBK / ANSI 等编码）
                 const maxLength = 5000;
+                let content = await invoke('read_text_flexible', { path: filePath, maxLen: maxLength * 5 });
+                if (typeof content !== 'string') {
+                    content = String(content ?? '');
+                }
+
+                // 限制预览长度
                 const isTruncated = content.length > maxLength;
                 if (isTruncated) {
                     content = content.slice(0, maxLength);
@@ -1285,11 +1336,21 @@ async function updatePreview(filePath) {
                         ${isTruncated ? '<p class="preview-more">... 内容已截断</p>' : ''}
                     </div>
                     <div class="preview-info" style="flex-shrink: 0; padding: 15px; border-top: 1px solid var(--border-color);">
-                        <p><i class="fas fa-hdd"></i> 大小: ${formatBytes(fileInfo.size || 0)}</p>
-                        ${fileInfo.created ? `<p><i class="fas fa-calendar-plus"></i> 创建时间: ${formatDate(fileInfo.created)}</p>` : ''}
-                        ${fileInfo.modified ? `<p><i class="fas fa-calendar-alt"></i> 修改时间: ${formatDate(fileInfo.modified)}</p>` : ''}
+                        ${fileInfo ? `<p><i class=\"fas fa-hdd\"></i> 大小: ${formatBytes(fileInfo.size || 0)}</p>` : ''}
+                        ${fileInfo && fileInfo.created ? `<p><i class=\"fas fa-calendar-plus\"></i> 创建时间: ${formatDate(fileInfo.created)}</p>` : ''}
+                        ${fileInfo && fileInfo.modified ? `<p><i class=\"fas fa-calendar-alt\"></i> 修改时间: ${formatDate(fileInfo.modified)}</p>` : ''}
                     </div>
                 `;
+
+                // 代码语法高亮（如果本地 hljs 存在）
+                const codeEl = previewContent.querySelector('.preview-code');
+                if (window.hljs && codeEl) {
+                    try {
+                        window.hljs.highlightElement(codeEl);
+                    } catch (e) {
+                        console.warn('代码高亮失败:', e);
+                    }
+                }
             } catch (error) {
                 previewContent.innerHTML = `<p class="preview-error">无法读取文件内容: ${error}</p>`;
             }
@@ -1309,9 +1370,9 @@ async function updatePreview(filePath) {
                     </div>
                     <div class="preview-info">
                         <p><i class="fas fa-exclamation-triangle"></i> PDF 预览失败: ${error.message}</p>
-                        <p><i class="fas fa-hdd"></i> 大小: ${formatBytes(fileInfo.size || 0)}</p>
-                        ${fileInfo.created ? `<p><i class="fas fa-calendar-plus"></i> 创建时间: ${formatDate(fileInfo.created)}</p>` : ''}
-                        ${fileInfo.modified ? `<p><i class="fas fa-calendar-alt"></i> 修改时间: ${formatDate(fileInfo.modified)}</p>` : ''}
+                ${fileInfo ? `<p><i class=\"fas fa-hdd\"></i> 大小: ${formatBytes(fileInfo.size || 0)}</p>` : ''}
+                ${fileInfo && fileInfo.created ? `<p><i class="fas fa-calendar-plus"></i> 创建时间: ${formatDate(fileInfo.created)}</p>` : ''}
+                ${fileInfo && fileInfo.modified ? `<p><i class="fas fa-calendar-alt"></i> 修改时间: ${formatDate(fileInfo.modified)}</p>` : ''}
                         <button class="preview-open-btn" onclick="window.__TAURI__.shell.open('${filePath.replace(/\\/g, '\\\\')}')">
                             <i class="fas fa-external-link-alt"></i> 使用默认程序打开
                         </button>
@@ -1330,9 +1391,9 @@ async function updatePreview(filePath) {
             </div>
             <div class="preview-info">
                 <p><i class="fas fa-tag"></i> 类型: ${ext || '未知'}</p>
-                <p><i class="fas fa-hdd"></i> 大小: ${formatBytes(fileInfo.size || 0)}</p>
-                ${fileInfo.created ? `<p><i class="fas fa-calendar-plus"></i> 创建时间: ${formatDate(fileInfo.created)}</p>` : ''}
-                ${fileInfo.modified ? `<p><i class="fas fa-calendar-alt"></i> 修改时间: ${formatDate(fileInfo.modified)}</p>` : ''}
+                ${fileInfo ? `<p><i class=\"fas fa-hdd\"></i> 大小: ${formatBytes(fileInfo.size || 0)}</p>` : ''}
+                ${fileInfo && fileInfo.created ? `<p><i class=\"fas fa-calendar-plus\"></i> 创建时间: ${formatDate(fileInfo.created)}</p>` : ''}
+                ${fileInfo && fileInfo.modified ? `<p><i class=\"fas fa-calendar-alt\"></i> 修改时间: ${formatDate(fileInfo.modified)}</p>` : ''}
                 <button class="preview-open-btn" onclick="window.__TAURI__.shell.open('${filePath.replace(/\\/g, '\\\\')}')">
                     <i class="fas fa-external-link-alt"></i> 使用默认程序打开
                 </button>
@@ -1399,7 +1460,7 @@ async function renderPDFPreview(filePath, fileName, fileInfo) {
             </div>
             <div class="preview-info" style="text-align: center; padding: 20px;">
                 <p><i class="fas fa-info-circle"></i> 无法内嵌预览 PDF</p>
-                <p style="margin: 10px 0;"><i class="fas fa-hdd"></i> 大小: ${formatBytes(fileInfo.size || 0)}</p>
+                ${fileInfo ? `<p style=\"margin: 10px 0;\"><i class=\"fas fa-hdd\"></i> 大小: ${formatBytes(fileInfo.size || 0)}</p>` : ''}
                 <button 
                     class="preview-open-btn" 
                     onclick="window.__TAURI__.shell.open('${filePath.replace(/\\/g, '\\\\')}')"
@@ -1691,6 +1752,13 @@ function bindEvents() {
     
     // 添加键盘快捷键
     document.addEventListener('keydown', async (e) => {
+        // 如果当前焦点在可编辑元素上（如地址栏输入框、文本框），不拦截快捷键
+        const target = e.target;
+        const tag = target && target.tagName;
+        const isEditable = tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable;
+        if (isEditable) {
+            return;
+        }
         // 空格键 - 预览选中的文件
         if (e.key === ' ' || e.code === 'Space') {
             console.log('空格键被按下，选中文件数量:', selectedFiles.length);
@@ -1717,7 +1785,7 @@ function bindEvents() {
             await cutFile(selectedFiles);
         }
         
-        // Ctrl+V - 粘贴
+        // Ctrl+V - 粘贴到当前目录（仅当不在输入框中时）
         if (e.ctrlKey && e.key === 'v' && currentPath) {
             e.preventDefault();
             await pasteFile(currentPath);
@@ -2773,10 +2841,24 @@ async function loadAnnualData(yearPath) {
                 monthProjects.querySelectorAll('.project-item').forEach(item => {
                     const filePath = item.getAttribute('data-path');
                     
-                    // 双击事件 - 在资源管理器中打开
+                    // 双击事件 - 在系统资源管理器中打开该项目文件夹
                     item.addEventListener('dblclick', (e) => {
                         e.stopPropagation();
-                        shellOpen(filePath);
+                        if (filePath) {
+                            shellOpen(filePath);
+                        }
+                    });
+
+                    // 右键菜单 - 使用与主文件列表一致的上下文菜单
+                    item.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        if (!filePath) return;
+                        const fileObj = {
+                            path: filePath,
+                            name: path.basename(filePath),
+                            is_directory: true
+                        };
+                        showContextMenu(fileObj, e.clientX, e.clientY);
                     });
                     
                     // 单击事件 - 显示预览并设置为活动项目
@@ -3387,29 +3469,19 @@ async function loadRecentAccess() {
         const filePath = item.getAttribute('data-path');
         const isDirectory = item.getAttribute('data-is-directory') === 'true';
         
-        // 单击 - 如果是文件夹则导航，如果是文件则预览
+        // 单击 - 如果是文件夹则在中间区域导航，如果是文件则仅更新右侧预览
         item.addEventListener('click', async () => {
             if (isDirectory) {
-                // 切换到主页标签并导航
-                const foldersButton = document.querySelector('[data-tab="folders"]');
-                if (foldersButton) {
-                    foldersButton.click();
-                }
                 await navigateTo(filePath);
             } else {
-                // 预览文件
                 await updatePreview(filePath);
             }
         });
         
-        // 双击 - 打开
+        // 双击 - 打开（不切换到主页标签）
         item.addEventListener('dblclick', async (e) => {
             e.stopPropagation();
             if (isDirectory) {
-                const foldersButton = document.querySelector('[data-tab="folders"]');
-                if (foldersButton) {
-                    foldersButton.click();
-                }
                 await navigateTo(filePath);
             } else {
                 try {

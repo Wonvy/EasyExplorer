@@ -6,7 +6,8 @@
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/all.min.css">
-    <!-- Highlight.js CDN 已移除，使用 Tauri 时不需要外部 CDN -->
+    <!-- 本地 Highlight.js 代码高亮主题 -->
+    <link rel="stylesheet" href="js/highlight/styles/github-dark.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <!-- 可选: 如果需要代码高亮和拖拽功能，取消注释下面两行 -->
@@ -164,6 +165,9 @@
     <div id="context-menu" class="context-menu" style="display: none;">
         <!-- 菜单项将通过 JS 动态生成 -->
     </div>
+
+    <!-- 本地 Highlight.js 代码高亮库（供预览区使用） -->
+    <script src="js/highlight/highlight.min.js"></script>
 
     <!-- 方式1: 使用 Tauri 原生实现（推荐） -->
     <script src="renderer-tauri.js"></script>

@@ -170,18 +170,28 @@ html
 
   #sidebar
     position: relative
-    max-width: 40%
+    display: flex
+    flex-direction: column   // 上下三块布局：顶部/中间/底部
+    height: 100%
+    width: 260px       // 默认稳定宽度，由分隔条调整
+    min-width: 220px   // 最小宽度，避免过窄
+    max-width: 40%     // 仍然不超过窗口的 40%
     transition: width 0.3s ease
     overflow: hidden
     will-change: width
     &.small-width
+      width: 0           // 折叠时完全收起
+      min-width: 0
       .file-parent-dir
         display: none
 
     .sidebar-content
-      width: 100%
-      height: calc(100% - 30px)
-      overflow: hidden
+      width: 100%            // 始终占满侧边栏宽度，切换选项卡不抖动
+      flex: 1                // 占据中间自适应区域
+      min-height: 0          // 允许内部滚动
+      display: flex
+      flex-direction: column // 顶部 tabs 固定，下面内容滚动
+      overflow: hidden       // 自身不滚动，由内部容器滚动
       direction: rtl
       pointer-events: auto
       &>*
@@ -249,7 +259,7 @@ html
     display: flex
     flex-direction: column
     // background-color: white
-    height: 100%
+    min-height: 0   // 允许子元素（如 #file-list-container）内部滚动
     min-width: 200px
 
     #toolbar
